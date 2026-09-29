@@ -2,7 +2,7 @@ import { q, q1, run } from '../../db/sqlite.js';
 import { classify } from '../../engine/classify.js';
 import { analyse, commit } from '../../engine/rules.js';
 import { msgHtml } from '../components.js';
-import { $, $$, esc, go, groups, school, state, today } from '../helpers.js';
+import { $, $$, esc, go, groups, state, today } from '../helpers.js';
 
 export const SAMPLES = [
   { g: 'G4', role: 'Mother of a girl student', ch: 'WhatsApp', t: 'हमारी बेटियाँ अकेले हाईवे पार करके नहीं जा सकतीं, डर लगता है।', en: 'Our daughters cannot cross the highway alone. We are scared.' },

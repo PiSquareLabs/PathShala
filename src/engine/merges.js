@@ -1,5 +1,5 @@
 import { q, q1, run } from '../db/sqlite.js';
-import { facts, school } from '../ui/helpers.js';
+import { school } from '../ui/helpers.js';
 
 export const RANK = { red: 0, pending: 1, amber: 2, green: 3 };
 export const ISSUE_ITEMS = {

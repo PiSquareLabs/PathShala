@@ -1,6 +1,6 @@
 import { db, q, q1, run, save } from '../db/sqlite.js';
 import { computeMerges } from './merges.js';
-import { MONTHS, P, esc, haversine, inr, monthsText, place, route, school, short, state } from '../ui/helpers.js';
+import { MONTHS, P, esc, haversine, inr, monthsText, place, route, school, short } from '../ui/helpers.js';
 import { render } from '../ui/router.js';
 import { toast } from '../ui/toast.js';
 

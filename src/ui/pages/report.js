@@ -1,7 +1,7 @@
 import { walkProfile } from '../../case/analysis.js';
 import { runDraft } from '../../agent/runner.js';
 import { q, q1, run, save } from '../../db/sqlite.js';
-import { $, $$, esc, evChip, go, inr, linkOf, logCase, nowTs, route, today } from '../helpers.js';
+import { $, $$, esc, evChip, go, inr, linkOf, logCase, nowTs, today } from '../helpers.js';
 import { render } from '../router.js';
 import { toast } from '../toast.js';
 

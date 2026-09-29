@@ -1,4 +1,3 @@
-import { school } from '../ui/helpers.js';
 
 export const ISSUE_KW = [
   ["Girls' safety", ['बेटी', 'बेटि', 'लड़कि', 'लड़की', 'छात्राओं', 'daughter', 'girl', 'harass', 'छेड़']],

@@ -1,5 +1,5 @@
 import { routeHazards, transportAt, walkProfile } from '../../case/analysis.js';
-import { P, esc, linkOf, route, school } from '../helpers.js';
+import { P, esc, linkOf, route } from '../helpers.js';
 
 export function stepAccess(el, c, A, B) {
   const Lk = linkOf(c.from_id, c.to_id), wp = Lk ? walkProfile(Lk) : null, hz = Lk ? routeHazards(Lk) : [], rhz = Lk ? routeHazards(Lk, 'road') : [];

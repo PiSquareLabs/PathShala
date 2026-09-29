@@ -1,4 +1,4 @@
-import { haversine, inr, route, school } from '../ui/helpers.js';
+import { haversine, inr } from '../ui/helpers.js';
 
 export function evalPair(s, r, R, opts = {}) {
   const d = opts.straight ?? haversine(s, r);

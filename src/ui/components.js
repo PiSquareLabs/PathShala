@@ -1,7 +1,7 @@
 import { q, q1, run } from '../db/sqlite.js';
 import { successHealth } from '../engine/merges.js';
 import { HAZARD_ANSWER, commit, optLabel } from '../engine/rules.js';
-import { $, $$, HC, MONTHS, css, esc, route, school, short, state, today } from './helpers.js';
+import { $, $$, HC, MONTHS, css, esc, route, school, state, today } from './helpers.js';
 
 export function qCards(gid, showMerge, kinds) {
   const qs = q(`SELECT qn.*, a.choice, a.note, a.answered_on, a.source AS asrc, g.sending_id, g.receiving_id

@@ -1,4 +1,4 @@
-import { q, q1 } from '../db/sqlite.js';
+import { q1 } from '../db/sqlite.js';
 import { resetNewItems } from '../engine/rules.js';
 import { $, $$, esc, go, mergeOf, mergeRow, route, state } from './helpers.js';
 import { maps, resetMaps } from './map/baseMap.js';
@@ -18,7 +18,7 @@ import { renderSchool } from './pages/school.js';
 import { renderSql } from './pages/sql.js';
 import { renderSurvey } from './pages/survey.js';
 import { renderSurveys } from './pages/surveys.js';
-import { dbStatus, toast } from './toast.js';
+import { dbStatus } from './toast.js';
 
 export function render(scrollTop) {
   const r = route(), app = $('#app');

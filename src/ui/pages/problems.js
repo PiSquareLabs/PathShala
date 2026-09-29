@@ -1,5 +1,5 @@
 import { q } from '../../db/sqlite.js';
-import { $$, crumbs, esc, school, short, state } from '../helpers.js';
+import { $$, crumbs, esc, short, state } from '../helpers.js';
 import { render } from '../router.js';
 
 export function renderProblems(pg) {

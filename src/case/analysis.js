@@ -1,5 +1,5 @@
 import { q, q1, run, save } from '../db/sqlite.js';
-import { P, capOf, haversine, linkOf, logCase, route, school, segKm, today } from '../ui/helpers.js';
+import { P, capOf, haversine, linkOf, logCase, school, segKm, today } from '../ui/helpers.js';
 
 export function walkProfile(lk) {
   const R = P(), pts = JSON.parse(lk.route_walk || '[]');
