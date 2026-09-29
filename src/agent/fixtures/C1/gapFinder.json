@@ -1,0 +1,51 @@
+{
+  "questions": [
+    {
+      "qid": "Q1",
+      "text": "Is the Baridropa–Jawal footbridge passable during heavy rain?",
+      "type": "choice",
+      "options": [
+        "Yes",
+        "No",
+        "Seasonal"
+      ],
+      "gap": "Bridge passability in heavy rain"
+    },
+    {
+      "qid": "Q2",
+      "text": "How many affected students currently use this route?",
+      "type": "number",
+      "options": [],
+      "gap": "Students who use this route"
+    },
+    {
+      "qid": "Q3",
+      "text": "Is public transport available at school arrival and departure times?",
+      "type": "choice",
+      "options": [
+        "Yes",
+        "No",
+        "Unknown"
+      ],
+      "gap": "Public transport at school times"
+    },
+    {
+      "qid": "Q4",
+      "text": "What is the approximate travel time during school hours?",
+      "type": "minutes",
+      "options": [],
+      "gap": "Actual travel time in school hours"
+    },
+    {
+      "qid": "Q5",
+      "text": "Upload supporting evidence",
+      "type": "evidence",
+      "options": [
+        "Photo",
+        "GPS",
+        "Note"
+      ],
+      "gap": "Photo or GPS evidence"
+    }
+  ]
+}

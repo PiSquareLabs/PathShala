@@ -1,0 +1,58 @@
+{
+  "evidence_changes": [
+    {
+      "eid": "E5",
+      "status": "verified",
+      "label": "Public transport unavailable during school hours",
+      "detail": "HRTC Banjar–Gushaini departs 07:10, 13:40, 16:50 — none in the school-time window; timetable not verified · checked in the field"
+    }
+  ],
+  "finding_changes": [
+    {
+      "fid": "F2",
+      "status": "Verified"
+    },
+    {
+      "fid": "F1",
+      "status": "Confirmed concern"
+    }
+  ],
+  "new_evidence": [
+    {
+      "eid": "E14",
+      "fid": "F2",
+      "kind": "field",
+      "status": "verified",
+      "label": "Field check: crossing is passable only outside the monsoon",
+      "detail": "",
+      "ref": "field"
+    },
+    {
+      "eid": "E15",
+      "fid": "F1",
+      "kind": "field",
+      "status": "verified",
+      "label": "24 students use this route (field count)",
+      "detail": "",
+      "ref": "field"
+    },
+    {
+      "eid": "E16",
+      "fid": "F1",
+      "kind": "field",
+      "status": "verified",
+      "label": "Measured travel time about 70 min during school hours",
+      "detail": "Compared with the calculated walking time",
+      "ref": "field"
+    },
+    {
+      "eid": "E17",
+      "fid": "F2",
+      "kind": "field",
+      "status": "verified",
+      "label": "Supporting evidence attached: Photo",
+      "detail": "Photo of the crossing",
+      "ref": "field"
+    }
+  ]
+}

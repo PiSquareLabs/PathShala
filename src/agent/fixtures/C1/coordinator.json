@@ -1,0 +1,165 @@
+{
+  "findings": [
+    {
+      "fid": "F1",
+      "title": "Transport",
+      "kind": "primary",
+      "severity": "high",
+      "summary": "No transport at school times from the affected habitations; the walk is long and steep for young children.",
+      "status": "Potential issue",
+      "evidence": [
+        {
+          "eid": "E1",
+          "kind": "feedback",
+          "status": "reported",
+          "label": "31 citizen responses mention transport",
+          "detail": "Community feedback, classified by theme",
+          "ref": "theme:Transport"
+        },
+        {
+          "eid": "E2",
+          "kind": "gis",
+          "status": "calculated",
+          "label": "Walk 4.6 km, about 82 min for a young child",
+          "detail": "Tobler's hiking function on the route profile, child pace × 0.75; 108 m up, 238 m down",
+          "ref": "route"
+        },
+        {
+          "eid": "E3",
+          "kind": "gis",
+          "status": "calculated",
+          "label": "Road 3.8 km, about 19 min by vehicle",
+          "detail": "Road route along the Pekhri link road and the valley road",
+          "ref": "route"
+        },
+        {
+          "eid": "E4",
+          "kind": "data",
+          "status": "calculated",
+          "label": "4 habitations affected",
+          "detail": "Pekhri (11), Jawal (7), Baridropa (5), Kandi Dhar (4)",
+          "ref": "habitations"
+        },
+        {
+          "eid": "E5",
+          "kind": "transport",
+          "status": "needs",
+          "label": "Actual transport availability",
+          "detail": "HRTC Banjar–Gushaini departs 07:10, 13:40, 16:50 — none in the school-time window; timetable not verified",
+          "ref": "transport"
+        }
+      ]
+    },
+    {
+      "fid": "F2",
+      "title": "Seasonal access",
+      "kind": "secondary",
+      "severity": "high",
+      "summary": "The footpath crosses the Tirthan at Baridropa–Jawal footbridge, which floods in the monsoon.",
+      "status": "Potential issue",
+      "evidence": [
+        {
+          "eid": "E6",
+          "kind": "feedback",
+          "status": "verified",
+          "label": "19 citizen responses mention seasonal access",
+          "detail": "4 of them checked against a field observation",
+          "ref": "theme:Seasonal access"
+        },
+        {
+          "eid": "E7",
+          "kind": "gis",
+          "status": "calculated",
+          "label": "Walking route crosses Baridropa–Jawal footbridge",
+          "detail": "Pedestrian bridge damaged in 2023 floods; temporary wooden bridges washed away, including on 13 Aug 2025; villagers rebuilt it a third time. Season: Monsoon (Jul–Sep)",
+          "ref": "feature:BR1"
+        },
+        {
+          "eid": "E8",
+          "kind": "field",
+          "status": "verified",
+          "label": "Field evidence: seasonal bridge issue",
+          "detail": "Footbridge at Baridropa–Jawal washed away on 13 Aug 2025; villagers rebuilt a wooden bridge. Not safe in heavy rain. (JE, PWD Banjar (reported in The Tribune), 2025-08-20)",
+          "ref": "obs:F1"
+        }
+      ]
+    },
+    {
+      "fid": "F3",
+      "title": "Route safety for young children",
+      "kind": "secondary",
+      "severity": "medium",
+      "summary": "Steep path and a river crossing; parents worry about girls walking alone.",
+      "status": "Potential issue",
+      "evidence": [
+        {
+          "eid": "E9",
+          "kind": "feedback",
+          "status": "reported",
+          "label": "14 citizen responses mention safety",
+          "detail": "",
+          "ref": "theme:Safety"
+        },
+        {
+          "eid": "E10",
+          "kind": "gis",
+          "status": "calculated",
+          "label": "0.7 km of path steeper than 15%",
+          "detail": "Steepest stretch 16%",
+          "ref": "route"
+        },
+        {
+          "eid": "E11",
+          "kind": "data",
+          "status": "calculated",
+          "label": "15 of 27 affected students are girls; 1 with a disability",
+          "detail": "Habitation records",
+          "ref": "habitations"
+        }
+      ]
+    },
+    {
+      "fid": "F4",
+      "title": "Receiving-school capacity",
+      "kind": "context",
+      "severity": "low",
+      "summary": "GPS Gushaini has 40 free seats for 27 students.",
+      "status": "No issue found",
+      "evidence": [
+        {
+          "eid": "E12",
+          "kind": "data",
+          "status": "calculated",
+          "label": "40 seats available at GPS Gushaini",
+          "detail": "Capacity 183, enrolled 143",
+          "ref": "school:GSH"
+        }
+      ]
+    },
+    {
+      "fid": "F5",
+      "title": "Building condition at GPS Pekhri-2",
+      "kind": "context",
+      "severity": "medium",
+      "summary": "The current building is unsafe. Rebuilding is an alternative to merging.",
+      "status": "Verified",
+      "evidence": [
+        {
+          "eid": "E13",
+          "kind": "field",
+          "status": "verified",
+          "label": "Pekhri-2 school building in poor condition; needs demolition and replacement.",
+          "detail": "Reported by vice-pradhan (The Tribune), 2026-09-02",
+          "ref": "obs:F2"
+        }
+      ]
+    }
+  ],
+  "gaps": [
+    "Bridge passability in heavy rain",
+    "Students who use this route",
+    "Public transport at school times",
+    "Actual travel time in school hours",
+    "Photo or GPS evidence"
+  ]
+}
