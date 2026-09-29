@@ -1,0 +1,20 @@
+name: Keep Render backend awake
+
+on:
+  schedule:
+    # Every 10 minutes - Render's free tier sleeps after ~15 min of no traffic.
+    # GitHub may delay a run by a few minutes under load; 10 min gives headroom.
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {} # lets you trigger it manually from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /health
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" https://pathshala-llm-api.onrender.com/health)
+          echo "Health check returned HTTP $status"
+          if [ "$status" -ne 200 ]; then
+            echo "::warning::Backend health check failed with status $status"
+          fi
