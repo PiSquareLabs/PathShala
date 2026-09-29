@@ -58,12 +58,13 @@ for (const [k, url] of Object.entries(targets)) { const page = await (await brow
 await browser.close();
 let bad = 0;
 for (const t of Object.keys(TABLES)) {
-  const a = JSON.stringify(res.reference[t]), b = JSON.stringify(res.build[t]);
+  const norm = v => JSON.stringify(v).replace(/\d{4}-\d\d-\d\d \d\d:\d\d/g, '<ts>');
+  const a = norm(res.reference[t]), b = norm(res.build[t]);
   const n = res.reference[t].length;
   if (a === b) console.log(`OK   ${t} (${n} rows)`);
   else {
     bad++; console.log(`DIFF ${t}: reference ${n} rows, build ${res.build[t].length} rows`);
-    res.reference[t].forEach((r, i) => { if (JSON.stringify(r) !== JSON.stringify(res.build[t][i])) { console.log('  ref  ', JSON.stringify(r).slice(0, 300)); console.log('  build', JSON.stringify(res.build[t][i]).slice(0, 300)); } });
+    res.reference[t].forEach((r, i) => { if (JSON.stringify(r) !== JSON.stringify(res.build[t][i])) { console.log('  ref  ', JSON.stringify(r).slice(0, 1500)); console.log('  build', JSON.stringify(res.build[t][i]).slice(0, 1500)); } });
   }
 }
 process.exit(bad ? 1 : 0);
