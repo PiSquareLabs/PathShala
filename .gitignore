@@ -1,0 +1,8 @@
+node_modules
+dist
+tests/compare
+test-results
+playwright-report
+.env
+.env.local
+__pycache__
