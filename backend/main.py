@@ -4,6 +4,7 @@ Your frontend calls this service; the Gemini API key stays on the server.
 """
 
 import json
+import logging
 import os
 from typing import Literal
 
@@ -28,6 +29,9 @@ SYSTEM_PROMPT = os.getenv(
 
 if not GEMINI_API_KEY:
     raise RuntimeError("GEMINI_API_KEY is not set (add it to backend/.env or Render env vars)")
+
+logger = logging.getLogger("pathshala")
+logging.basicConfig(level=logging.INFO)
 
 client = genai.Client(api_key=GEMINI_API_KEY)
 
@@ -82,13 +86,17 @@ def build_request(req: ChatRequest) -> dict:
 
 
 def to_http_error(e: errors.APIError) -> HTTPException:
+    # Log the real Gemini error server-side; only a safe summary goes to the client.
+    logger.error("Gemini API error (code=%s): %s", e.code, e.message)
     if e.code == 429:
         return HTTPException(status_code=429, detail="LLM rate limit hit, try again shortly")
     if e.code in (401, 403):
         return HTTPException(status_code=500, detail="Server's Gemini API key is invalid")
     if e.code == 400:
         return HTTPException(status_code=400, detail=str(e.message))
-    return HTTPException(status_code=502, detail="LLM provider error")
+    if e.code == 404:
+        return HTTPException(status_code=502, detail=f"Model '{MODEL}' not found or unavailable for this key")
+    return HTTPException(status_code=502, detail=f"LLM provider error ({e.code}): {e.message}")
 
 
 @app.get("/")
