@@ -1,12 +1,11 @@
-import L from 'leaflet';
 import { q, q1, run, save } from '../db/sqlite.js';
 import { P, capOf, haversine, linkOf, logCase, route, school, segKm, today } from '../ui/helpers.js';
 
-export function walkProfile(L) {
-  const R = P(), pts = JSON.parse(L.route_walk || '[]');
+export function walkProfile(lk) {
+  const R = P(), pts = JSON.parse(lk.route_walk || '[]');
   if (pts.length < 2) return null;
   let raw = 0; for (let i = 0; i < pts.length - 1; i++) raw += segKm(pts[i], pts[i + 1]);
-  const scale = L.walk_km / raw;
+  const scale = lk.walk_km / raw;
   let min = 0, maxSlope = 0, steepKm = 0, dist = 0; const prof = [[0, pts[0][2]]];
   for (let i = 0; i < pts.length - 1; i++) {
     const h = segKm(pts[i], pts[i + 1]) * scale, dz = pts[i + 1][2] - pts[i][2], slope = dz / (h * 1000);
@@ -14,22 +13,23 @@ export function walkProfile(L) {
     min += h / v * 60; dist += h; prof.push([dist, pts[i + 1][2]]);
     maxSlope = Math.max(maxSlope, Math.abs(slope)); if (Math.abs(slope) > 0.15) steepKm += h;
   }
-  return { min: Math.round(min), km: L.walk_km, climb: L.climb_m, descent: L.descent_m, maxSlope: Math.round(maxSlope * 100), steepKm: +steepKm.toFixed(1), prof, pace: R.child_pace || 0.75 };
+  return { min: Math.round(min), km: lk.walk_km, climb: lk.climb_m, descent: lk.descent_m, maxSlope: Math.round(maxSlope * 100), steepKm: +steepKm.toFixed(1), prof, pace: R.child_pace || 0.75 };
 }
 /* Tool: GIS overlay — which mapped features the route passes within 150 m of. */
-export function routeHazards(L, which = 'walk') {
-  const pts = JSON.parse((which === 'walk' ? L.route_walk : L.route_road) || '[]').map(p => [p[0], p[1]]);
+export function routeHazards(lk, which = 'walk', bufferM = 150, kinds = ['bridge', 'steep', 'landslide']) {
+  const pts = JSON.parse((which === 'walk' ? lk.route_walk : lk.route_road) || '[]').map(p => [p[0], p[1]]);
   if (!pts.length) return [];
-  return q("SELECT * FROM geo_features WHERE kind IN ('bridge','steep','landslide')").filter(f => {
+  return q(`SELECT * FROM geo_features WHERE kind IN (${kinds.map(() => '?').join(',')})`, kinds).filter(f => {
     const g = JSON.parse(f.geometry), fp = typeof g[0] === 'number' ? [g] : g;
-    return fp.some(a => pts.some(b => segKm(a, b) < 0.15));
+    return fp.some(a => pts.some(b => segKm(a, b) < bufferM / 1000));
   });
 }
 /* Tool: transport availability at school times. */
-export function transportAt(cid) {
-  const rows = q('SELECT * FROM transport');
-  const inWin = t => { const [h, m] = t.split(':').map(Number), x = h * 60 + m; return (x >= 495 && x <= 555) || (x >= 885 && x <= 945); };
-  return rows.map(t => { const dep = JSON.parse(t.departures || '[]'); return Object.assign({}, t, { dep, atSchoolTime: dep.filter(inWin) }); });
+export const SCHOOL_WINDOWS = ['08:15-09:15', '14:45-15:45'];
+export function transportAt(windows = SCHOOL_WINDOWS) {
+  const wins = windows.map(w => w.split(/[-–]/).map(t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; }));
+  const inWin = t => { const [h, m] = t.split(':').map(Number), x = h * 60 + m; return wins.some(([a, b]) => x >= a && x <= b); };
+  return q('SELECT * FROM transport').map(t => { const dep = JSON.parse(t.departures || '[]'); return Object.assign({}, t, { dep, atSchoolTime: dep.filter(inWin) }); });
 }
 /* Screening score for a school pair — transparent, not a recommendation. */
 export function screen(a, s) {

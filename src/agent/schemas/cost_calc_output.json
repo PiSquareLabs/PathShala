@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pathshala.local/schemas/cost_calc_output.json",
+  "title": "CostCalcOutput",
+  "type": "object",
+  "required": [
+    "inputs",
+    "formula",
+    "cost_inr",
+    "cost_type"
+  ],
+  "properties": {
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "minItems": 3,
+        "maxItems": 3
+      }
+    },
+    "formula": {
+      "type": "string"
+    },
+    "cost_inr": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "cost_type": {
+      "enum": [
+        "per year",
+        "one-time",
+        "none"
+      ]
+    }
+  }
+}

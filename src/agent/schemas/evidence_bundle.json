@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pathshala.local/schemas/evidence_bundle.json",
+  "title": "EvidenceBundle",
+  "type": "object",
+  "required": [
+    "evidence",
+    "metrics"
+  ],
+  "properties": {
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "evidence.json"
+      }
+    },
+    "metrics": {
+      "type": "object"
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pathshala.local/schemas/evidence.json",
+  "type": "object",
+  "required": [
+    "eid",
+    "kind",
+    "status",
+    "label",
+    "ref"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "eid": {
+      "type": "string",
+      "pattern": "^E[0-9]+$"
+    },
+    "kind": {
+      "enum": [
+        "feedback",
+        "gis",
+        "data",
+        "transport",
+        "field",
+        "policy"
+      ]
+    },
+    "status": {
+      "enum": [
+        "reported",
+        "verified",
+        "calculated",
+        "needs"
+      ]
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1
+    },
+    "detail": {
+      "type": "string"
+    },
+    "ref": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Where the evidence came from; every claim needs a source"
+    },
+    "fid": {
+      "type": "string"
+    }
+  }
+}

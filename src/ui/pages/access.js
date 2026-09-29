@@ -3,7 +3,7 @@ import { P, esc, linkOf, route, school } from '../helpers.js';
 
 export function stepAccess(el, c, A, B) {
   const Lk = linkOf(c.from_id, c.to_id), wp = Lk ? walkProfile(Lk) : null, hz = Lk ? routeHazards(Lk) : [], rhz = Lk ? routeHazards(Lk, 'road') : [];
-  const tr = transportAt(c.case_id), R = P();
+  const tr = transportAt(), R = P();
   const limit = A.level_code === 'primary' ? R.walk_limit_primary_km : R.walk_limit_upper_km;
   el.innerHTML = `<div class="big4" style="grid-template-columns:repeat(2,minmax(0,1fr))">
       <div class="tile ${wp && wp.km > limit ? 'flag' : ''}"><span class="tl">Walking to ${esc(B.name)}</span><b>${wp ? wp.km + ' km' : 'Data unavailable'}</b><span class="ts">${wp ? `~${wp.min} min for a young child · RTE limit ${limit} km` : ''}</span></div>

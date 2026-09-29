@@ -1,7 +1,6 @@
-import { agentPlan } from '../../agent/plan.js';
-import { applyField, buildInterventions, writeFindings } from '../../case/findings.js';
-import { q, q1, run, save } from '../../db/sqlite.js';
-import { $, $$, esc, evChip, go, logCase, school, sleep } from '../helpers.js';
+import { runFieldUpdate, runInvestigation, runPolicy } from '../../agent/runner.js';
+import { q, q1, save } from '../../db/sqlite.js';
+import { $, $$, esc, evChip } from '../helpers.js';
 import { render } from '../router.js';
 import { toast } from '../toast.js';
 
@@ -25,19 +24,18 @@ export function agentRow(s, done) {
 }
 export async function runAgent(c) {
   const btn = $('#ag-run'); btn.disabled = true; btn.textContent = 'Investigating…';
-  run('DELETE FROM agent_steps WHERE case_id = ?', [c.case_id]);
-  logCase(c.case_id, 'Officer', 'Started agent investigation');
   const list = $('#ag-list'); list.innerHTML = '';
-  const plan = agentPlan(c.case_id);
-  for (let i = 0; i < plan.length; i++) {
-    const s = plan[i];
-    const li = document.createElement('li'); li.className = 'busy'; li.innerHTML = `<span class="ck">…</span><span><b>${esc(s.label)}</b> <code>${esc(s.tool)}</code></span>`; list.appendChild(li);
-    await sleep(matchMedia('(prefers-reduced-motion: reduce)').matches ? 50 : 420);
-    const out = s.run(), summary = s.sum();
-    run('INSERT INTO agent_steps VALUES (?,?,?,?,?,?,?)', [c.case_id, i + 1, s.label, s.tool, JSON.stringify(s.input), JSON.stringify(out), summary]);
-    li.outerHTML = agentRow({ label: s.label, tool: s.tool, input: s.input, output: out, summary }, true);
+  let busy = null;
+  try {
+    await runInvestigation(c.case_id, ev => {
+      if (ev.type === 'start') { busy = document.createElement('li'); busy.className = 'busy'; busy.innerHTML = `<span class="ck">…</span><span><b>${esc(ev.label)}</b> <code>${esc(ev.tool)}</code></span>`; list.appendChild(busy); }
+      else busy.outerHTML = agentRow(ev, true);
+    });
+  } catch (e) {
+    console.error(e); save(); render();
+    toast('Investigation failed', [String(e.message || e)]);
+    return;
   }
-  writeFindings(c.case_id, plan[0].ctx, plan[0].A, plan[0].B);
   save(); render();
   toast('Investigation complete', ['Potential issue detected: transport and seasonal access', '5 targeted field questions generated']);
 }
@@ -70,12 +68,12 @@ export function wireField(c) {
     const ff = $('.ff', el); if (ff) ff.onchange = () => { const fn = ff.files[0]?.name; if (fn) { const n = $('.fnote', el); n.value = (n.value ? n.value + ' · ' : '') + 'photo: ' + fn; $$('.opts button', el).forEach(x => x.setAttribute('aria-pressed', x.dataset.v === 'Photo' ? 'true' : 'false')); } };
   });
   const go_ = $('#fq-go'); if (!go_) return;
-  go_.onclick = () => {
+  go_.onclick = async () => {
     const ans = {};
     $$('.fq').forEach(el => { const on = $('.opts button[aria-pressed="true"]', el), v = $('.fv', el); ans[el.dataset.q] = { v: on ? on.dataset.v : v ? v.value.trim() : '', note: $('.fnote', el).value.trim() }; });
     const before = q('SELECT fid, status FROM findings WHERE case_id = ?', [c.case_id]);
-    applyField(c.case_id, ans);
-    if (q1('SELECT count(*) AS n FROM interventions WHERE case_id = ?', [c.case_id]).n) buildInterventions(c.case_id);
+    await runFieldUpdate(c.case_id, ans);
+    if (q1('SELECT count(*) AS n FROM interventions WHERE case_id = ?', [c.case_id]).n) await runPolicy(c.case_id);
     save();
     const after = q('SELECT fid, title, status FROM findings WHERE case_id = ?', [c.case_id]);
     const lines = after.filter(a => before.find(b => b.fid === a.fid)?.status !== a.status).map(a => `${esc(a.title)}: <b style="display:inline;font:inherit;font-weight:700">${esc(a.status)}</b>`);

@@ -1,14 +1,14 @@
-import { buildInterventions } from '../../case/findings.js';
+import { runPolicy } from '../../agent/runner.js';
+import { tools } from '../../agent/tools.js';
 import { q, q1, run, save } from '../../db/sqlite.js';
-import { retrieve } from '../../retrieval/bm25.js';
 import { $$, esc, inr, logCase } from '../helpers.js';
 
-export function stepPolicy(el, c, A, B) {
+export async function stepPolicy(el, c, A, B) {
   if (!q1('SELECT count(*) AS n FROM findings WHERE case_id = ?', [c.case_id]).n) { el.innerHTML = `<div class="card"><h2>Run the investigation first</h2><p class="muted">The policy search uses the agent's findings.</p><p style="margin-top:10px"><a class="btn primary" href="#/case/${c.case_id}/investigate">Go to Investigate</a></p></div>`; return; }
   const F = q('SELECT * FROM findings WHERE case_id = ? AND removed = 0', [c.case_id]);
   const query = 'transport escort distance terrain flood bridge habitation seasonal walking ' + F.map(f => f.title).join(' ');
-  const hits = retrieve(query, 6);
-  if (!q1('SELECT count(*) AS n FROM interventions WHERE case_id = ?', [c.case_id]).n) { buildInterventions(c.case_id); save(); }
+  const hits = await tools.policy_retrieve({ query, k: 6 });
+  if (!q1('SELECT count(*) AS n FROM interventions WHERE case_id = ?', [c.case_id]).n) { await runPolicy(c.case_id); save(); }
   const iv = q("SELECT * FROM interventions WHERE case_id = ? ORDER BY CASE code WHEN 'TR' THEN 1 WHEN 'ES' THEN 2 WHEN 'SEA' THEN 3 ELSE 4 END", [c.case_id]);
   const chunk = id => q1('SELECT c.*, d.title AS doc_title, d.url FROM policy_chunks c JOIN policy_docs d USING (doc_id) WHERE chunk_id = ?', [id]);
   el.innerHTML = `<div class="card"><h2>Policy investigation <small>retrieval over ${q1('SELECT count(*) AS n FROM policy_chunks').n} passages from ${q1('SELECT count(*) AS n FROM policy_docs').n} government sources</small></h2>

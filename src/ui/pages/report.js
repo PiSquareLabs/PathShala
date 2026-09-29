@@ -1,11 +1,11 @@
 import { walkProfile } from '../../case/analysis.js';
-import { draftText } from '../../case/findings.js';
+import { runDraft } from '../../agent/runner.js';
 import { q, q1, run, save } from '../../db/sqlite.js';
 import { $, $$, esc, evChip, go, inr, linkOf, logCase, nowTs, route, today } from '../helpers.js';
 import { render } from '../router.js';
 import { toast } from '../toast.js';
 
-export function stepReport(el, c, A, B) {
+export async function stepReport(el, c, A, B) {
   if (!q1('SELECT count(*) AS n FROM findings WHERE case_id = ?', [c.case_id]).n) { el.innerHTML = `<div class="card"><h2>Run the investigation first</h2><p style="margin-top:10px"><a class="btn primary" href="#/case/${c.case_id}/investigate">Go to Investigate</a></p></div>`; return; }
   const Lk = linkOf(c.from_id, c.to_id), wp = walkProfile(Lk);
   const F = q('SELECT * FROM findings WHERE case_id = ? ORDER BY fid', [c.case_id]);
@@ -14,7 +14,7 @@ export function stepReport(el, c, A, B) {
   const fq = q('SELECT * FROM field_questions WHERE case_id = ? ORDER BY seq', [c.case_id]);
   const th = {}; q('SELECT theme, count(*) AS n FROM citizen_feedback WHERE school_id IN (?,?) GROUP BY 1', [A.school_id, B.school_id]).forEach(r => th[r.theme] = r.n);
   const rep = q1('SELECT * FROM reports WHERE case_id = ?', [c.case_id]) || {};
-  const parts = draftText(c.case_id), plain = parts.map(p => p[0]).join(' ');
+  const parts = (await runDraft(c.case_id)).draft.sentences.map(x => [x.text, x.refs]), plain = parts.map(p => p[0]).join(' ');
   const draft = rep.edited ? rep.draft : plain;
   const comments = JSON.parse(rep.comments || '[]');
   const outstanding = [...ev.filter(e => e.status === 'needs' && !e.officer_verified).map(e => e.label), ...(!fq.find(x => x.qid === 'Q2')?.answer ? ['Students using the route'] : []), 'Applicable transport eligibility', ...(sel.some(s => s.code === 'TR') ? ['Final vehicle cost (appraised on actual cost)'] : [])];
