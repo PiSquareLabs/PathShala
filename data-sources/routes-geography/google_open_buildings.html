@@ -1,0 +1,3349 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    
+        
+<meta name="description" content="A dataset of building footprints to support social good applications."><link rel="canonical" href="http://sites.research.google/gr/open-buildings/" /><meta property="og:title" content="Open Buildings - Google Research"><meta property="og:url" content="http://sites.research.google/gr/open-buildings/"><meta property="og:description" content="A dataset of building footprints to support social good applications."><meta property="og:image" content="https://storage.googleapis.com/gweb-research2023-media/images/open-buildings-hero-1.width-800.format-jpeg.jpg"><meta property="og:image:secure_url" content="https://storage.googleapis.com/gweb-research2023-media/images/open-buildings-hero-1.width-800.format-jpeg.jpg"><meta property="og:type" content="Website">
+
+    
+    
+    <title>Open Buildings - Google Research - Open Buildings</title>
+    
+    <meta name="description" content="A dataset of building footprints to support social good applications." />
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1 viewport-fit=cover"/>
+
+    
+    
+
+    <link rel="icon" type="image/png" href="https://www.gstatic.com/images/branding/googleg_gradient/1x/googleg_gradient_standard_20dp.png">
+
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload"
+        href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&family=Product+Sans&display=swap"
+        as="style">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&family=Product+Sans&display=swap">
+    <link rel="preload"
+        href="https://fonts.googleapis.com/css2?family=Product+Sans&family=Google+Sans+Display:ital@0;1&family=Google+Sans:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&family=Google+Sans+Text:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap"
+        as="style">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Product+Sans&family=Google+Sans+Display:ital@0;1&family=Google+Sans:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&family=Google+Sans+Text:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Google+Symbols:opsz,wght,FILL,GRAD,ROND@48,100..300,0..1,0,100&display=swap" as="style" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Symbols:opsz,wght,FILL,GRAD,ROND@48,100..300,0..1,0,100&display=swap">
+
+    
+    <link href="https://www.gstatic.com/glue/cookienotificationbar/cookienotificationbar.min.css" rel="stylesheet" />
+    <link href="https://www.gstatic.com/glue/v27_1/glue-material.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="/gr/static/css/googleresearch.css?id=1df8cfd093ef74378ad52e9df6e91ef9">
+    
+
+
+
+    
+    
+
+    <!-- Google Tag Manager -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function glueCookieNotificationBarLoaded() {
+        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-K8QBZ7Q');
+      }
+    </script>
+    <!-- End Google Tag Manager -->
+</head>
+
+<body class="template-homepage js-google-tag-wrapper" data-gt-page-path="http://sites.research.google/gr/open-buildings/" data-env="production">
+    
+    <div class="button-group skip-link">
+      <a href="#page-content" class="glue-button glue-button--high-emphasis">Skip to main content</a>
+    </div>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-K8QBZ7Q"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    
+    
+      
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+<header class="glue-header glue-header--single glue-header--no-cta glue-header-no-drawer microsite-header js-microsite-header" >
+    <a href="#page-content" class="glue-header__link glue-header__skip-content">Jump to Content</a>
+    <div class="glue-header__bar glue-header__bar--mobile js-glue-header__bar">
+        <div class="glue-header__tier">
+            <div class="glue-header__container">
+                <div class="glue-header__lock-up">
+                    
+                        <div class="glue-header__hamburger">
+                            <button class="glue-header__drawer-toggle-btn" aria-label="Open the navigation drawer">
+                            <svg class="glue-icon glue-icon--24px" role="presentation" aria-hidden="true">
+                                <use href="/gr/static/assets/icons/glue-icons.svg#menu"></use>
+                            </svg>
+                            </button>
+                        </div>
+                    
+                    <div class="glue-header__logo">
+                        <a class="glue-header__logo-link" href="https://research.google" title="Google Research">
+                            <div class="glue-header__logo-container">
+                                
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true" alt='Google' class="glue-icon  glue-icon glue-header__logo-svg">
+  <use href="/gr/static/assets/icons/glue-icons.svg#google-color-logo"></use>
+</svg>
+
+                            </div>
+                            <span class="glue-header__logo--product">Research</span>
+                        </a>
+                        <a href="/gr/open-buildings" class="glue-header__logo--product glue-header__logo--product-campaign">
+                            Open Buildings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+  </div>
+  <div class="glue-header__bar glue-header__bar--desktop glue-header__drawer js-glue-header__bar">
+    <div class="glue-header__tier">
+        <div class="glue-header__container">
+        <div class="glue-header__lock-up">
+            <div class="glue-header__logo">
+            <a class="glue-header__logo-link" href="https://research.google" title="Google Research">
+                <div class="glue-header__logo-container">
+                
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true" alt='Google' class="glue-icon  glue-icon glue-header__logo-svg">
+  <use href="/gr/static/assets/icons/glue-icons.svg#google-color-logo"></use>
+</svg>
+
+                </div>
+                <span class="glue-header__logo--product">Research</span>
+            </a>
+            <a href="/gr/open-buildings" class="glue-header__logo--product glue-header__logo--product-campaign">Open Buildings</a>
+            </div>
+        </div>
+        </div>
+        
+        <div class="glue-header__container glue-header__container--linkbar">
+            <nav class="glue-header__link-bar">
+                <ul class="glue-header__list">
+                
+                    
+
+
+
+
+
+
+<li class="glue-header__item ">
+    <a
+        class="glue-header__link"
+        href="https://sites.research.google/gr/open-buildings/temporal"
+        aria-current="page"
+        
+    >
+        Temporal Dataset New!
+    </a>
+</li>
+
+                
+                </ul>
+            </nav>
+        </div>
+        
+    </div>
+  </div>
+  <div class="glue-header__drawer-backdrop" aria-label="Close navigation menu"></div>
+</header>
+<div class="glue-header__logo --product-campaign-microsite">
+    <a class="glue-header__logo--product glue-header__logo--product-campaign" href="/gr/open-buildings">Open Buildings</a>
+</div>
+
+
+    
+
+    <main id="page-content" tabindex="-1">
+        
+
+<div class="glue-body microsite">
+    
+        
+
+
+
+
+    <div class="glue-jumplinks jumplinks-bar js-jumplinks-bar">
+        <button class="glue-jumplinks__button glue-jumplinks__button--prev">
+            <svg role="presentation" aria-hidden="true" class="glue-icon glue-icon--18px">
+                <use href="/gr/static/assets/icons/glue-icons.svg#chevron-left"></use>
+            </svg>
+        </button>
+        <ul class="glue-jumplinks__list" data-glue-jumplink-label="Jump to section within page">
+            
+                <li class="glue-jumplinks__list-item">
+                    <a class="glue-jumplinks__link" href="#open-buildings-dataset-description">Dataset description</a>
+                </li>
+            
+                <li class="glue-jumplinks__list-item">
+                    <a class="glue-jumplinks__link" href="#open-buildings-explore">Explore</a>
+                </li>
+            
+                <li class="glue-jumplinks__list-item">
+                    <a class="glue-jumplinks__link" href="#open-buildings-data-format">Data format</a>
+                </li>
+            
+                <li class="glue-jumplinks__list-item">
+                    <a class="glue-jumplinks__link" href="#open-buildings-download">Download</a>
+                </li>
+            
+                <li class="glue-jumplinks__list-item">
+                    <a class="glue-jumplinks__link" href="#open-buildings-faq">FAQ</a>
+                </li>
+            
+        </ul>
+        <button class="glue-jumplinks__button glue-jumplinks__button--next">
+        <svg role="presentation" aria-hidden="true" class="glue-icon glue-icon--18px">
+            <use href="/gr/static/assets/icons/glue-icons.svg#chevron-right"></use>
+        </svg>
+        </button>
+    </div>
+
+
+    
+    
+        
+    
+
+<section class="full-bleed-hero glue-fullbleed dark opacity-dark">
+  <div class="glue-grid">
+    <div class="full-bleed-hero__details">
+      <div class="full-bleed-hero__wrapper">
+        
+          <h1 class="full-bleed-hero__heading">Open Buildings</h1>
+        
+        <p data-block-key="unopj">A dataset of building footprints to support social good applications</p>
+        
+          <div class="full-bleed-hero__ctas">
+            
+              
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<a class="glue-button glue-button--high-emphasis" href="https://sites.research.google/gr/open-buildings#open-buildings-download"   >
+  
+
+
+<span class="js-gt-item-id">Download here</span>
+
+
+
+
+</a>
+
+
+
+            
+          </div>
+        
+      </div>
+    </div>
+
+    <div class="glue-grid__col glue-grid__col--span-4-sm glue-grid__col--span-12 full-bleed-hero__assets">
+      
+    
+
+
+  <div class="media-wrapper" data-gt-id="media" data-gt-component-name="">
+    
+
+    
+
+
+
+
+    
+      
+        
+
+
+
+
+
+    <!-- Determine the appropriate width based on image_width -->
+    
+        
+    
+
+
+<!-- For mobile images, use a default width -->
+
+
+<picture class=" media__image">
+    
+    
+        <source media="(min-width: 768px)" srcset="https://storage.googleapis.com/gweb-research2023-media/images/open-buildings-hero.width-1920.png" alt="open-buildings-hero-small" />
+    
+    <img src="https://storage.googleapis.com/gweb-research2023-media/images/open-buildings-hero.width-1920.png" alt="open-buildings-hero-small" loading="lazy" />
+    
+</picture>
+      
+    
+  </div>
+
+
+
+
+    </div>
+
+    <div class="full-bleed-hero__scrim"></div>
+  </div>
+</section>
+
+
+
+    
+    
+        
+
+
+<section class="overview --microsite microsite-component-wrapper">
+    <div class="glue-page"> 
+
+        <div class="glue-grid">
+            <div class="glue-grid__col glue-grid__col--span-4-sm glue-grid__col--span-12-md glue-grid__col--span-9-lg">
+                
+                    <h2 class="overview__heading headline-3">Overview</h2>
+                
+                
+                    <p data-block-key="1qtvi">Building footprints are useful for a range of important applications, from population estimation, urban planning and humanitarian response, to environmental and climate science. This large-scale open dataset contains the outlines of buildings derived from high-resolution satellite imagery in order to support these types of uses. The project is based in Google's <a href="https://www.google.com/about/careers/applications/locations/accra" target="_blank" rel="noopener noreferrer">Ghana office</a>, focusing on the continent of Africa and the Global South at large.</p>
+                
+            </div>
+            
+                <div class="glue-grid__col glue-grid__col--span-4-sm glue-grid__col--span-12-md glue-grid__col--span-3-lg">
+                    
+
+
+<section class="quicklinks">
+    
+        <h2 class="eyebrow">Quick links</h2>
+        <ul class="quicklinks__list">
+            
+            
+            
+                <li class="quicklinks__item">
+                    <a class="not-glue quicklinks__item__link" href="https://sites.research.google/gr/open-buildings#open-buildings-download" target="_blank" rel="noreferrer noopener">
+                        <span class="icon icon--sim_card_download"></span>
+                        <span class="quicklinks__item__text">Download</span>
+                    </a>
+                </li>
+            
+            
+            
+            <li class="quicklinks__item quicklinks__item--share js-quicklinks-share">
+                
+                <button
+                    class="quicklinks__share-button js-quicklinks-share__button"
+                    aria-expanded="false"
+                    aria-controls="js-quicklinks-share__list-70ea5cee">
+                    <span class="icon icon--share"></span>
+                    <span class="quicklinks__item__text">Share</span>
+                </button>
+                
+
+
+
+<section id="js-quicklinks-share__list-70ea5cee" class="glue-social glue-social--monochrome quicklinks__share-list js-quicklinks-share__list glue-elevation-level-1 js-gt-share-wrapper">
+  <div class="glue-social__group">
+    <ul class="glue-social__list" role="list">
+
+      <li class="glue-social__item">
+        <a class="glue-social__link" href="https://twitter.com/intent/tweet?text=http%3A//sites.research.google/gr/open-buildings/"
+            title="Share on Twitter" target="_blank" rel="noopener" data-gt-method="x">
+            <svg role="presentation" aria-hidden="true"
+              class="glue-icon glue-icon--social glue-icon--24px">
+              <use href="/gr/static/assets/icons/twitter-x.svg#twitter-x"></use>
+          </svg>
+        </a>
+      </li>
+      <li class="glue-social__item">
+        <a class="glue-social__link" href="https://www.facebook.com/sharer/sharer.php?u=http%3A//sites.research.google/gr/open-buildings/"
+            title="Share on Facebook" target="_blank" rel="noopener" data-gt-method="facebook">
+          <svg role="presentation" aria-hidden="true"
+              class="glue-icon glue-icon--social glue-icon--color-facebook glue-icon--24px">
+            <use href="/gr/static/assets/icons/facebook.svg#facebook"></use>
+          </svg>
+        </a>
+      </li>
+      <li class="glue-social__item">
+        <a class="glue-social__link" href="https://www.linkedin.com/shareArticle?url=http%3A//sites.research.google/gr/open-buildings/&amp;mini=true" title="Share on LinkedIn" target="_blank" rel="noopener" data-gt-method="linkedin">
+          <svg role="presentation" aria-hidden="true"
+              class="glue-icon glue-icon--social glue-icon--color-linkedin glue-icon--24px">
+            <use href="/gr/static/assets/icons/glue-icons.svg#post-linkedin"></use>
+          </svg>
+        </a>
+      </li>
+      <li class="glue-social__item">
+        <a class="glue-social__link" href="mailto:name@example.com?subject=Check%20out%20this%20site&body=Check%20out%20http%3A//sites.research.google/gr/open-buildings/" title="Send via Email" data-gt-method="email">
+          <svg role="presentation" aria-hidden="true"
+              class="glue-icon glue-icon--social glue-icon--color-sharemail glue-icon--24px">
+            <use href="/gr/static/assets/icons/glue-icons.svg#email"></use>
+          </svg>
+        </a>
+      </li>
+      <li class="glue-social__item">
+        <div class="glue-social__popover">
+          <div class="glue-social__icon-trigger" aria-label="Get shareable link" title="Get shareable link" id="share-static-popover-trigger-70ea5cee">
+            <svg role="presentation" aria-hidden="true"
+                class="glue-icon glue-icon--social glue-icon--color-sharelink glue-icon--24px">
+              <use href="/gr/static/assets/icons/glue-icons.svg#link"></use>
+            </svg>
+          </div>
+
+          <div class="glue-social__dialog" id="share-popover-dialog-70ea5cee">
+            <svg role="presentation" aria-hidden="true"
+                class="glue-icon glue-icon--social glue-icon--color-sharelink glue-icon--24px">
+              <use href="/gr/static/assets/icons/glue-icons.svg#link"></use>
+            </svg>
+            <div class="glue-social__copy" glue-copy-success="Copied to clipboard"
+                glue-copy-fail="Press Ctrl+C or ⌘+C to copy">
+              <input class="glue-social__copy-input" readonly="" type="text"
+                  value="http://sites.research.google/gr/open-buildings/" aria-label="URL" name="glue-social__copy-input">
+              <button class="glue-social__copy-btn" id="share-copy-btn-70ea5cee" data-gt-method="link-copied">Copy link</button>
+            </div>
+            <div aria-label="Close" class="glue-social__close-btn">
+              ×
+            </div>
+          </div>
+        </div>
+      </li>
+    </ul>
+  </div>
+</section>
+            </li>
+            
+        </ul>
+    
+</section>
+
+                </div>
+            
+        </div>
+    
+    </div>
+    
+</section>
+
+    
+    
+        
+
+<div id="open-buildings-dataset-description" class="jumplink-bar-target"></div>
+    
+        
+    
+
+
+<div class="microsite-component-wrapper component-as-block --no-padding-bottom --theme-dark --dbl-padding">
+    <div class="glue-page">
+        
+  
+
+
+<div class="rich-text --theme-dark --mode-microsite" data-gt-id="rich_text"
+    data-gt-component-name="Dataset description">
+  
+
+
+
+
+  <h2 data-block-key="ojyd1">Dataset description</h2><p data-block-key="91om1">The dataset contains 1.8 billion building detections, across an inference area of 58M km<sup class="superscript">2</sup> covering Africa, South Asia, South-East Asia, Latin America and the Caribbean. The current dataset is in its 3rd version.</p><p data-block-key="c04p5">For each building in this dataset we include the polygon describing its footprint on the ground, a confidence score indicating how sure we are that this is a building, and a <a href="https://plus.codes/" target="_blank" rel="noopener noreferrer">Plus Code</a> corresponding to the centre of the building. There is no information about the type of building, its street address, or any details other than its geometry.</p>
+  
+    
+  
+</div>
+
+
+    </div>
+</div>
+
+
+    
+        
+    
+
+
+<div class="microsite-component-wrapper component-as-block both --theme-dark --dbl-padding">
+    <div class="glue-page">
+        
+    
+
+
+  
+
+  <div class="
+      dynamic_media
+      glue-grid__col
+      glue-grid__col--span-4-sm
+      glue-grid__col--span-12-md
+      glue-grid__col--span-12-lg
+      --
+      
+        --flex
+        --center
+      
+    "
+    data-gt-id="dynamic_media"
+    data-gt-component-name="heat map"
+    >
+
+    
+
+
+
+
+    <div class="
+      glue-grid
+      
+        --remove-gap
+        --full
+      
+    ">
+      
+        <div class="
+          dynamic_media__item
+          glue-grid__col
+          glue-grid__col--span-4-sm
+          
+            glue-grid__col--span-12-md
+          
+          
+            glue-grid__col--span-12-lg
+          
+        ">
+          <div class="">
+            
+
+
+
+  
+    
+
+
+
+
+
+    <!-- Determine the appropriate width based on image_width -->
+    
+        
+    
+
+
+<!-- For mobile images, use a default width -->
+
+
+<picture class="media__image media__image">
+    
+    
+        <source media="(min-width: 768px)" srcset="https://storage.googleapis.com/gweb-research2023-media/images/heat-map.width-1250.png" alt="heat-map-v2" />
+    
+    <img src="https://storage.googleapis.com/gweb-research2023-media/images/heat-map.width-1250.png" alt="heat-map-v2" loading="lazy" />
+    
+</picture>
+  
+
+
+          </div>
+        </div>
+      
+
+      
+    </div>
+  </div>
+
+
+
+    </div>
+</div>
+
+
+    
+        
+    
+
+
+<div class="microsite-component-wrapper component-as-block --no-padding-top --theme-dark --dbl-padding">
+    <div class="glue-page">
+        
+  
+
+
+<div class="rich-text --theme-dark --mode-microsite" data-gt-id="rich_text"
+    data-gt-component-name="Uses of the data">
+  
+
+
+
+
+  <h3 data-block-key="ojyd1">Uses of the data</h3><p data-block-key="ejhn3">Potential use cases of the data include:</p><ul><li data-block-key="59pt1"><b>Population mapping:</b> Building footprints are a key ingredient for estimating population density. In areas of rapid change, or where census information is out of date, population estimates are vital for many kinds of planning and statistics.</li><li data-block-key="ant3u"><b>Humanitarian response:</b> To plan the response to a flood, drought, or other natural disaster, it is useful to assess the number of buildings or households affected. This is also useful for disaster risk reduction, e.g. to estimate the number of buildings in a particular hazard area.</li><li data-block-key="5p4d7"><b>Environmental science:</b> Knowledge of settlement density is useful for understanding human impact on the natural environment. For example, it helps with estimating energy needs and carbon emissions in a certain area, or pressure on protected areas and wildlife due to urbanisation.</li><li data-block-key="8leq0"><b>Addressing systems:</b> In many areas buildings do not have formal addresses, which can make it difficult for people to access social benefits and economic opportunities. Building footprint data can help with the rollout of digital addressing systems such as <a href="https://maps.google.com/pluscodes/" target="_blank" rel="noopener noreferrer">Plus Codes</a>.</li><li data-block-key="537p3"><b>Vaccination planning:</b> Knowing the density of population and settlements helps to anticipate demand for vaccines and the best locations for facilities. This data is also useful for precision epidemiology, as well as eradication efforts such as mosquito net distribution.</li><li data-block-key="5oanr"><b>Statistical indicators:</b> Buildings data can be used to help calculate statistical indicators for national planning, such as the numbers of houses in the catchment areas of schools and health centres; mean travel distances to the nearest hospital or forecast of demand for transportation systems.</li></ul>
+  
+    
+  
+</div>
+
+
+    </div>
+</div>
+
+
+    
+        
+  
+
+
+<div class="microsite-component-wrapper component-as-block both --theme-light --dbl-padding">
+    <div class="glue-page microsite-fullbleed">
+        
+    
+
+<div class="carousel --research-controls --theme-light viewport-width-limited js-gt-carousel-wrapper" data-gt-id="basic_card_carousel" data-gt-component-name="How Partners Have Leveraged Open Buildings">
+    <div class="carousel__wrapper">
+        <div class="carousel__heading glue-grid">
+            
+            <h3 class="glue-grid__col glue-grid__col--span-6 glue-grid__col--span-12-md glue-grid__col--align-bottom glue-headline headline-3">
+            How Partners Have Leveraged the Open Buildings Dataset</h3>
+            <div class="glue-grid__col glue-grid__col--span-6 glue-grid__col--span-12-md glue-grid__col--align-bottom">
+                <div class="carousel__ctas">
+                    
+                </div>
+            </div>
+            
+            
+        </div>
+        <div class="carousel__carousel-wrapper --microsite">
+            <div class="glue-carousel glue-carousel--cards" aria-label="How Partners Have Leveraged the Open Buildings Dataset carousel" data-glue-carousel-navigation="false">
+                <!-- List -->
+                <div class="glue-carousel__viewport">
+                    <div class="glue-carousel__list">
+                    
+                    
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+    <a class="glue-card glue-card--basic not-glue glue-carousel__item" href="https://sunbird.ai/" aria-label="Slide 1of4 - Sunbird AI" target="_blank" rel="noreferrer noopener" >
+
+        <div class="glue-card__inner">
+            
+    
+    
+
+
+  <div class="media-wrapper" data-gt-id="media" data-gt-component-name="How Partners Have Leveraged Open Buildings">
+    
+
+    
+
+
+
+
+    
+      
+        
+
+
+
+
+
+    <!-- Determine the appropriate width based on image_width -->
+    
+        
+    
+
+
+<!-- For mobile images, use a default width -->
+
+
+<picture class="glue-card__asset play-pause-size-override media__image">
+    
+    
+        <source media="(min-width: 768px)" srcset="https://storage.googleapis.com/gweb-research2023-media/images/subird-ai.width-800.png" alt="sunbird-ai" />
+    
+    <img src="https://storage.googleapis.com/gweb-research2023-media/images/subird-ai.width-800.png" alt="sunbird-ai" loading="lazy" />
+    
+</picture>
+      
+    
+  </div>
+
+
+
+
+
+
+
+            <div class="glue-card__content ">
+  
+
+  
+    <span class="headline-6 js-gt-item-id">
+      Sunbird AI
+    </span>
+  
+
+  
+    <div class="glue-card__description body">
+      <p data-block-key="szf4x">Sunbird AI is a Ugandan nonprofit that uses data technology for social good. They have used Open Buildings to support planning at the Ministry of Energy in Uganda. With building footprint data, they can see which are the priority areas for electrification, estimating where commercial centers are, and areas with large population, or areas with essential services like schools and hospitals. Some of these are settlements which otherwise might be overlooked because they are literally not on the map.</p>
+    </div>
+  
+</div>
+
+
+            
+
+
+        
+            
+  <div class="glue-card__cta">
+    <span class="glue-button glue-spacer-1-top glue-button--low-emphasis">
+        
+            Learn more
+        
+    </span>
+  </div>
+
+
+        
+        </div>
+
+    </a>
+
+
+                    
+                    
+                    
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+    <a class="glue-card glue-card--basic not-glue glue-carousel__item" href="https://www.unhcr.org/" aria-label="Slide 2of4 - UN Refugee Agency" target="_blank" rel="noreferrer noopener" >
+
+        <div class="glue-card__inner">
+            
+    
+    
+
+
+  <div class="media-wrapper" data-gt-id="media" data-gt-component-name="How Partners Have Leveraged Open Buildings">
+    
+
+    
+
+
+
+
+    
+      
+        
+
+
+
+
+
+    <!-- Determine the appropriate width based on image_width -->
+    
+        
+    
+
+
+<!-- For mobile images, use a default width -->
+
+
+<picture class="glue-card__asset play-pause-size-override media__image">
+    
+    
+        <source media="(min-width: 768px)" srcset="https://storage.googleapis.com/gweb-research2023-media/images/UN-refugee-agency.width-800.png" alt="UN-refugee-agency" />
+    
+    <img src="https://storage.googleapis.com/gweb-research2023-media/images/UN-refugee-agency.width-800.png" alt="UN-refugee-agency" loading="lazy" />
+    
+</picture>
+      
+    
+  </div>
+
+
+
+
+
+
+
+            <div class="glue-card__content ">
+  
+
+  
+    <span class="headline-6 js-gt-item-id">
+      UN Refugee Agency
+    </span>
+  
+
+  
+    <div class="glue-card__description body">
+      <p data-block-key="r2tef">The UN Refugee Agency, UNHCR, has used Open Buildings for survey sampling. It’s common to do household surveys in regions where people have been displaced, in order to know what people need. But UNHCR needs to first have an assessment of where the households actually are, which is where the Open Buildings project has been useful.</p>
+    </div>
+  
+</div>
+
+
+            
+
+
+        
+            
+  <div class="glue-card__cta">
+    <span class="glue-button glue-spacer-1-top glue-button--low-emphasis">
+        
+            Learn more
+        
+    </span>
+  </div>
+
+
+        
+        </div>
+
+    </a>
+
+
+                    
+                    
+                    
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+    <a class="glue-card glue-card--basic not-glue glue-carousel__item" href="https://unhabitat.org/" aria-label="Slide 3of4 - UN Habitat" target="_blank" rel="noreferrer noopener" >
+
+        <div class="glue-card__inner">
+            
+    
+    
+
+
+  <div class="media-wrapper" data-gt-id="media" data-gt-component-name="How Partners Have Leveraged Open Buildings">
+    
+
+    
+
+
+
+
+    
+      
+        
+
+
+
+
+
+    <!-- Determine the appropriate width based on image_width -->
+    
+        
+    
+
+
+<!-- For mobile images, use a default width -->
+
+
+<picture class="glue-card__asset play-pause-size-override media__image">
+    
+    
+        <source media="(min-width: 768px)" srcset="https://storage.googleapis.com/gweb-research2023-media/images/UN-habitat.width-800.png" alt="UN-habitat" />
+    
+    <img src="https://storage.googleapis.com/gweb-research2023-media/images/UN-habitat.width-800.png" alt="UN-habitat" loading="lazy" />
+    
+</picture>
+      
+    
+  </div>
+
+
+
+
+
+
+
+            <div class="glue-card__content ">
+  
+
+  
+    <span class="headline-6 js-gt-item-id">
+      UN Habitat
+    </span>
+  
+
+  
+    <div class="glue-card__description body">
+      <p data-block-key="r2tef">UN Habitat has used Open Buildings to study urbanization across the African continent. Having detail on the way that cities are laid out enables them to make recommendations on urban planning.</p>
+    </div>
+  
+</div>
+
+
+            
+
+
+        
+            
+  <div class="glue-card__cta">
+    <span class="glue-button glue-spacer-1-top glue-button--low-emphasis">
+        
+            Learn more
+        
+    </span>
+  </div>
+
+
+        
+        </div>
+
+    </a>
+
+
+                    
+                    
+                    
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+    <a class="glue-card glue-card--basic not-glue glue-carousel__item" href="https://www.iea.org/" aria-label="Slide 4of4 - International Energy Agency" target="_blank" rel="noreferrer noopener" >
+
+        <div class="glue-card__inner">
+            
+    
+    
+
+
+  <div class="media-wrapper" data-gt-id="media" data-gt-component-name="How Partners Have Leveraged Open Buildings">
+    
+
+    
+
+
+
+
+    
+      
+        
+
+
+
+
+
+    <!-- Determine the appropriate width based on image_width -->
+    
+        
+    
+
+
+<!-- For mobile images, use a default width -->
+
+
+<picture class="glue-card__asset play-pause-size-override media__image">
+    
+    
+        <source media="(min-width: 768px)" srcset="https://storage.googleapis.com/gweb-research2023-media/images/international-energy-agency.width-800.png" alt="international-energy-agency" />
+    
+    <img src="https://storage.googleapis.com/gweb-research2023-media/images/international-energy-agency.width-800.png" alt="international-energy-agency" loading="lazy" />
+    
+</picture>
+      
+    
+  </div>
+
+
+
+
+
+
+
+            <div class="glue-card__content ">
+  
+
+  
+    <span class="headline-6 js-gt-item-id">
+      International Energy Agency
+    </span>
+  
+
+  
+    <div class="glue-card__description body">
+      <p data-block-key="97227">The International Energy Agency has used Open Buildings to estimate energy needs. With data about individual buildings, they can assess the needs of communities at a new level of precision and know how much energy is needed for cooking, lighting and for operating machinery. This will help with planning sustainable energy policy.</p>
+    </div>
+  
+</div>
+
+
+            
+
+
+        
+            
+  <div class="glue-card__cta">
+    <span class="glue-button glue-spacer-1-top glue-button--low-emphasis">
+        
+            Learn more
+        
+    </span>
+  </div>
+
+
+        
+        </div>
+
+    </a>
+
+
+                    
+                    
+                    </div>
+                </div>
+                <!-- Navigation dots -->
+                <div class="glue-carousel__navigation" aria-label="Choose a page"
+                    data-glue-carousel-navigation-label="Selected tab $glue_carousel_page_number$ of $glue_carousel_page_total$">
+                </div>
+                
+                <div class="carousel__research-arrow-row">
+                    <button class="glue-carousel__button glue-carousel__button--prev" aria-label="Go to the previous slide">
+                        
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px ">
+  <use href="/gr/static/assets/icons/glue-icons.svg#chevron-left"></use>
+</svg>
+
+                    </button>
+                    <button class="glue-carousel__button glue-carousel__button--next" aria-label="Go to the next slide">
+                        
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px ">
+  <use href="/gr/static/assets/icons/glue-icons.svg#chevron-right"></use>
+</svg>
+
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    </div>
+</div>
+
+
+
+    
+        
+
+<div id="open-buildings-explore" class="jumplink-bar-target"></div>
+    
+        
+    
+
+
+<div class="microsite-component-wrapper component-as-block --no-vertical-padding --theme-dark --dbl-padding">
+    <div class="glue-page">
+        
+  
+
+
+
+
+    <div class="component-intro ">
+        
+            
+                <h2 class=>Explore the Open Buildings data</h2>
+            
+        
+        
+    </div>
+
+
+
+<iframe class="iframe aspect-ratio-3-2" src="https://researchsites.withgoogle.com/open-buildings"></iframe>
+
+
+
+    </div>
+</div>
+
+
+    
+        
+    
+
+
+<div class="microsite-component-wrapper component-as-block --no-padding-top --theme-dark --dbl-padding">
+    <div class="glue-page">
+        
+  
+
+
+<div class="rich-text --theme-dark --mode-microsite" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <table style="border-collapse: collapse; width: 254px; height: 119px; border-color: #ffffff;">
+<tbody>
+<tr style="height: 24.5117px;">
+<td style="width: 37.2798px; height: 24.5117px;"><span style="color: #ffffff;"><img src="https://lh3.googleusercontent.com/Na7uBCWCwlKn9S-M1iDV8rK4Xou5pWGUKaVQxlHEjIPPUhpgBTa_K1phq1ib5BTxP7evdI1wzMsbyZjmc55SB8SBk6PPN0f_Lko7HA=w2880-e365-pa-nu" alt="" width="19" height="19" /></span></td>
+<td style="width: 188.395px; height: 24.5117px;"><span style="color: #ffffff;">confidence &gt;= 0.75</span></td>
+</tr>
+<tr style="height: 24.5117px;">
+<td style="width: 37.2798px; height: 24.5117px;"><span style="color: #ffffff;"><img src="https://lh3.googleusercontent.com/f7gWcR_rnLL6W09bkw1uoKxVWWFEn6xVNpcA2-XcUItyyzy6D6kfcDc2--YRoL0savf2p2Yjv9ImRpahJUAqDsLgFF53NTBBxY9QEw=w2880-e365-pa-nu" alt="" width="19" height="19" /></span></td>
+<td style="width: 188.395px;"><span style="color: #ffffff;">0.7 &lt; confidence &lt; 0.75</span></td>
+</tr>
+<tr style="height: 19.6973px;">
+<td style="width: 37.2798px; height: 19.6973px;"><span style="color: #ffffff;"><img src="https://lh3.googleusercontent.com/rUXsnB9USMNMMqvmlYrnYtes8Cn0nj3eLZuzBCSrqIlssZqJWXY0xVyMPFmfJFirn10LKmHRomF_4JB8TeS1shNxCuhVPOHcGsrvIIf5=w2880-e365-pa-nu" alt="" width="19" height="19" /></span></td>
+<td style="width: 188.395px; height: 19.6973px;"><span style="color: #ffffff;">0.65 &lt;= confidence &lt; 0.7</span></td>
+</tr>
+</tbody>
+</table>
+<div data-draftjs-conductor-fragment="{&quot;blocks&quot;:[{&quot;key&quot;:&quot;d763&quot;,&quot;text&quot;:&quot;Click here to explore the data in Earth Engine. If you'd like to know more about our methods, quality and data limitations, check out the FAQs&nbsp;and&nbsp;technical report.&quot;,&quot;type&quot;:&quot;unstyled&quot;,&quot;depth&quot;:0,&quot;inlineStyleRanges&quot;:[],&quot;entityRanges&quot;:[{&quot;offset&quot;:6,&quot;length&quot;:4,&quot;key&quot;:0},{&quot;offset&quot;:138,&quot;length&quot;:4,&quot;key&quot;:1},{&quot;offset&quot;:147,&quot;length&quot;:16,&quot;key&quot;:2}],&quot;data&quot;:{}}],&quot;entityMap&quot;:{&quot;0&quot;:{&quot;type&quot;:&quot;LINK&quot;,&quot;mutability&quot;:&quot;MUTABLE&quot;,&quot;data&quot;:{&quot;url&quot;:&quot;https://developers.google.com/earth-engine/datasets/catalog/GOOGLE_Research_open-buildings_v3_polygons&quot;}},&quot;1&quot;:{&quot;type&quot;:&quot;LINK&quot;,&quot;mutability&quot;:&quot;MUTABLE&quot;,&quot;data&quot;:{&quot;url&quot;:&quot;https://sites.research.google/open-buildings/#open-buildings-faq&quot;}},&quot;2&quot;:{&quot;type&quot;:&quot;LINK&quot;,&quot;mutability&quot;:&quot;MUTABLE&quot;,&quot;data&quot;:{&quot;url&quot;:&quot;https://arxiv.org/abs/2107.12283&quot;}}}}">&nbsp;</div>
+<div data-draftjs-conductor-fragment="{&quot;blocks&quot;:[{&quot;key&quot;:&quot;d763&quot;,&quot;text&quot;:&quot;Click here to explore the data in Earth Engine. If you'd like to know more about our methods, quality and data limitations, check out the FAQs&nbsp;and&nbsp;technical report.&quot;,&quot;type&quot;:&quot;unstyled&quot;,&quot;depth&quot;:0,&quot;inlineStyleRanges&quot;:[],&quot;entityRanges&quot;:[{&quot;offset&quot;:6,&quot;length&quot;:4,&quot;key&quot;:0},{&quot;offset&quot;:138,&quot;length&quot;:4,&quot;key&quot;:1},{&quot;offset&quot;:147,&quot;length&quot;:16,&quot;key&quot;:2}],&quot;data&quot;:{}}],&quot;entityMap&quot;:{&quot;0&quot;:{&quot;type&quot;:&quot;LINK&quot;,&quot;mutability&quot;:&quot;MUTABLE&quot;,&quot;data&quot;:{&quot;url&quot;:&quot;https://developers.google.com/earth-engine/datasets/catalog/GOOGLE_Research_open-buildings_v3_polygons&quot;}},&quot;1&quot;:{&quot;type&quot;:&quot;LINK&quot;,&quot;mutability&quot;:&quot;MUTABLE&quot;,&quot;data&quot;:{&quot;url&quot;:&quot;https://sites.research.google/open-buildings/#open-buildings-faq&quot;}},&quot;2&quot;:{&quot;type&quot;:&quot;LINK&quot;,&quot;mutability&quot;:&quot;MUTABLE&quot;,&quot;data&quot;:{&quot;url&quot;:&quot;https://arxiv.org/abs/2107.12283&quot;}}}}">
+<div data-draftjs-conductor-fragment="{&quot;blocks&quot;:[{&quot;key&quot;:&quot;2rmdo&quot;,&quot;text&quot;:&quot;Click here to explore the data in Earth Engine. If you'd like to know more about our methods, quality and data limitations, check out the FAQs and technical report.&quot;,&quot;type&quot;:&quot;unstyled&quot;,&quot;depth&quot;:0,&quot;inlineStyleRanges&quot;:[],&quot;entityRanges&quot;:[{&quot;offset&quot;:6,&quot;length&quot;:4,&quot;key&quot;:0},{&quot;offset&quot;:138,&quot;length&quot;:4,&quot;key&quot;:1},{&quot;offset&quot;:147,&quot;length&quot;:16,&quot;key&quot;:2}],&quot;data&quot;:{}}],&quot;entityMap&quot;:{&quot;0&quot;:{&quot;type&quot;:&quot;LINK&quot;,&quot;mutability&quot;:&quot;MUTABLE&quot;,&quot;data&quot;:{&quot;url&quot;:&quot;https://developers.google.com/earth-engine/datasets/catalog/GOOGLE_Research_open-buildings_v3_polygons&quot;}},&quot;1&quot;:{&quot;type&quot;:&quot;LINK&quot;,&quot;mutability&quot;:&quot;MUTABLE&quot;,&quot;data&quot;:{&quot;url&quot;:&quot;https://sites.research.google/open-buildings/#open-buildings-faq&quot;}},&quot;2&quot;:{&quot;type&quot;:&quot;LINK&quot;,&quot;mutability&quot;:&quot;MUTABLE&quot;,&quot;data&quot;:{&quot;url&quot;:&quot;https://arxiv.org/abs/2107.12283&quot;}}}}"><span style="color: #ffffff;" data-offset-key="63a52-0-0">Click </span><a href="https://developers.google.com/earth-engine/datasets/catalog/GOOGLE_Research_open-buildings_v3_polygons" target="_blank" rel="noopener noreferrer"><span data-offset-key="63a52-1-0">here</span></a><span data-offset-key="63a52-2-0"> <span style="color: #ffffff;">to explore the data in Earth Engine. If you'd like to know more about our methods, quality and data limitations, check out the </span></span><a href="https://sites.research.google/gr/open-buildings/#open-buildings-faq"><span data-offset-key="63a52-3-0">FAQs</span></a><span data-offset-key="63a52-4-0"> <span style="color: #ffffff;">and</span> </span><a href="https://arxiv.org/abs/2107.12283" target="_blank" rel="noopener noreferrer"><span data-offset-key="63a52-5-0">technical report</span></a><span style="color: #ffffff;" data-offset-key="63a52-6-0">.</span></div>
+</div>
+  
+    
+  
+</div>
+
+
+    </div>
+</div>
+
+
+    
+        
+
+<div id="open-buildings-data-format" class="jumplink-bar-target"></div>
+    
+        
+    
+
+
+<div class="microsite-component-wrapper component-as-block both --theme-light --dbl-padding">
+    <div class="glue-page">
+        
+  
+
+
+<div class="rich-text --theme-light --mode-microsite" data-gt-id="rich_text"
+    data-gt-component-name="data format">
+  
+
+
+
+
+  <h2 data-block-key="boxac">Data format</h2><p data-block-key="5fu6m">The dataset consists of 3 parts: building polygons, building points and score thresholds.</p><h4 data-block-key="3vv97">Building polygons and points</h4><p data-block-key="e2oak">Building polygons and points are stored in spatially sharded CSVs with one CSV per S2 cell level 4. Each row in the CSV represents one building polygon or point and has the following columns:</p><ul><li data-block-key="1avf9"><b>latitude</b>: latitude of the building polygon centroid,</li><li data-block-key="3e6aj"><b>longitude</b>: longitude of the building polygon centroid,</li><li data-block-key="fv2lb"><b>area_in_meters</b>: area in square meters of the polygon,</li><li data-block-key="5hoaf"><b>confidence</b>: confidence score [0.65;1.0] assigned by the model,</li><li data-block-key="2q2a3"><b>geometry</b>: the building polygon in the WKT format (POLYGON or MULTIPOLYGON). This feature is present in only in polygons data,</li><li data-block-key="erdqb"><b>full_plus_code</b>: the full <a href="https://plus.codes/" target="_blank" rel="noopener noreferrer">Plus Code</a> at the building polygon centroid.</li></ul><h4 data-block-key="bo56o">Score thresholds</h4><p data-block-key="54d0">The estimated score thresholds are stored as one CSV. Each row in the CSV represents one S2 cell level 4 bucket and has the following columns:</p><ul><li data-block-key="t9jv"><b>s2_token</b>: S2 cell token of the bucket,</li><li data-block-key="2vt92"><b>geometry</b>: geometry in the WKT format of the S2 cell bucket,</li><li data-block-key="8dbvb"><b>confidence_threshold_80%_precision</b>, <b>confidence_threshold_85%_precision</b>, <b>confidence_threshold_90%_precision</b>: estimated confidence score threshold to get specific precision for building polygons in this S2 cell bucket,</li><li data-block-key="ea62s"><b>building_count_80%_precision</b>, <b>building_count_85%_precision</b>, <b>building_count_90%_precision</b>: number of building polygons in this S2 cell bucket with confidence score greater than or equal to the score threshold needed to get the specific precision,</li><li data-block-key="e9hd7"><b>building_count</b>: number of building polygons in this S2 cell bucket,</li><li data-block-key="ffh7v"><b>num_samples</b>: number of samples used for generating the score threshold. This feature exists from v2 onwards.</li></ul>
+  
+    
+  
+</div>
+
+
+    </div>
+</div>
+
+
+    
+        
+
+<div id="open-buildings-download" class="jumplink-bar-target"></div>
+    
+        
+    
+
+
+<div class="microsite-component-wrapper component-as-block --no-padding-bottom --theme-dark --dbl-padding">
+    <div class="glue-page">
+        
+  
+
+
+<div class="rich-text --theme-dark --mode-microsite" data-gt-id="rich_text"
+    data-gt-component-name="download polygon data">
+  
+
+
+
+
+  <h2 data-block-key="boxac">Download</h2><p data-block-key="811bs">The polygon data (178 GB total) is composed of a set of CSV files, with one file per level 4 <a href="https://s2geometry.io/" target="_blank" rel="noopener noreferrer">S2 cell</a> that are up to 7.8 GB in size. Similarly, the points data (48 GB total) are up to 2.1 GB per file. Select a download method below.</p><h4 data-block-key="13d4p">Download from the map</h4><p data-block-key="bf92a">To manually download polygons data for a specific cell, click on the map below.</p>
+  
+    
+  
+</div>
+
+
+    </div>
+</div>
+
+
+    
+        
+    
+
+
+<div class="microsite-component-wrapper component-as-block both --theme-dark --dbl-padding">
+    <div class="glue-page">
+        
+  
+
+
+
+
+
+
+<iframe class="iframe aspect-ratio-3-2" src="https://researchsites.withgoogle.com/open-buildings/download"></iframe>
+
+
+
+    </div>
+</div>
+
+
+    
+        
+    
+
+
+<div class="microsite-component-wrapper component-as-block --no-padding-top --theme-dark --dbl-padding">
+    <div class="glue-page">
+        
+  
+
+
+<div class="rich-text --theme-dark --mode-microsite" data-gt-id="rich_text"
+    data-gt-component-name="download polygons - code">
+  
+
+
+
+
+  <h4 data-block-key="boxac">Download polygons or points data for a specific country or region</h4><p data-block-key="1j1jt">This <a href="https://colab.research.google.com/github/google-research/google-research/blob/master/building_detection/open_buildings_download_region_polygons.ipynb">Colab notebook</a> shows how data can be downloaded for a specific country or region.</p><p data-block-key="3b9qg">Or you can use the UN Humantatian Data Exchange (HDX), where the HDX team curated 20 country level datasets to better enable humanitarian response use.</p><p data-block-key="d2q8p"><a href="https://data.humdata.org/organization/google-open-buildings" target="_blank" rel="noopener noreferrer">HDX Link</a></p><h4 data-block-key="3of8m">Download all data</h4><p data-block-key="euukl">Download all polygons using <a href="https://cloud.google.com/storage/docs/gsutil_install" target="_blank" rel="noopener noreferrer">gsutil</a> (178 GB total):</p><p data-block-key="81i64"><code>gsutil cp -R gs://open-buildings-data/v3/polygons_s2_level_4_gzip</code></p><p data-block-key="7d0se">Download all points (48 GB total):</p><p data-block-key="597nd"><code>gsutil cp -R gs://open-buildings-data/v3/points_s2_level_4_gzip</code></p><h4 data-block-key="90lh9">Download metadata</h4><p data-block-key="4bn0f">Metadata files can be downloaded as follows:</p><ul><li data-block-key="9n6jg"><a href="https://openbuildings-public-dot-gweb-research.uw.r.appspot.com/public/tiles.geojson" target="_blank" rel="noopener noreferrer">Tile geometry and URLs</a> in geojson format.</li><li data-block-key="984g0"><a href="https://storage.googleapis.com/open-buildings-data/v3/score_thresholds_s2_level_4.csv" target="_blank" rel="noopener noreferrer">Score thresholds</a> CSV file.</li></ul><p data-block-key="e11r1">Download score thresholds using <a href="https://cloud.google.com/storage/docs/gsutil_install" target="_blank" rel="noopener noreferrer">gsutil</a>:</p><p data-block-key="fhtdv"><code>gsutil cp gs://open-buildings-data/v3/score_thresholds_s2_level_4.csv</code></p><h4 data-block-key="b7rp7">Version history</h4><p data-block-key="dj07j"><b>v1</b>: inference carried out during April 2021 on imagery covering 19.4M km2 of Africa.</p><p data-block-key="3po6o"><b>v2</b>: inference carried out during August 2022 on imagery covering 39.1M km<sup class="superscript">2</sup> of Africa, South and South-East Asia.</p><p data-block-key="9i4vo"><b>v3</b>: inference carried out during May 2023 on imagery covering 58M km2 of Africa, South and South-East Asia, Latin America and the Caribbean. See <a href="#open-buildings-faq">FAQ</a> for comparison of versions.</p>
+  
+    
+  
+</div>
+
+
+    </div>
+</div>
+
+
+    
+        
+
+<div id="open-buildings-faq" class="jumplink-bar-target"></div>
+    
+        
+    
+
+
+<div class="microsite-component-wrapper component-as-block --no-padding-bottom --theme-light --dbl-padding">
+    <div class="glue-page">
+        
+    
+
+
+
+    <div class="accordion --theme-light --mode-microsite" data-gt-id="dynamic_accordion" data-gt-component-name="">
+        
+
+
+    <div class="component-intro ">
+        
+            
+                <h2 class=>FAQ</h2>
+            
+        
+        
+    </div>
+
+
+
+        <div class="glue-expansion-panels --dynamic">
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-what-countries-are-currently-geographically-covered-by-the-open-buildings-v3-data-set-1-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-what-countries-are-currently-geographically-covered-by-the-open-buildings-v3-data-set-1-content">
+        <span class="glue-expansion-panel__header-text">What countries are currently geographically covered by the Open Buildings V3 data set?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-what-countries-are-currently-geographically-covered-by-the-open-buildings-v3-data-set-1-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="9zq78">Currently the Open Buildings V3 dataset geographic coverage includes the following list of countries; however, this list is subject to change.</p><p data-block-key="2862d"><b>List of Countries</b>:</p><p data-block-key="a0ina">ARG Argentina, ATG Antigua and Barbuda, BDI Burundi, BEN Benin, BFA Burkina Faso, BGD Bangladesh, BHS The Bahamas, BLM Saint Barthelemy, BLZ Belize, BOL Bolivia, BRA Brazil, BRB Barbados, BRN Brunei, BTN Bhutan, BWA Botswana, CAF Central African Republic, CHL Chile, CIV Ivory Coast, CMR Cameroon, COD Democratic Republic of the Congo, COG Republic of Congo, COL Colombia, COM Comoros, CPV Cape Verde, CRI Costa Rica, CUB Cuba, CUW Curaçao, CYM Cayman Islands, DJI Djibouti, DMA Dominica, DOM Dominican Republic, DZA Algeria, ECU Ecuador, EGY Egypt, ERI Eritrea, ETH Ethiopia, FLK Falkland Islands, GAB Gabon, GHA Ghana, GIN Guinea, GMB Gambia, GNB Guinea Bissau, GNQ Equatorial Guinea, GRD Grenada, GTM Guatemala, GUY Guyana, HND Honduras, HTI Haiti, IDN Indonesia, IND India, IOT British Indian Ocean Territory, JAM Jamaica, KEN Kenya, KHM Cambodia, KNA Saint Kitts and Nevis, LAO Laos, LBR Liberia, LCA Saint Lucia, LKA Sri Lanka, LSO Lesotho, MAF Saint Martin, MDG Madagascar, MDV Maldives, MEX Mexico, MOZ Mozambique, MRT Mauritania, MSR Montserrat, MUS Mauritius, MWI Malawi, MYS Malaysia, MYT Mayotte, NAM Namibia, NER Niger, NGA Nigeria, NIC Nicaragua, NPL Nepal, PAN Panama, PER Peru, PHL Philippines, PRI Puerto Rico, PRY Paraguay, RWA Rwanda, SDN Sudan, SEN Senegal, SGP Singapore, SHN Saint Helena, SLE Sierra Leone, SLV El Salvador, SOM Somalia, STP Sao Tome and Principe, SUR Suriname, SWZ Eswatini, SXM Sint Maarten, SYC Seychelles, TCA Turks and Caicos Islands, TGO Togo, THA Thailand, TLS East Timor, TTO Trinidad and Tobago, TUN Tunisia, TZA United Republic of Tanzania, UGA Uganda, URY Uruguay, VCT Saint Vincent and the Grenadines, VEN Venezuela, VGB British Virgin Islands, VIR United States Virgin Islands, VNM Vietnam, ZAF South Africa, ZMB Zambia, ZWE Zimbabwe</p>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-how-was-the-open-buildings-dataset-created-2-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-how-was-the-open-buildings-dataset-created-2-content">
+        <span class="glue-expansion-panel__header-text">How was the Open Buildings dataset created?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-how-was-the-open-buildings-dataset-created-2-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="4eggc">A deep learning model was trained to determine the footprints of buildings from high resolution satellite imagery. Our accompanying <a href="https://arxiv.org/abs/2107.12283" target="_blank" rel="noopener noreferrer">technical report</a> describes the methodology used to generate the first version of the dataset. We however made further improvements for the subsequent versions, v2 and v3.</p>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-how-is-the-data-licensed-3-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-how-is-the-data-licensed-3-content">
+        <span class="glue-expansion-panel__header-text">How is the data licensed?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-how-is-the-data-licensed-3-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="4eggc">The data is shared under the <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution (CC BY-4.0) license</a> and the <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener noreferrer">Open Data Commons Open Database License (ODbL) v1.0 license</a>. As the user, you can pick which of the two licenses you prefer and use the data under the terms of that license. However, please note the liability disclaimer in the footnotes.<footnote id="e0fa5832-8d6a-4138-926e-1caa39902e81">[e0fa58]</footnote></p>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-why-two-licenses-4-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-why-two-licenses-4-content">
+        <span class="glue-expansion-panel__header-text">Why two licenses?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-why-two-licenses-4-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="4eggc">We wanted to make the data compatible for ingestion by those working with ODbL-licensed datasets (namely the OpenStreetMap community) while enabling people who don't use ODbL licensing to use it under the terms of the CC BY-4.0 license. We hoped to take away the burden of figuring out whether the two licenses were compatible and simply release the data set under both licenses.</p>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-can-these-buildings-be-added-to-openstreetmap-5-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-can-these-buildings-be-added-to-openstreetmap-5-content">
+        <span class="glue-expansion-panel__header-text">Can these buildings be added to OpenStreetMap?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-can-these-buildings-be-added-to-openstreetmap-5-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="4eggc">Yes – however, to maintain the quality of OSM, please be mindful of the need for human review when adding machine-generated features, and where possible to do this with the benefit of local knowledge. Errors in the data to look out for include false detections and inaccurate shapes (see more about accuracy below). We also recommend starting by filtering out building detections that have a confidence score below the estimated <a href="https://storage.googleapis.com/open-buildings-data/v3/score_thresholds_s2_level_4.csv" target="_blank" rel="noopener noreferrer">90% precision threshold</a>.</p>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-are-these-the-same-buildings-as-on-google-maps-6-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-are-these-the-same-buildings-as-on-google-maps-6-content">
+        <span class="glue-expansion-panel__header-text">Are these the same buildings as on Google Maps?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-are-these-the-same-buildings-as-on-google-maps-6-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="4eggc">The buildings on Google Maps come from a variety of sources, including the model used to generate this dataset. So there is some overlap, but the sets of footprints are not exactly the same.</p>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-why-are-buildings-offset-from-satellite-imagery-in-some-areas-7-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-why-are-buildings-offset-from-satellite-imagery-in-some-areas-7-content">
+        <span class="glue-expansion-panel__header-text">Why are buildings offset from satellite imagery in some areas?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-why-are-buildings-offset-from-satellite-imagery-in-some-areas-7-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="4eggc">As the imagery in Google Maps is updated over time, the specific images used to identify these buildings are not necessarily the same images that are currently published in Google Maps. If there is a misalignment between these two sets of imagery, buildings displayed in the <a href="#open-buildings-explore">data explorer map</a> may appear to be offset from the underlying imagery.</p><p data-block-key="6n71s">You can view a timeline of the imagery for a specific area using the <a href="https://support.google.com/earth/answer/148094?hl=en" target="_blank" rel="noopener noreferrer">Historical Imagery</a> feature in <a href="https://www.google.com/earth/versions/#download-pro" target="_blank" rel="noopener noreferrer">Google Earth Pro</a> which may show this imagery offset between different images and dates. To learn a little more about satellite imagery offset see these sites (<a href="https://www.agsgis.com/Advanced-Mobile-Mapping-Series-Why-Does-My-GPS-Data-and-Imagery-Not-Line-Up_b_1062.html" target="_blank" rel="noopener noreferrer">1</a>, <a href="https://gis.stackexchange.com/questions/86734/google-earth-google-satellite-and-bing-aerial-accuracy" target="_blank" rel="noopener noreferrer">2</a>). Also see the <a href="https://arxiv.org/abs/2107.12283" target="_blank" rel="noopener noreferrer">technical report</a> for details about data limitations and quality.</p>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-why-are-the-building-detections-less-accurate-in-certain-urban-arid-or-rural-areas-8-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-why-are-the-building-detections-less-accurate-in-certain-urban-arid-or-rural-areas-8-content">
+        <span class="glue-expansion-panel__header-text">Why are the building detections less accurate in certain urban, arid or rural areas?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-why-are-the-building-detections-less-accurate-in-certain-urban-arid-or-rural-areas-8-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-vertical-padding">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="4eggc">Despite having a diverse set of training data, some scenarios are challenging for the building detection pipeline, including: 1) geological or vegetation features which can be confused with built structures; 2) settlements with many contiguous buildings not having clear delineations; 3) areas characterised by small buildings, which can appear only a few pixels wide at the given image resolution; 4) rural or desert areas, where buildings constructed with natural materials tend to visually blend into the surrounding area; 5) areas with high-rise buildings: our model is trained to detect building rooftop rather than base and as a result, depending on satellite image's viewing angle, roofs of high rise buildings jump around which makes it challenging to track buildings across a stack of imagery in a given location. See the <a href="https://arxiv.org/abs/2107.12283" target="_blank" rel="noopener noreferrer">technical report</a> for more details.</p>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+  
+
+
+  
+
+  <div class="
+      dynamic_media
+      glue-grid__col
+      glue-grid__col--span-4-sm
+      glue-grid__col--span-12-md
+      glue-grid__col--span-12-lg
+      --
+      
+        --flex
+        --center
+      
+    "
+    data-gt-id="dynamic_media"
+    data-gt-component-name=""
+    >
+
+    
+
+
+
+
+    <div class="
+      glue-grid
+      
+        --remove-gap
+        --full
+      
+    ">
+      
+        <div class="
+          dynamic_media__item
+          glue-grid__col
+          glue-grid__col--span-4-sm
+          
+            glue-grid__col--span-12-md
+          
+          
+            glue-grid__col--span-12-lg
+          
+        ">
+          <div class="">
+            
+
+
+
+  
+    
+
+
+
+
+
+    <!-- Determine the appropriate width based on image_width -->
+    
+        
+    
+
+
+<!-- For mobile images, use a default width -->
+
+
+<picture class="media__image media__image">
+    
+    
+        <source media="(min-width: 768px)" srcset="https://storage.googleapis.com/gweb-research2023-media/images/failure_cases.width-1250.png" alt="failure_cases" />
+    
+    <img src="https://storage.googleapis.com/gweb-research2023-media/images/failure_cases.width-1250.png" alt="failure_cases" loading="lazy" />
+    
+</picture>
+  
+
+
+          </div>
+        </div>
+      
+
+      
+        <div class="
+          glue-grid__col
+          glue-grid__col--span-4-sm
+          glue-grid__col--span-12-md
+          caption
+          --left
+        ">
+          <p data-block-key="w3vkm"><i>From left to right: false positives on natural features (glacier and rocks), contiguous buildings without clear delineation, shifted footprint due to high-rise building.</i></p>
+        </div>
+      
+    </div>
+  </div>
+
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-how-accurate-is-the-data-9-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-how-accurate-is-the-data-9-content">
+        <span class="glue-expansion-panel__header-text">How accurate is the data?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-how-accurate-is-the-data-9-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-vertical-padding">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="4eggc">The data is subject to both omission and commission errors, of these types:</p><p data-block-key="agldo"><b>Imagery completeness errors:</b> for some areas, up-to-date satellite imagery may not have been available, or there were buildings on the ground that were not visible from the satellite image, or there was cloud cover.</p><p data-block-key="9i81"><b>Detection errors:</b> estimated precision and recall curves for our detection model, based on a held-out test set, are as shown below. For more details, including confidence score thresholds, click on the plot. A further breakdown based on density (fraction of image occupied by buildings) is also shown.</p>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+  
+
+
+  
+
+  <div class="
+      dynamic_media
+      glue-grid__col
+      glue-grid__col--span-4-sm
+      glue-grid__col--span-12-md
+      glue-grid__col--span-12-lg
+      --
+      
+        --flex
+        --center
+      
+    "
+    data-gt-id="dynamic_media"
+    data-gt-component-name=""
+    >
+
+    
+
+
+
+
+    <div class="
+      glue-grid
+      
+        --remove-gap
+        --full
+      
+    ">
+      
+        <div class="
+          dynamic_media__item
+          glue-grid__col
+          glue-grid__col--span-4-sm
+          
+            glue-grid__col--span-12-md
+          
+          
+            glue-grid__col--span-12-lg
+          
+        ">
+          <div class="">
+            
+
+
+
+  
+    
+
+
+
+
+
+    <!-- Determine the appropriate width based on image_width -->
+    
+        
+    
+
+
+<!-- For mobile images, use a default width -->
+
+
+<picture class="media__image media__image">
+    
+    
+        <source media="(min-width: 768px)" srcset="https://storage.googleapis.com/gweb-research2023-media/images/precision-recall.width-1250.png" alt="precision-recall-opt" />
+    
+    <img src="https://storage.googleapis.com/gweb-research2023-media/images/precision-recall.width-1250.png" alt="precision-recall-opt" loading="lazy" />
+    
+</picture>
+  
+
+
+          </div>
+        </div>
+      
+
+      
+    </div>
+  </div>
+
+
+
+
+    
+</section>
+
+
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="iwa9x">Our model sometimes wrongly detects buildings where there are actually rocks or vegetation features, for example.</p><p data-block-key="d1gvo">By choosing the confidence score threshold at which buildings are filtered out, the tradeoff between precision and recall can be controlled. We provide suggested thresholds with each download tile to obtain estimated 80% and 90% precision levels.</p>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-does-dataset-quality-vary-per-location-10-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-does-dataset-quality-vary-per-location-10-content">
+        <span class="glue-expansion-panel__header-text">Does dataset quality vary per location?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-does-dataset-quality-vary-per-location-10-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-vertical-padding">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="4eggc">Yes, see plots below. To address this we provide a <a href="https://storage.googleapis.com/open-buildings-data/v3/score_thresholds_s2_level_4.csv" target="_blank" rel="noopener noreferrer">CSV file with suggested score thresholds</a> to obtain specific precision levels for each download tile.</p>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+  
+
+
+  
+
+  <div class="
+      dynamic_media
+      glue-grid__col
+      glue-grid__col--span-4-sm
+      glue-grid__col--span-12-md
+      glue-grid__col--span-12-lg
+      --
+      
+        --flex
+        --center
+      
+    "
+    data-gt-id="dynamic_media"
+    data-gt-component-name=""
+    >
+
+    
+
+
+
+
+    <div class="
+      glue-grid
+      
+        --remove-gap
+        --full
+      
+    ">
+      
+        <div class="
+          dynamic_media__item
+          glue-grid__col
+          glue-grid__col--span-4-sm
+          
+            glue-grid__col--span-12-md
+          
+          
+            glue-grid__col--span-12-lg
+          
+        ">
+          <div class="">
+            
+
+
+
+  
+    
+
+
+
+
+
+    <!-- Determine the appropriate width based on image_width -->
+    
+        
+    
+
+
+<!-- For mobile images, use a default width -->
+
+
+<picture class="media__image media__image">
+    
+    
+        <source media="(min-width: 768px)" srcset="https://storage.googleapis.com/gweb-research2023-media/images/precision-levels-map.width-1250.png" alt="precision-levels-map" />
+    
+    <img src="https://storage.googleapis.com/gweb-research2023-media/images/precision-levels-map.width-1250.png" alt="precision-levels-map" loading="lazy" />
+    
+</picture>
+  
+
+
+          </div>
+        </div>
+      
+
+      
+    </div>
+  </div>
+
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-how-complete-and-up-to-date-is-it-11-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-how-complete-and-up-to-date-is-it-11-content">
+        <span class="glue-expansion-panel__header-text">How complete and up-to-date is it?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-how-complete-and-up-to-date-is-it-11-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="4eggc">The dataset freshness is determined by the availability of the high-resolution source imagery which we use to detect buildings. While we have tried to include the most recent images possible, particularly in populated areas, in some cases, the most recent image for some location was several years old or not available to us at all. To look at freshness for a particular area, the <a href="https://support.google.com/earth/answer/148094?hl=en" target="_blank" rel="noopener noreferrer">Historical Imagery</a> function in <a href="https://www.google.com/earth/versions/#download-pro" target="_blank" rel="noopener noreferrer">Google Earth Pro</a> shows the specific dates and imagery (check for imagery before the inference date given in the version history below). Furthermore, we have not processed imagery for the entire continent: to check whether a particular region has been included, the <a href="#open-buildings-explore">dataset explorer map</a> above visualises all buildings in the dataset.</p>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-what-is-the-distribution-of-confidence-scores-and-building-sizes-12-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-what-is-the-distribution-of-confidence-scores-and-building-sizes-12-content">
+        <span class="glue-expansion-panel__header-text">What is the distribution of confidence scores and building sizes?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-what-is-the-distribution-of-confidence-scores-and-building-sizes-12-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="4eggc">We filtered detections to include only those with confidence score 0.65 or greater. Depending on the application, it may be necessary to filter at a higher threshold (e.g. with the score thresholds above to achieve 90% precision).</p>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+  
+
+
+  
+
+  <div class="
+      dynamic_media
+      glue-grid__col
+      glue-grid__col--span-4-sm
+      glue-grid__col--span-12-md
+      glue-grid__col--span-12-lg
+      --
+      
+    "
+    data-gt-id="dynamic_media"
+    data-gt-component-name=""
+    >
+
+    
+
+
+
+
+    <div class="
+      glue-grid
+      
+    ">
+      
+        <div class="
+          dynamic_media__item
+          glue-grid__col
+          glue-grid__col--span-4-sm
+          
+            --vertical-center
+          
+          
+            glue-grid__col--span-6-md
+          
+        ">
+          <div class="--mobile-spacer">
+            
+
+
+
+  
+    
+
+
+
+
+
+    <!-- Determine the appropriate width based on image_width -->
+    
+        
+    
+
+
+<!-- For mobile images, use a default width -->
+
+
+<picture class="media__image media__image">
+    
+    
+        <source media="(min-width: 768px)" srcset="https://storage.googleapis.com/gweb-research2023-media/images/confidence-score.width-800.png" alt="confidence-score" />
+    
+    <img src="https://storage.googleapis.com/gweb-research2023-media/images/confidence-score.width-800.png" alt="confidence-score" loading="lazy" />
+    
+</picture>
+  
+
+
+          </div>
+        </div>
+      
+        <div class="
+          dynamic_media__item
+          glue-grid__col
+          glue-grid__col--span-4-sm
+          
+            --vertical-center
+          
+          
+            glue-grid__col--span-6-md
+          
+        ">
+          <div class="--mobile-spacer">
+            
+
+
+
+  
+    
+
+
+
+
+
+    <!-- Determine the appropriate width based on image_width -->
+    
+        
+    
+
+
+<!-- For mobile images, use a default width -->
+
+
+<picture class="media__image media__image">
+    
+    
+        <source media="(min-width: 768px)" srcset="https://storage.googleapis.com/gweb-research2023-media/images/area-detection.width-800.png" alt="area-detection" />
+    
+    <img src="https://storage.googleapis.com/gweb-research2023-media/images/area-detection.width-800.png" alt="area-detection" loading="lazy" />
+    
+</picture>
+  
+
+
+          </div>
+        </div>
+      
+
+      
+    </div>
+  </div>
+
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-how-can-i-access-the-data-13-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-how-can-i-access-the-data-13-content">
+        <span class="glue-expansion-panel__header-text">How can I access the data?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-how-can-i-access-the-data-13-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="4eggc">We currently provide 3 options:</p><ul><li data-block-key="5p9f2">CSV files. See the <a href="#open-buildings-data-format">Data format</a> and <a href="#open-buildings-download">Download</a> sections.</li><li data-block-key="84u39">Earth Engine asset. See this <a href="https://developers.google.com/earth-engine/datasets/catalog/GOOGLE_Research_open-buildings_v3_polygons" target="_blank" rel="noopener noreferrer">catalog page</a>.</li><li data-block-key="3tl4v">Explorer embedded in this website. See <a href="#open-buildings-explore">Explore</a> section.</li></ul>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-how-can-i-download-data-for-a-specific-country-or-region-14-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-how-can-i-download-data-for-a-specific-country-or-region-14-content">
+        <span class="glue-expansion-panel__header-text">How can I download data for a specific country or region?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-how-can-i-download-data-for-a-specific-country-or-region-14-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="4eggc">The data is organised into tiles that can be directly downloaded. Alternatively, the example <a href="https://colab.research.google.com/github/google-research/google-research/blob/master/building_detection/open_buildings_download_region_polygons.ipynb">Colab notebook</a> shows how to download data for a specific region, given the geometry of the area of interest.</p>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-is-the-imagery-also-available-15-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-is-the-imagery-also-available-15-content">
+        <span class="glue-expansion-panel__header-text">Is the imagery also available?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-is-the-imagery-also-available-15-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="4eggc">The underlying satellite imagery is not part of this dataset. However, the source imagery used for detections can be viewed in <a href="https://www.google.com/earth/versions/#download-pro" target="_blank" rel="noopener noreferrer">Google Earth Pro</a>. Different time frames can be viewed using the <a href="https://support.google.com/earth/answer/148094?hl=en" target="_blank" rel="noopener noreferrer">Historical Imagery</a> function.</p>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-are-there-examples-of-resources-for-analysing-the-data-16-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-are-there-examples-of-resources-for-analysing-the-data-16-content">
+        <span class="glue-expansion-panel__header-text">Are there examples of resources for analysing the data?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-are-there-examples-of-resources-for-analysing-the-data-16-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="4eggc">In this <a href="https://colab.research.google.com/github/google-research/google-research/blob/master/building_detection/open_buildings_spatial_analysis_examples.ipynb">Colab notebook</a> , we demonstrate some analysis methods on the data for a specific country or region:</p><ul><li data-block-key="7v5a8">Generating heatmaps of building density and size, and how to save this information in GeoTIFF format.</li><li data-block-key="4kjaj">Analysis of accessibility to health sites.</li></ul>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-will-the-data-be-updated-or-extended-17-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-will-the-data-be-updated-or-extended-17-content">
+        <span class="glue-expansion-panel__header-text">Will the data be updated or extended?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-will-the-data-be-updated-or-extended-17-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="4eggc">We hope to continue improving this dataset, by both refreshing it using new source imagery, and by refining the detection model to improve accuracy. Based on community feedback, we may extend the dataset to new areas or add additional features: please let us know, using the contact details below, any queries or requests.</p>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-when-the-data-is-extended-will-the-previous-versions-be-available-18-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-when-the-data-is-extended-will-the-previous-versions-be-available-18-content">
+        <span class="glue-expansion-panel__header-text">When the data is extended, will the previous version(s) be available?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-when-the-data-is-extended-will-the-previous-versions-be-available-18-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="4eggc">The previous versions, like the current version v3, will be hosted in cloud and can be accessed using the same commands as v3, with v3 replaced by either v1 or v2.</p>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-what-are-the-differences-between-the-versions-19-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-what-are-the-differences-between-the-versions-19-content">
+        <span class="glue-expansion-panel__header-text">What are the differences between the versions?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-what-are-the-differences-between-the-versions-19-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="4eggc">The current version, v3, adds new regions in Latin America and the Caribbean (in addition to Africa, South Asia and South East Asia in the previous versions), has improved accuracy, and is based on more up-to-date satellite imagery. Click <a href="https://storage.googleapis.com/gweb-research2023-media/images/compare-v1-v2-v3.original.png" target="_blank" rel="noopener noreferrer">here</a> to view differences in precision-recall curves. We further provide breakdown of precision-recall curves based on building density.</p>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-what-is-the-citation-for-this-dataset-20-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-what-is-the-citation-for-this-dataset-20-content">
+        <span class="glue-expansion-panel__header-text">What is the citation for this dataset?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-what-is-the-citation-for-this-dataset-20-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="4eggc">If this dataset is useful, please consider citing our <a href="https://arxiv.org/abs/2107.12283" target="_blank" rel="noopener noreferrer">technical report</a>:</p><p data-block-key="djvl">W. Sirko, S. Kashubin, M. Ritter, A. Annkah, Y.S.E. Bouchareb, Y. Dauphin, D. Keysers, M. Neumann, M. Cisse, J.A. Quinn. <i>Continental-scale building detection from high resolution satellite imagery</i>. <a href="https://arxiv.org/abs/2107.12283" target="_blank" rel="noopener noreferrer">arXiv:2107.12283</a>, 2021.</p>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-why-is-there-no-data-for-certain-areas-21-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-why-is-there-no-data-for-certain-areas-21-content">
+        <span class="glue-expansion-panel__header-text">Why is there no data for certain areas?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-why-is-there-no-data-for-certain-areas-21-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="9q98y">Sensitive areas, including conflict zones, were omitted from consideration to protect at-risk populations. The list of excluded areas is subject to change.</p>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+                
+
+<div class="glue-expansion-panel js-gt-accordion-item">
+    <h3 class="glue-expansion-panel__toggle">
+        <span class="glue-expansion-panel__button" id="accordion-panel-who-can-i-contact-about-issues-with-the-dataset-22-toggle"
+            data-glue-expansion-panel-toggle-for="accordion-panel-who-can-i-contact-about-issues-with-the-dataset-22-content">
+        <span class="glue-expansion-panel__header-text">Who can I contact about issues with the dataset?</span>
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--18px glue-expansion-panel__header-arrow">
+  <use href="/gr/static/assets/icons/glue-icons.svg#expand-more"></use>
+</svg>
+
+        </span>
+    </h3>
+    <div class="glue-expansion-panel__content" id="accordion-panel-who-can-i-contact-about-issues-with-the-dataset-22-content">
+        <div class="accordion__item__content">
+            <div>
+            
+                
+    
+
+
+<section class="component-as-block --no-padding-top">
+    
+    
+
+
+<div class="rich-text --theme-light --mode-subcomponent" data-gt-id="rich_text"
+    data-gt-component-name="">
+  
+
+
+
+
+  <p data-block-key="4eggc">Please contact <a href="mailto:open-buildings-dataset@google.com">open-buildings-dataset@google.com</a> with any feedback.</p>
+  
+</div>
+
+
+
+    
+</section>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+            
+        </div>
+    </div>
+
+
+
+    </div>
+</div>
+
+
+    
+    
+        
+  
+
+
+<div class="microsite-component-wrapper component-as-block  --theme- --dbl-padding">
+    <div class="glue-page">
+        
+  
+
+
+<hr class="footnotes__divider" />
+
+<section aria-label="List of footnotes" data-gt-id="footnotes" data-gt-component-name="Footnotes">
+  <ol class="js-footnotes footnotes">
+    
+        <li id="footnote-item-e0fa5832-8d6a-4138-926e-1caa39902e81" class="js-footnote__note footnotes__item">
+          <span class="footnote__item__counter"></span>
+          <p data-block-key="p6ssc">TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT WILL ANY OF THE LICENSORS OR ANY THIRD PARTY THAT PUBLISHES ANY LICENSED MATERIAL BE LIABLE TO YOU ON ANY LEGAL THEORY FOR ANY INCIDENTAL, DIRECT, INDIRECT, PUNITIVE, ACTUAL, SPECIAL, EXEMPLARY, OR OTHER DAMAGES, INCLUDING WITHOUT LIMITATION, LOSS OF REVENUE OR INCOME, LOST PROFITS, PAIN AND SUFFERING, EMOTIONAL DISTRESS, COST OF SUBSTITUTE GOODS OR SERVICES, OR SIMILAR DAMAGES SUFFERED OR INCURRED BY YOU OR ANY THIRD PARTY THAT ARISE IN CONNECTION WITH SUCH MATERIALS (OR THE TERMINATION THEREOF FOR ANY REASON), EVEN IF ANY OF THE LICENSORS OR ANY THIRD PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, ANY OF THE LICENSORS OR ANY THIRD PARTY IS NOT RESPONSIBLE OR LIABLE WHATSOEVER IN ANY MANNER FOR ANY CONTENT POSTED ON OR AVAILABLE THROUGH THE RELEVANT MATERIALS (INCLUDING CLAIMS OF INFRINGEMENT RELATING TO THAT CONTENT), FOR YOUR USE OF THE MATERIALS.</p>
+          <a href="#footnote-source-1" 
+            class="footnotes__item__back-to-content js-back-to-content not-glue" 
+            aria-label="Back to footnote content"
+            title="Jump back to footnote content">
+            
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon glue-icon--24px ">
+  <use href="/gr/static/assets/icons/glue-icons.svg#arrow-upward"></use>
+</svg>
+
+          </a>
+        </li>
+    
+  </ol>
+</section>
+
+
+    </div>
+</div>
+
+
+    
+</div>
+
+
+  
+
+
+
+  <div id="imageModal" class="image-modal">
+    <span class="image-modal-close">&times;</span>
+    <span class="image-modal-prev">&#10094;</span>
+    <span class="image-modal-next">&#10095;</span>
+    <div class="image-modal-content">
+    
+      
+        <div class="modal-slide" data-slide-alt="UN-refugee-agency" data-slide-source="https://storage.googleapis.com/gweb-research2023-media/original_images/UN-refugee-agency.png">
+          <img src="https://storage.googleapis.com/gweb-research2023-media/original_images/UN-refugee-agency.png" alt="UN-refugee-agency">
+          
+          
+        </div>
+      
+    
+      
+        <div class="modal-slide" data-slide-alt="UN-habitat" data-slide-source="https://storage.googleapis.com/gweb-research2023-media/original_images/UN-habitat.png">
+          <img src="https://storage.googleapis.com/gweb-research2023-media/original_images/UN-habitat.png" alt="UN-habitat">
+          
+          
+        </div>
+      
+    
+      
+        <div class="modal-slide" data-slide-alt="international-energy-agency" data-slide-source="https://storage.googleapis.com/gweb-research2023-media/original_images/international-energy-agency.png">
+          <img src="https://storage.googleapis.com/gweb-research2023-media/original_images/international-energy-agency.png" alt="international-energy-agency">
+          
+          
+        </div>
+      
+    
+      
+        <div class="modal-slide" data-slide-alt="heat-map-v2" data-slide-source="https://storage.googleapis.com/gweb-research2023-media/original_images/heat-map.png">
+          <img src="https://storage.googleapis.com/gweb-research2023-media/original_images/heat-map.png" alt="heat-map-v2">
+          
+          
+        </div>
+      
+    
+      
+        <div class="modal-slide" data-slide-alt="sunbird-ai" data-slide-source="https://storage.googleapis.com/gweb-research2023-media/original_images/subird-ai.png">
+          <img src="https://storage.googleapis.com/gweb-research2023-media/original_images/subird-ai.png" alt="sunbird-ai">
+          
+          
+        </div>
+      
+    
+      
+        <div class="modal-slide" data-slide-alt="https://lh3.googleusercontent.com/Na7uBCWCwlKn9S-M1iDV8rK4Xou5pWGUKaVQxlHEjIPPUhpgBTa_K1phq1ib5BTxP7evdI1wzMsbyZjmc55SB8SBk6PPN0f_Lko7HA=w2880-e365-pa-nu" data-slide-source="https://lh3.googleusercontent.com/Na7uBCWCwlKn9S-M1iDV8rK4Xou5pWGUKaVQxlHEjIPPUhpgBTa_K1phq1ib5BTxP7evdI1wzMsbyZjmc55SB8SBk6PPN0f_Lko7HA=w2880-e365-pa-nu">
+          <img src="https://lh3.googleusercontent.com/Na7uBCWCwlKn9S-M1iDV8rK4Xou5pWGUKaVQxlHEjIPPUhpgBTa_K1phq1ib5BTxP7evdI1wzMsbyZjmc55SB8SBk6PPN0f_Lko7HA=w2880-e365-pa-nu" width="760" height="530" alt="https://lh3.googleusercontent.com/Na7uBCWCwlKn9S-M1iDV8rK4Xou5pWGUKaVQxlHEjIPPUhpgBTa_K1phq1ib5BTxP7evdI1wzMsbyZjmc55SB8SBk6PPN0f_Lko7HA=w2880-e365-pa-nu">
+        </div>
+      
+    
+      
+        <div class="modal-slide" data-slide-alt="https://lh3.googleusercontent.com/rUXsnB9USMNMMqvmlYrnYtes8Cn0nj3eLZuzBCSrqIlssZqJWXY0xVyMPFmfJFirn10LKmHRomF_4JB8TeS1shNxCuhVPOHcGsrvIIf5=w2880-e365-pa-nu" data-slide-source="https://lh3.googleusercontent.com/rUXsnB9USMNMMqvmlYrnYtes8Cn0nj3eLZuzBCSrqIlssZqJWXY0xVyMPFmfJFirn10LKmHRomF_4JB8TeS1shNxCuhVPOHcGsrvIIf5=w2880-e365-pa-nu">
+          <img src="https://lh3.googleusercontent.com/rUXsnB9USMNMMqvmlYrnYtes8Cn0nj3eLZuzBCSrqIlssZqJWXY0xVyMPFmfJFirn10LKmHRomF_4JB8TeS1shNxCuhVPOHcGsrvIIf5=w2880-e365-pa-nu" width="760" height="530" alt="https://lh3.googleusercontent.com/rUXsnB9USMNMMqvmlYrnYtes8Cn0nj3eLZuzBCSrqIlssZqJWXY0xVyMPFmfJFirn10LKmHRomF_4JB8TeS1shNxCuhVPOHcGsrvIIf5=w2880-e365-pa-nu">
+        </div>
+      
+    
+      
+        <div class="modal-slide" data-slide-alt="https://lh3.googleusercontent.com/f7gWcR_rnLL6W09bkw1uoKxVWWFEn6xVNpcA2-XcUItyyzy6D6kfcDc2--YRoL0savf2p2Yjv9ImRpahJUAqDsLgFF53NTBBxY9QEw=w2880-e365-pa-nu" data-slide-source="https://lh3.googleusercontent.com/f7gWcR_rnLL6W09bkw1uoKxVWWFEn6xVNpcA2-XcUItyyzy6D6kfcDc2--YRoL0savf2p2Yjv9ImRpahJUAqDsLgFF53NTBBxY9QEw=w2880-e365-pa-nu">
+          <img src="https://lh3.googleusercontent.com/f7gWcR_rnLL6W09bkw1uoKxVWWFEn6xVNpcA2-XcUItyyzy6D6kfcDc2--YRoL0savf2p2Yjv9ImRpahJUAqDsLgFF53NTBBxY9QEw=w2880-e365-pa-nu" width="760" height="530" alt="https://lh3.googleusercontent.com/f7gWcR_rnLL6W09bkw1uoKxVWWFEn6xVNpcA2-XcUItyyzy6D6kfcDc2--YRoL0savf2p2Yjv9ImRpahJUAqDsLgFF53NTBBxY9QEw=w2880-e365-pa-nu">
+        </div>
+      
+    
+    </div>
+  </div>
+
+
+
+
+    </main>
+
+    
+    
+      
+        
+        
+
+
+        
+
+<footer class="glue-footer">
+    <section class="glue-page">
+        <nav class="glue-footer__global" aria-label="Footer resource links">
+            <div class="glue-footer__logo">
+                <a href="https://www.google.com" aria-label="Google" title="Google" class="glue-footer__link">
+                    
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true"  class="glue-icon  glue-footer__logo-img">
+  <use href="/gr/static/assets/icons/glue-icons.svg#google-solid-logo"></use>
+</svg>
+
+                </a>
+            </div>
+            <ul class="glue-footer__global-links glue-no-bullet js-gt-global-nav-wrapper" role="list">
+                
+                <li class="glue-footer__global-links-list-item" data-gt-primary="About Google">
+                    <a class="glue-footer__link" href="https://about.google/" target="_blank" rel="noopener">
+                        About Google
+                    </a>
+                </li>
+                
+                <li class="glue-footer__global-links-list-item" data-gt-primary="Google products">
+                    <a class="glue-footer__link" href="https://about.google/intl/en/products/" target="_blank" rel="noopener">
+                        Google products
+                    </a>
+                </li>
+                
+                <li class="glue-footer__global-links-list-item" data-gt-primary="Privacy">
+                    <a class="glue-footer__link" href="https://policies.google.com/privacy" target="_blank" rel="noopener">
+                        Privacy
+                    </a>
+                </li>
+                
+                <li class="glue-footer__global-links-list-item" data-gt-primary="Terms">
+                    <a class="glue-footer__link" href="https://policies.google.com/terms" target="_blank" rel="noopener">
+                        Terms
+                    </a>
+                </li>
+                
+            </ul>
+            <ul class="glue-footer__global-links glue-footer__global-links--extra glue-no-bullet" role="list">
+                <li class="glue-footer__global-links-list-item
+            glue-footer__global-links-list-item--extra">
+                    <a class="glue-footer__link" href="https://support.google.com/?hl=en">
+                        
+
+
+
+  
+
+<svg role="presentation" aria-hidden="true" aria-hidden="true" class="glue-icon glue-icon--24px glue-icon--footer-help">
+  <use href="/gr/static/assets/icons/glue-icons.svg#help"></use>
+</svg>
+
+                        Help
+                    </a>
+                </li>
+                <li class="glue-footer__global-links-list-item
+            glue-footer__global-links-list-item--extra">
+                    
+                </li>
+            </ul>
+        </nav>
+    </section>
+</footer>
+
+      
+    
+
+    <div id="dynamicImageModal" class="image-modal">
+  <span class="image-modal-close">&times;</span>
+  <div class="image-modal-content">
+    <div class="dynamic-modal-image">
+      <img width="800" height="540">
+    </div>
+  </div>
+</div>
+
+
+    
+    <script>
+        var scriptUrl = "https://www.gstatic.com/glue/v27_1/material-components-web.min.js";
+        var scriptElement = document.createElement('script');
+        scriptElement.async = false;
+        scriptElement.src = scriptUrl;
+        document.body.appendChild(scriptElement);
+    </script>
+    <script>
+        var scriptUrl = "https://www.youtube.com/player_api";
+        var scriptElement = document.createElement('script');
+        scriptElement.async = false;
+        scriptElement.src = scriptUrl;
+        document.body.appendChild(scriptElement);
+    </script>
+    <script>
+        var scriptUrl = "/gr/static/js/googleresearch.js?id=1db86c2c4ce1c6902b92830acba1963e";
+        var scriptElement = document.createElement('script');
+        scriptElement.async = false;
+        scriptElement.src = scriptUrl;
+        document.body.appendChild(scriptElement);
+    </script>
+    <script>
+        var scriptUrl = "https://support.google.com/inapp/api.js";
+        var scriptElement = document.createElement('script');
+        scriptElement.async = false;
+        scriptElement.src = scriptUrl;
+        document.body.appendChild(scriptElement);
+    </script>
+
+    
+    
+    
+
+    <script>
+        var scripts = [
+            "https://www.gstatic.com/glue/cookienotificationbar/cookienotificationbar.min.js"
+        ];
+
+        scripts.forEach(function(scriptUrl) {
+            var scriptElement = document.createElement('script');
+            scriptElement.async = false;
+            scriptElement.src = scriptUrl;
+            scriptElement.setAttribute("data-glue-cookie-notification-bar-category", "2B");
+            document.body.appendChild(scriptElement);
+        });
+    </script>
+</body>
+
+</html>
+
