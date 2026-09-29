@@ -24,6 +24,8 @@ export function renderCase(pg, cid, step) {
     <div class="cgrid"><div class="cmain" id="cmain"></div><div class="cside">${caseMapPanel(c, step)}<div id="cside2"></div></div></div>
     <div class="row" style="margin-top:4px">${idx > 0 ? `<a class="btn" href="#/case/${cid}/${STEPS[idx - 1][0]}">← ${STEPS[idx - 1][1]}</a>` : '<span></span>'}${idx < STEPS.length - 1 ? `<a class="btn primary" href="#/case/${cid}/${STEPS[idx + 1][0]}">Continue: ${STEPS[idx + 1][1]} →</a>` : ''}</div>`;
   const main = $('#cmain');
-  ({ compare: stepCompare, access: stepAccess, community: stepCommunity, investigate: stepInvestigate, policy: stepPolicy, report: stepReport })[step](main, c, A, B);
+  const stepFn = { compare: stepCompare, access: stepAccess, community: stepCommunity, investigate: stepInvestigate, policy: stepPolicy, report: stepReport }[step];
+  // policy and report steps are async (they call agents); show a failure instead of an unhandled rejection
+  Promise.resolve(stepFn(main, c, A, B)).catch(e => { console.error(e); main.innerHTML = `<div class="card err">${esc(e.message)}</div>`; });
   drawCaseMap(c, step);
 }
