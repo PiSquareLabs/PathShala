@@ -13,7 +13,7 @@ let timer = null; const paused = new Set(), running = new Set();
 export const clearFullTimer = () => { if (timer) clearInterval(timer); timer = null; };
 const cite = r => `<span class="cite">${esc(r)}</span>`;
 const logBox = row => `<div class="fclog" id="fc-log" role="log">${row.log.slice(-40).map(l => `<div><small>${esc(l.t)}</small> ${esc(l.text)}</div>`).join('')}</div>`;
-const appendLog = text => { const b = $('#fc-log'); if (b) { b.insertAdjacentHTML('beforeend', `<div>${esc(text)}</div>`); b.scrollTop = b.scrollHeight; } };
+const appendLog = text => { const d = $('#fc-doing'); if (d && text) d.textContent = text.trim(); const b = $('#fc-log'); if (b) { b.insertAdjacentHTML('beforeend', `<div>${esc(text)}</div>`); b.scrollTop = b.scrollHeight; } };
 
 const MSG = {
   compare: 'The AI chose the candidate schools by screening score.',
@@ -58,7 +58,7 @@ export function fullWire(inv, step) {
 export function workingPanel(main, inv, step) {
   const f = fullRow(inv), key = inv + step + f.stage; if (running.has(key)) { main.innerHTML = `<div class="card"><h2>The AI is working on this screen</h2>${logBox(f)}</div>`; return; }
   running.add(key);
-  main.innerHTML = `<div class="card"><h2>The AI is working on this screen</h2><p class="small muted">Each line is a logged step. The screen appears when the work is finished.</p>${logBox(f)}<p class="small muted" id="fc-wait">Working…</p></div>`;
+  main.innerHTML = `<div class="card"><h2>The AI is researching for you</h2><p class="fcdoing" id="fc-doing" aria-live="polite">Getting started…</p><p class="small muted">You do not need to click anything. Each line below is one thing it has looked at. The screen appears when it is done.</p>${logBox(f)}<p class="small muted" id="fc-wait">Working…</p></div>`;
   runWork(inv, step, appendLog).then(() => { running.delete(key); render(); }).catch(e => { console.error(e); running.delete(key); appendLog('Failed: ' + e.message); const w = $('#fc-wait'); if (w) w.innerHTML = `<span class="t-red">${esc(e.message)}</span> <button class="btn sm" id="fc-retry">Try again</button>`; const r = $('#fc-retry'); if (r) r.onclick = () => render(); toast('Full control stopped', [String(e.message || e)]); });
 }
 
@@ -89,8 +89,6 @@ export function finalInto(body, inv) {
   const winnerId = o.recommended === 'keep' ? null : o.recommended, mark = (fn, dir) => { const v = cols.map(fn), ok = v.filter(n => n != null); if (ok.length < 2 || new Set(ok).size === 1) return new Set(); const t = dir === 'low' ? Math.min(...ok) : Math.max(...ok); return new Set(v.map((n, i) => (n === t ? i : -1)).filter(i => i >= 0)); };
   const opt = id => C.options.find(x => x.school_id === id), rank = id => { const i = o.ranking.indexOf(id); return i < 0 ? 'Not workable' : '#' + (i + 1); };
   const rows = [
-    ['Rank (by overall score)', c => `<b>${rank(c.school_id)}</b>`, null],
-    ['Overall score (of 100)', c => (o.scores[c.school_id] ? `<b>${o.scores[c.school_id].total}</b>` : '—'), c => o.scores[c.school_id]?.total ?? null, 'high'],
     ['Free seats for the students', c => `${opt(c.school_id).seats_available} for ${o.students} ${opt(c.school_id).enough_seats ? '<span class="yes">✓</span>' : '<span class="no">✗</span>'}`, c => opt(c.school_id).seats_available, 'high'],
     ['Walk', c => `about ${opt(c.school_id).walk_min} min (${opt(c.school_id).walk_km} km)${opt(c.school_id).estimated ? '*' : ''}`, c => opt(c.school_id).walk_min, 'low'],
     ['Terrain on the way', c => { const t = opt(c.school_id).terrain || [], d = opt(c.school_id).elev_diff_m; return (t.length ? t.map(esc).join('<br>') : 'None recorded') + (d != null && Math.abs(d) >= 100 ? `<div class="small muted">${Math.abs(d)} m ${d > 0 ? 'uphill' : 'downhill'} overall</div>` : ''); }, c => (opt(c.school_id).terrain || []).length, 'low'],
@@ -138,7 +136,7 @@ export function policyWhy(target, inv) {
   });
   const n = Object.values(ch.by).filter(x => x.chosen).length;
   target.insertAdjacentHTML('afterbegin', `<section class="card aipick" id="fc-pick"><div class="eyebrow">The AI picked the best policies for this school${ch.mode === 'Gemini' ? ' (Gemini)' : ' (rules)'}</div>
-    <p style="margin:2px 0">${n ? `${n} chosen out of ${Object.keys(ch.by).length}.` : 'None needed for this school.'} The reason is under each option. <b>Tick or untick any option to change it</b>; the totals and the report use your final ticks. The flow moves on by itself unless you change something.</p>
+    <p style="margin:2px 0">${n ? '' : 'No intervention is needed for this school. '}The reason for each option is written under it. <b>Tick or untick any option to change it</b>; the totals and the report use your final ticks. The flow moves on by itself unless you change something.</p>
     <div class="row" style="justify-content:flex-start;gap:8px"><button class="btn sm" id="fc-reset-pick">Put back the AI's choice</button><span class="small muted" id="fc-pick-note"></span></div></section>`);
   $('#fc-reset-pick').onclick = async () => { await selectBestPolicies(c.case_id); render(); };
   $$('.ivsel input', target).forEach(i => i.addEventListener('change', () => { const n_ = $('#fc-pick-note'); if (n_) n_.textContent = 'You changed the AI’s choice. The report will use your ticks.'; const f = fullRow(inv); if (f.stage === 'final') { reopenReport(inv); } }));

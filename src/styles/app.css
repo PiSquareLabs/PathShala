@@ -666,3 +666,5 @@ blockquote cite { display: block; font-style: normal; font-size: 12px; color: va
 .fcrec { border: 2px solid var(--accent); }
 .fcwhy { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 12px; } .fcwhycard { border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; background: var(--surface); } .fcwhycard ul { margin: 4px 0 0; padding-left: 18px; font-size: 13.5px; }
 @media print { header.bar, .steps, #demo, .no-print, .srcs, .row .actions, .btn, nav, .maplegend { display: none !important; } .fcprint { display: block !important; } body { background: #fff; } .card { border: 0; box-shadow: none; } .fq input[type=text], .fq input[type=number] { border-bottom: 1px solid #000; } }
+
+.rplain { font-weight: 600; margin-right: 8px; } .rtool { opacity: .55; font-size: 11px; } .fcdoing { font-size: 18px; font-weight: 600; margin: 6px 0 10px; }

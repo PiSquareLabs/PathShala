@@ -86,7 +86,7 @@ export async function runLoop({ agent, cid, ctx, onEvent = () => {}, delay = CON
       stopReason = 'No tool can help; marked Data unavailable and raised a field question'; break;
     }
     const kind = SEARCH_TOOLS.has(d.tool) ? 'search' : 'tool';
-    onEvent({ type: 'start', seq: n, kind, tool: d.tool, reason: d.reason });
+    onEvent({ type: 'start', seq: n, kind, tool: d.tool, reason: d.reason, args: d.args });
     if (delay) await sleep(delay);
     let output, err = '';
     try { output = await tools[d.tool](d.args); } catch (e) { err = e.message; output = { error: err }; }

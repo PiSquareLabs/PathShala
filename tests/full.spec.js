@@ -17,7 +17,7 @@ test('Full control drives the ordinary screens: one closing school in, AI resear
   await cont(page); await expect(page).toHaveURL(/feedback/); await expect(page.locator('#fbsum, #rs-feedbackChecker').first()).toBeVisible({ timeout: 120000 });
   await expect(page.locator('#rs-feedbackChecker .rstep').first()).toBeVisible(); await expect(page.locator('#fc-banner')).toContainText('checked the claims');
   // Evidence: the Transport Planner has run
-  await cont(page); await expect(page).toHaveURL(/evidence/); await expect(page.locator('#rs-transportPlanner .rstep')).toHaveCount(8, { timeout: 120000 }); await expect(page.locator('#rs-transportPlanner')).toContainText('terrain_profile');
+  await cont(page); await expect(page).toHaveURL(/evidence/); await expect(page.locator('#rs-transportPlanner .rstep')).toHaveCount(8, { timeout: 120000 }); await expect(page.locator('#rs-transportPlanner .rplain').first()).toContainText(/villages|geography|road route/); await expect(page.locator('#rs-transportPlanner')).toContainText('Studying the geography around both schools');
   // Investigate: research of every school, the field form is generated, and the flow waits
   await cont(page); await expect(page).toHaveURL(/investigate/); await expect(page.locator('#fc-form')).toBeVisible({ timeout: 180000 });
   await expect(page.locator('#fc-banner')).toContainText('waiting for the field officer'); await expect(page.locator('#fc-now')).toHaveCount(0);   // no auto-advance while waiting
@@ -44,9 +44,10 @@ test('Full control drives the ordinary screens: one closing school in, AI resear
   expect(st2.sel).toBe(st2.auto); expect(st2.chosen).toBeNull();
   await page.locator('.ivsel input:checked').first().uncheck(); await expect(page.locator('#fc-pick-note')).toContainText('You changed'); await expect(page.locator('#fc-count')).toHaveText('Paused'); await page.locator('#fc-pause').click();
   await cont(page); await expect(page).toHaveURL(/report/); await expect(page.locator('.fcrec')).toBeVisible({ timeout: 180000 });
-  await expect(page.locator('.fcrec .eyebrow')).toContainText('a suggestion, the officer decides');
+  await expect(page.locator('.fcrec .eyebrow')).toContainText('a suggestion, the officer decides'); await expect(page.locator('.fcrec')).not.toContainText(/out of 100|scores \d+/);   // reasons in words, not a ranking
+  await expect(page.locator('#fc-compare')).not.toContainText('Rank');
   await expect(page.locator('#fc-compare thead th')).toHaveCount(4); await expect(page.locator('#fc-compare')).toContainText('Confirmed concerns');
-  expect(await page.locator('.fcwhycard').count()).toBeGreaterThan(0); await expect(page.locator('#fc-budget')).toContainText('Three-year total'); await expect(page.locator('#fc-budget-notes')).toContainText('Policies were chosen school by school'); await expect(page.locator('#fc-report')).toContainText('Budget compared across schools');
+  expect(await page.locator('.fcwhycard').count()).toBeGreaterThan(0); await expect(page.locator('#fc-budget')).toContainText('Three-year total'); await expect(page.locator('#fc-budget-notes')).toContainText('For each school the AI picked only the policies'); await expect(page.locator('#fc-report')).toContainText('Budget compared across schools');
   expect(await page.locator('#fc-report h3').count()).toBeGreaterThanOrEqual(5); await expect(page.locator('#fc-report')).toContainText('Still to be confirmed');
   await expect(page.locator('#opt-table')).toBeVisible();      // the ordinary Report step is still there for the officer's decision
   const st3 = await page.evaluate(() => { const q = window.__pathshala.q; return { stage: q('SELECT stage FROM full_runs')[0].stage, chosen: q('SELECT chosen_id FROM investigations')[0].chosen_id, status: q('SELECT status FROM investigations')[0].status }; });

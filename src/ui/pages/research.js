@@ -1,3 +1,4 @@
+import { plainStep } from '../../agent/plain.js';
 import { runResearch, runSuggestion, acceptSuggestion, ignoreSuggestion, addFieldQuestions, suggestionRow } from '../../agent/research.js';
 import { MAX_STEPS, modeName, savedRun } from '../../agent/loop.js';
 import { $, $$, esc, inr } from '../helpers.js';
@@ -19,7 +20,7 @@ export function stepHtml(s, ev = []) {
   const body = `<div class="rio"><div class="eyebrow">Input</div><pre class="io">${j(s.input)}</pre><div class="eyebrow">Output</div><pre class="io">${j(s.output)}</pre></div>
     ${s.passages ? `<div class="eyebrow">Passages retrieved (${s.passages.length})</div>${s.passages.map(passageHtml).join('')}` : ''}
     ${mine.length ? `<div class="eyebrow">Saved as evidence</div>${mine.map(e => `<div class="revid"><b>${esc(e.eid)}</b> ${esc(e.label)} <span class="pill ${ST[e.status] || ''}">${esc(e.status)}</span><div class="small muted">${esc(e.source)}</div></div>`).join('')}` : ''}`;
-  return `<li class="rstep" data-seq="${s.seq}"><details><summary><span class="rn">${s.seq}</span><span class="rk ${s.kind}">${s.kind === 'search' ? 'Search' : 'Tool'}</span><code>${esc(s.tool)}</code><span class="rr">${esc(s.reason || '')}</span><span class="rs small">${esc(s.summary || '')}</span></summary>${body}</details></li>`;
+  return `<li class="rstep" data-seq="${s.seq}"><details><summary><span class="rn">${s.seq}</span><span class="rk ${s.kind}">${s.kind === 'search' ? 'Search' : 'Tool'}</span><b class="rplain">${esc(plainStep(s.tool, s.input))}</b><code class="rtool">${esc(s.tool)}</code><span class="rr">${esc(s.reason || '')}</span><span class="rs small">${esc(s.summary || '')}</span></summary>${body}</details></li>`;
 }
 const chips = (refs, ev) => refs.map(r => `<span class="cite" title="${esc(ev.find(e => e.eid === r)?.label || r)}">${esc(r)}</span>`).join('');
 const sentencesHtml = (ss, ev) => `<ul class="rsent">${ss.map(x => `<li>${esc(x.text)} ${chips(x.refs, ev)}</li>`).join('')}</ul>`;
@@ -58,7 +59,7 @@ export function wireResearch(root, cid) {
     const agent = b.dataset.run, list = $('#rl-' + agent); b.disabled = true; b.textContent = 'Researching…'; list.innerHTML = ''; $('#rres-' + agent).innerHTML = '';
     try {
       await runResearch(agent, cid, ev => {
-        if (ev.type === 'start') list.insertAdjacentHTML('beforeend', `<li class="rstep busy" data-seq="${ev.seq}"><span class="rn">${ev.seq}</span><span class="rk ${ev.kind}">${ev.kind === 'search' ? 'Search' : 'Tool'}</span><code>${esc(ev.tool)}</code><span class="rr">${esc(ev.reason || '')}</span></li>`);
+        if (ev.type === 'start') list.insertAdjacentHTML('beforeend', `<li class="rstep busy" data-seq="${ev.seq}"><span class="rn">${ev.seq}</span><span class="rk ${ev.kind}">${ev.kind === 'search' ? 'Search' : 'Tool'}</span><b class="rplain">${esc(plainStep(ev.tool, ev.args))}…</b><code class="rtool">${esc(ev.tool)}</code><span class="rr">${esc(ev.reason || '')}</span></li>`);
         if (ev.type === 'step') { const li = list.querySelector(`[data-seq="${ev.seq}"]`); if (li) li.outerHTML = stepHtml(ev, []); }
       });
       render();

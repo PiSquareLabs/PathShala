@@ -346,7 +346,11 @@ defineTool('suggest_option', 'Rank the candidate schools that have enough seats 
     const keep = !ok.length || allBad, best = ranked[0] || null, next = ranked[1] || null;
     let edge = null;   // what put the best school ahead of the runner-up
     if (best && next) { const d = Object.keys(WEIGHTS).map(k => [k, (scores[best.school_id].parts[k].pts - scores[next.school_id].parts[k].pts) * WEIGHTS[k] / 100]).sort((a, b) => b[1] - a[1])[0]; edge = { over: next.name, over_score: scores[next.school_id].total, factor: LABEL[d[0]], factor_points: Math.round(d[1]) }; }
-    return { concern_threshold: 2, weights: WEIGHTS, scores, edge, suggested: keep ? 'keep' : best.school_id, suggested_name: keep ? 'Keep and repair the closing school' : best.name, best, ranking: ranked.map(o => o.school_id), keep_reason: !ok.length ? 'no_seats' : allBad ? 'all_over_limit_with_confirmed_concerns' : null,
+    // plain reasons: what the best school does best, and where the runner-up falls short
+    const gain = (a, b) => Object.keys(WEIGHTS).map(k => [k, (scores[a.school_id].parts[k].pts - scores[b.school_id].parts[k].pts) * WEIGHTS[k] / 100]);
+    const strengths = best && next ? gain(best, next).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 2).map(x => x[0]) : best ? ['walk'] : [];
+    const weaknesses = best && next ? gain(best, next).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 1).map(x => x[0]) : [];
+    return { concern_threshold: 2, weights: WEIGHTS, scores, edge, strengths, weaknesses, runner_up: next ? { school_id: next.school_id, name: next.name, walk_min: next.walk_min, first_year_total: next.first_year_total, confirmed_concerns: next.confirmed_concerns } : null, suggested: keep ? 'keep' : best.school_id, suggested_name: keep ? 'Keep and repair the closing school' : best.name, best, ranking: ranked.map(o => o.school_id), keep_reason: !ok.length ? 'no_seats' : allBad ? 'all_over_limit_with_confirmed_concerns' : null,
       unanswered: C.options.filter(o => o.questions && o.answered < o.questions).map(o => ({ name: o.name, unanswered: o.questions - o.answered })), not_investigated: C.options.filter(o => !o.investigated).map(o => o.name) };
   });
 

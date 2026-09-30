@@ -14,6 +14,7 @@ import { CONFIG } from './provider.js';
 import { runDraft, runFieldUpdate, runInvestigation, runPolicy } from './runner.js';
 import { tools } from './tools.js';
 import { savedRun } from './loop.js';
+import { plainStep } from './plain.js';
 import { llmConfigured, llmJson } from './llm.js';
 
 export const STAGES = [['school', 'Closing school'], ['research', 'AI research'], ['field', 'Field form'], ['policy', 'Policies and budget'], ['decision', 'Decision']];
@@ -65,30 +66,30 @@ export function nextAfter(inv, step) {
 async function each(inv, log, fn) { const old = CONFIG.stepDelayMs; CONFIG.stepDelayMs = 60; try { for (const t of tracks(inv)) await fn(t, school(t.to_id), t => log(`${school(t.to_id).name}: `)); } finally { CONFIG.stepDelayMs = old; } }
 export async function runWork(inv, step, onLog = () => {}) {
   const log = t => { addLog(inv, t); onLog(t); };
-  if (step === 'feedback') return each(inv, log, async (t, B) => { log(`${B.name}: reading citizen feedback`); await ensureFeedback(t.case_id); log(`${B.name}: Feedback Checker (claims against records, maps and reports)`); await runResearch('feedbackChecker', t.case_id, ev => { if (ev.type === 'step') onLog(`  ${ev.tool}`); }); });
-  if (step === 'evidence') return each(inv, log, async (t, B) => { log(`${B.name}: Transport Planner`); await runResearch('transportPlanner', t.case_id, ev => { if (ev.type === 'step') onLog(`  ${ev.tool}`); }); });
+  if (step === 'feedback') return each(inv, log, async (t, B) => { log(`${B.name}: reading what parents and villagers say`); await ensureFeedback(t.case_id); log(`${B.name}: checking what people say against the records, the map and news reports`); await runResearch('feedbackChecker', t.case_id, ev => { if (ev.type === 'start') onLog(`  ${plainStep(ev.tool, ev.args)}`); }); });
+  if (step === 'evidence') return each(inv, log, async (t, B) => { log(`${B.name}: planning how the children could travel there`); await runResearch('transportPlanner', t.case_id, ev => { if (ev.type === 'start') onLog(`  ${plainStep(ev.tool, ev.args)}`); }); });
   if (step === 'investigate') {
     const f = fullRow(inv);
     if (f.stage === 'research') {
       await each(inv, log, async (t, B) => {
-        if (!hasResults(t.case_id)) { log(`${B.name}: investigating: students, routes, map layers, transport, feedback, gaps`); await runInvestigation(t.case_id, ev => { if (ev.type === 'step') onLog(`  ${ev.label}`); }); }
+        if (!hasResults(t.case_id)) { log(`${B.name}: studying the school: children affected, the route, the geography, transport and what is still unknown`); await runInvestigation(t.case_id, ev => { if (ev.type === 'step') onLog(`  ${ev.label}`); }); }
         const tp = savedRun(t.case_id, 'transportPlanner')?.out, fc = savedRun(t.case_id, 'feedbackChecker')?.out;
         run("DELETE FROM field_questions WHERE case_id = ? AND qid IN ('Q4','Q5') AND COALESCE(answer,'') = '' AND COALESCE(note,'') = ''", [t.case_id]);   // the form stays short: three standard questions and the one the research found most important for this school
-        const n = addFieldQuestions(t.case_id, [...(tp?.open_questions || []), ...(fc?.open_questions || [])].slice(0, 1)); log(`${B.name}: field form ready (${q('SELECT count(*) n FROM field_questions WHERE case_id = ?', [t.case_id])[0].n} questions, ${n} from the research)`);
+        const n = addFieldQuestions(t.case_id, [...(tp?.open_questions || []), ...(fc?.open_questions || [])].slice(0, 1)); log(`${B.name}: field form ready (${q('SELECT count(*) n FROM field_questions WHERE case_id = ?', [t.case_id])[0].n} questions, tailored to this school)`);
       });
-      log('Field form generated for the officer. Waiting for the field officer.'); setStage(inv, 'field'); logCase(inv, 'System', 'Full control is waiting for the field officer', 'Field form generated');
+      log('The field form is ready. Waiting for the field officer to fill it in.'); setStage(inv, 'field'); logCase(inv, 'System', 'Full control is waiting for the field officer', 'Field form generated');
     } else if (f.stage === 'answered') {
-      await each(inv, log, async (t, B) => { log(`${B.name}: updating the evidence from the field answers`); const ans = Object.fromEntries(q('SELECT qid, answer, note FROM field_questions WHERE case_id = ?', [t.case_id]).map(x => [x.qid, { v: x.answer || '', note: x.note || '' }])); await runFieldUpdate(t.case_id, ans); });
+      await each(inv, log, async (t, B) => { log(`${B.name}: updating the picture with the field officer's answers`); const ans = Object.fromEntries(q('SELECT qid, answer, note FROM field_questions WHERE case_id = ?', [t.case_id]).map(x => [x.qid, { v: x.answer || '', note: x.note || '' }])); await runFieldUpdate(t.case_id, ans); });
       setStage(inv, 'policy');
     }
     return;
   }
-  if (step === 'policy') { await each(inv, log, async (t, B) => { log(`${B.name}: retrieving policy and pricing interventions`); await runPolicy(t.case_id); const r = await selectBestPolicies(t.case_id); log(`${B.name}: ${r.mode === 'Gemini' ? 'Gemini' : 'rules'} chose ${r.pick.join(', ') || 'no intervention (none needed)'}, with a reason for every option`); }); setStage(inv, 'report'); return; }
+  if (step === 'policy') { await each(inv, log, async (t, B) => { log(`${B.name}: finding the government rules that apply and working out the costs`); await runPolicy(t.case_id); const r = await selectBestPolicies(t.case_id); log(`${B.name}: ${r.mode === 'Gemini' ? 'Gemini' : 'rules'} chose ${r.pick.join(', ') || 'no intervention (none needed)'}, with a reason for every option`); }); setStage(inv, 'report'); return; }
   if (step === 'report') {
     const old = CONFIG.stepDelayMs; CONFIG.stepDelayMs = 60;
     try {
-      log('Comparing the candidates and ranking them'); const sg = await runSuggestion(inv), cmp = await tools.compare_options({ inv_id: inv }), sug = await tools.suggest_option({ comparison: cmp }), out = buildFinal(inv, cmp, sug, sg);
-      log('Drafting the report'); const ct = tracks(inv).find(t => t.to_id === out.best_if_merge), { draft, critique } = await runDraft(ct.case_id);
+      log('Comparing the schools and weighing the trade-offs'); const sg = await runSuggestion(inv), cmp = await tools.compare_options({ inv_id: inv }), sug = await tools.suggest_option({ comparison: cmp }), out = buildFinal(inv, cmp, sug, sg);
+      log('Writing the report'); const ct = tracks(inv).find(t => t.to_id === out.best_if_merge), { draft, critique } = await runDraft(ct.case_id);
       out.report = buildReport(inv, out, ct.case_id, draft.sentences, critique); setStage(inv, 'final', out); logCase(inv, 'Full control', 'Final report ready', `${out.recommended_name}; nothing submitted, the officer decides`); log('Final report ready.');
     } finally { CONFIG.stepDelayMs = old; }
   }
@@ -155,7 +156,7 @@ function buildFinal(inv, C, S, sg) {
   const keep = ret ? { title: ret.title, cost_inr: ret.cost_inr, cost_type: ret.cost_type, formula: ret.formula } : null;
   const byCost = cols.slice().sort((a, b) => a.firstYear - b.firstYear || a.name.localeCompare(b.name)), notes = [];
   const rc = cols.find(c => c.school_id === best.school_id);
-  notes.push(`Policies were chosen school by school (${cols.map(c => `${c.name}: ${c.items.length ? c.items.map(i => i.code).join(' + ') : 'none needed'}`).join('; ')}), then the budgets were compared.`);
+  notes.push(`For each school the AI picked only the policies that school's problems call for (${cols.map(c => `${c.name}: ${c.items.length ? c.items.map(i => i.title).join(' + ') : 'none needed'}`).join('; ')}), then compared the budgets.`);
   if (byCost.length > 1) notes.push(`Lowest first-year cost: ${byCost[0].name} at ${byCost[0].firstYear ? '₹' + fmt(byCost[0].firstYear) : 'no new cost'}; highest: ${byCost[byCost.length - 1].name} at ${byCost[byCost.length - 1].firstYear ? '₹' + fmt(byCost[byCost.length - 1].firstYear) : 'no new cost'}.`);
   if (rc && byCost.length > 1) { const d = rc.firstYear - byCost[0].firstYear; notes.push(d > 0 ? `${rc.name}, the best candidate if the merger goes ahead, costs ₹${fmt(d)} more in the first year than the cheapest option, ${byCost[0].name}.` : `${rc.name}, the best candidate if the merger goes ahead, is also the cheapest in the first year.`); }
   if (keep) notes.push(`Keeping and repairing ${A.name} would cost ₹${fmt(keep.cost_inr)} ${keep.cost_type}.`);
