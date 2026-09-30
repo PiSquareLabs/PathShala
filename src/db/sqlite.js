@@ -4,8 +4,11 @@ import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
 import { CASE_DDL, ENGINE_DDL, MERGE_DDL } from './schema.js';
 
 // Bump when the seed schema changes. openDb() also compares the saved schema with the seed's, so a stale save is never loaded.
-export const STORE = 'pathshala.db.v8';
-const OLD_STORES = ['pathshala.db.v7', 'pathshala.db.v6', 'pathshala.db.v5', 'pathshala.db.v2'];
+// The key carries a fingerprint of the seed, so a browser holding a save made from an older seed (older data, same tables)
+// starts from the new data instead of showing stale rows. Any other 'pathshala.db*' key is removed on open.
+const seedId = (() => { let h = 0; for (let i = 0; i < seedSql.length; i++) h = (h * 31 + seedSql.charCodeAt(i)) | 0; return (h >>> 0).toString(36); })();
+export const STORE = 'pathshala.db.' + seedId;
+const OLD_STORES = () => Object.keys(localStorage).filter(k => k.startsWith('pathshala.db') && k !== STORE);
 export let SQL, db;
 export const q = (sql, p = []) => { const st = db.prepare(sql); st.bind(p); const out = []; while (st.step()) out.push(st.getAsObject()); st.free(); return out; };
 export const q1 = (sql, p = []) => q(sql, p)[0];
@@ -23,7 +26,7 @@ function sameSchema(saved, fresh) {
 }
 export function openDb() {
   let saved = null;
-  try { OLD_STORES.forEach(k => localStorage.removeItem(k)); saved = localStorage.getItem(STORE); } catch (e) {}
+  try { OLD_STORES().forEach(k => localStorage.removeItem(k)); saved = localStorage.getItem(STORE); } catch (e) {}
   const fresh = freshDb();
   if (saved) {
     try {

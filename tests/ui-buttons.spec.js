@@ -63,7 +63,7 @@ test('reset demo: two clicks, wipes changes and localStorage', async ({ page }) 
   await go(page, 'rules');
   await page.locator('.rl input').first().fill('7');
   await page.locator('#rl-go').click(); await expect(toast(page)).toBeVisible();
-  expect(await page.evaluate(() => Object.keys(localStorage).find(k => k.startsWith('pathshala.db')))).toBe('pathshala.db.v8');
+  expect(await page.evaluate(() => Object.keys(localStorage).find(k => k.startsWith('pathshala.db')))).toMatch(/^pathshala\.db\.[0-9a-z]+$/);
   await page.locator('#more summary').click();
   await page.locator('#reset').click(); await expect(page.locator('#reset')).toHaveText('Click again to reset');
   await page.locator('#reset').click(); await expect(page.locator('#reset')).toHaveText('Reset demo');
@@ -463,4 +463,11 @@ test('quick demo: guides through every input with "Do it for me", back, exit', a
   await page.screenshot({ path: 'docs/screens/15-demo.png' });
   await page.locator('#dm-next').click(); await expect(page.locator('#demo')).toBeHidden();
   await go(page, ''); await page.locator('#demo-start').click(); await page.locator('#dm-exit').click(); await expect(page.locator('#demo')).toBeHidden();
+});
+
+test('every school has feedback about it; a save under an older seed key is discarded', async ({ page }) => {
+  const r = await page.evaluate(() => { const q = window.__pathshala.q; return { none: q('SELECT name FROM schools WHERE school_id NOT IN (SELECT about_id FROM citizen_feedback)').map(x => x.name), n: q('SELECT count(*) AS n FROM schools')[0].n }; });
+  expect(r.none).toEqual([]); expect(r.n).toBeGreaterThan(20);
+  await page.evaluate(() => localStorage.setItem('pathshala.db.abc123', 'x')); await page.reload(); await page.waitForSelector('#hmap');
+  expect(await page.evaluate(() => Object.keys(localStorage).filter(k => k.startsWith('pathshala.db')).includes('pathshala.db.abc123'))).toBe(false);
 });
