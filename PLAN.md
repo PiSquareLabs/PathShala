@@ -52,7 +52,7 @@ the moved functions changed, so the HTML they produce is identical. After that, 
 | `src/ui/pages/school.js` | `renderSchool` |
 | `src/ui/pages/planner.js` | `renderPlanner` |
 | `src/main.js` | boot: reset button, `bootSql()`, first `analyseAll()`, first `render()` |
-| `src/geo.js` | replaces the inlined `GEO` constant; loads `public/hp.json` at boot |
+| `src/geo.js`, `src/data/hp.json` | replaces the inlined `GEO` constant |
 
 Mechanical changes made while moving code (all needed only because the code is now in separate modules):
 

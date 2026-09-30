@@ -12,12 +12,21 @@ behaviour, on the same SQLite data (sql.js in the browser), and a clean seam for
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173
-npm run build        # static bundle in dist/, runs from any static host, works offline
+npm run dev          # http://localhost:5173/app.html  (dev entry is app.html)
+npm run build        # one self-contained dist/index.html
+npm run pages        # build and copy it to ./index.html (what GitHub Pages serves)
 npm run preview      # serve dist/ on :4173
 ```
 
-Everything runs in the browser: SQLite (WebAssembly, with an asm.js fallback), the rules engine and the agents. The database
+### Host on GitHub Pages
+
+The repo root already contains a built `index.html`: a single file with the JS, CSS, sql.js WebAssembly and map data inlined
+(about 2.9 MB, 1 MB gzipped). In the GitHub repo go to **Settings → Pages → Build and deployment → Deploy from a branch**,
+pick the branch and `/ (root)`, and open `https://<user>.github.io/<repo>/`. It also opens by double-clicking `index.html`.
+After changing the source, run `npm run pages` and commit the new `index.html`. It makes no network requests except the
+optional Google Fonts stylesheet (system fonts are used if that is blocked).
+
+Everything runs in the browser, from that one file: SQLite (WebAssembly, with an asm.js fallback), the rules engine and the agents. The database
 is saved to `localStorage` (`pathshala.db.v5`) after every write; **Reset demo** reloads it from `src/db/seed.sql`.
 
 Deploy `dist/` anywhere: `firebase deploy` (see `firebase.json`), or `docker build -t pathshala . && docker run -p 8080:8080 pathshala`
@@ -174,6 +183,6 @@ Raw pages and PDFs that were fetched for this are in `data-sources/` (index in `
 
 ## Repository layout
 
-`src/`, `public/`, `index.html` the app · `data/` seed generators · `tests/` Playwright tests · `reference/` the prototype and its
+`app.html` and `src/` the app source · `index.html` the built single-file app for GitHub Pages · `data/` seed generators · `tests/` Playwright tests · `reference/` the prototype and its
 24 screenshots · `docs/` AGENTS.md, user story, data sources · `backend/`, `render.yaml` the existing FastAPI Gemini proxy ·
 `data-sources/` fetched source material.

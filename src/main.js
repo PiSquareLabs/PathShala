@@ -1,7 +1,7 @@
 import 'leaflet/dist/leaflet.css';
 import './styles/app.css';
 import { STORE, bootSql, db, freshDb, openDb, save, setDb } from './db/sqlite.js';
-import { loadGeo } from './geo.js';
+
 import { analyseAll } from './engine/rules.js';
 import { $, esc, nowTime, state } from './ui/helpers.js';
 import { render } from './ui/router.js';
@@ -22,7 +22,7 @@ $('#reset').onclick = function () {
   Object.assign(state, { sqlResult: null, lastRun: nowTime(), draft: null, plan: null });
   render(); toast('Demo reset', ['All tables reloaded from the seed data.']);
 };
-Promise.all([bootSql(), loadGeo()]).then(([engine]) => {
+bootSql().then(engine => {
   setDb(openDb()); analyseAll(); save();
   render(true);
   console.info('PathShala: SQLite via ' + engine);
