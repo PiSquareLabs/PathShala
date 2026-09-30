@@ -95,7 +95,7 @@ export function wireDock(inv) {
 
 export function fieldInto(body, inv) {
   const row = fullRow(inv), secs = fieldForm(inv), A = school(secs[0].track.from_id);
-  body.innerHTML = `<div class="card" id="fc-form"><div class="row no-print"><h2 style="margin:0">3 · Field verification form <small>the AI stops here: the field officer enters the answers</small></h2><span class="actions"><button class="btn" id="fc-print">Print blank form</button></span></div>
+  body.innerHTML = `<div class="card" id="fc-form"><div class="row no-print"><h2 style="margin:0">3 · Field verification form <small>the AI stops here: the field officer enters the answers</small></h2><span class="actions"><button class="btn" id="fc-demo-fill" title="Fill every question with sample answers for a demo">Fill demo answers</button><button class="btn" id="fc-print">Print blank form</button></span></div>
       <div class="fcprint"><h2>Field verification form: ${esc(A.name)}</h2><p>Closing school: <b>${esc(A.name)}</b> · Candidates: ${secs.map(s => esc(s.school.name)).join(', ')}<br>Officer: ______________________ &nbsp; Date: ____________ &nbsp; Place visited: ______________________</p></div>
       <p class="small muted no-print">The research is complete for ${secs.length} candidate schools. These are the questions it could not answer from data. Answer what you can: tap an option, type a number, or add a note. The AI continues automatically after you submit.</p>
       ${secs.map(s => `<section class="fcsec" data-cid="${esc(s.track.case_id)}"><h3>${esc(s.school.name)}</h3><div class="fqs">${s.questions.map(x => fieldQ(x)).join('')}</div></section>`).join('')}
@@ -107,6 +107,14 @@ export function fieldInto(body, inv) {
   function count() { const a = collect(); $('#fc-count').textContent = Object.entries(a).map(([cid, x]) => `${school(secs.find(s => s.track.case_id === cid).school.school_id).name}: ${answered(x)} of ${Object.keys(x).length}`).join(' · '); }
   count();
   $('#fc-print').onclick = () => window.print();
+  // demo helper: sample answers for every question (they differ a little by school), so the form passes its check
+  $('#fc-demo-fill').onclick = () => $$('.fcsec', body).forEach((sec, i) => $$('.fq', sec).forEach(el => {
+    const opts = $$('.opts button', el).map(b => b.dataset.v), q = el.dataset.q, fv = $('.fv', el), note = $('.fnote', el);
+    const pick = q === 'Q1' ? ['No', 'Seasonal', 'Yes'][i % 3] : q === 'Q3' ? ['No', 'No', 'Yes'][i % 3] : ['Confirmed', 'Not confirmed', 'Confirmed'][i % 3];
+    if (opts.length) { const b = $$('.opts button', el).find(x => x.dataset.v === pick) || $$('.opts button', el)[0]; b.click(); }
+    else if (fv) { fv.value = /minute|time/i.test(fv.closest('.fq').textContent) ? String(35 + i * 10) : String(secs[0].school && school(secs[0].track.from_id).enrol_total || 20); fv.dispatchEvent(new Event('input')); }
+    if (note && !note.value) note.value = 'Demo answer'; note?.dispatchEvent(new Event('input'));
+  }));
   $('#fc-submit').onclick = () => {
     const a = collect(), lacking = Object.entries(a).filter(([, x]) => !answered(x)).map(([cid]) => school(secs.find(s => s.track.case_id === cid).school.school_id).name);
     if (lacking.length) { toast('Answer at least one question for each school', lacking); return; }
