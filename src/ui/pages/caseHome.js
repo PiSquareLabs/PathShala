@@ -44,6 +44,12 @@ export function renderCaseHome(app) {
   if (sel) sync();
 }
 
+const DEMO = 'KST';
+/* The school that shows the most reasoning, pinned first in Full control whatever the district filter says. */
+function demoPick() {
+  const s = school(DEMO); if (!s) return '';
+  return `<div><div class="eyebrow">Best for the demo</div><div class="rlist" style="margin-top:8px"><button class="srow" data-s="${DEMO}" id="demo-school" style="text-align:left;cursor:pointer;font:inherit;border:2px solid var(--accent)"><span class="fd" style="background:${SEND_BADGE(s)}"></span><span class="nm">${esc(s.name)}</span><span class="small muted">${s.enrol_total} students</span><span class="mt">${esc(s.block)} block, ${esc(s.district)} · three candidate schools with different trade-offs</span></button></div></div>`;
+}
 const isFull = () => caseState.mode === 'full';
 /* How to work: step by step (the officer clicks through) or Full control (the AI runs the flow and stops only at the field form). */
 function modeSwitch() {
@@ -54,8 +60,9 @@ function startPanel(cases) {
   return `<div><div class="eyebrow">${caseState.district === 'All' ? 'Himachal Pradesh' : caseState.district + ' district'}</div><h1 class="ptitle">Which school might close?</h1>
       <button class="btn primary" id="demo-start" style="margin-top:8px">▶ Quick demo: guide me</button>
       ${modeSwitch()}
-      <p class="lead" style="margin-top:6px">Click a school on the map, or start with one that needs review.${isFull() ? ' <b>Try GPS Kasta</b>: its three candidate schools each have different trade-offs, so the best one is not obvious.' : ''}</p></div>
-    <div class="rlist">${list.map(s => `<button class="srow" data-s="${s.school_id}" style="text-align:left;cursor:pointer;font:inherit"><span class="fd" style="background:${SEND_BADGE(s)}"></span><span class="nm">${esc(s.name)}</span><span class="small muted">${s.enrol_total} students</span><span class="mt">${esc(s.block)} block · ${esc(facts(s.school_id).building || 'building condition not recorded')}</span></button>`).join('')}</div>
+      <p class="lead" style="margin-top:6px">Click a school on the map, or start with one that needs review.${isFull() ? ' Start with <b>GPS Kasta</b> (pinned below): its three candidate schools each have different trade-offs, so the best one is not obvious.' : ''}</p></div>
+    ${isFull() ? demoPick() : ''}
+    <div class="rlist">${list.filter(s => !(isFull() && s.school_id === DEMO)).map(s => `<button class="srow" data-s="${s.school_id}" style="text-align:left;cursor:pointer;font:inherit"><span class="fd" style="background:${SEND_BADGE(s)}"></span><span class="nm">${esc(s.name)}</span><span class="small muted">${s.enrol_total} students</span><span class="mt">${esc(s.block)} block · ${esc(facts(s.school_id).building || 'building condition not recorded')}</span></button>`).join('')}</div>
     ${cases.length ? `<div><div class="eyebrow">Continue</div><div class="rlist" style="margin-top:8px">${cases.map(c => `<a class="srow" href="#/case/${c.inv_id}"><span class="fd" style="background:${c.status === 'Ready for administrative review' ? 'var(--ok)' : 'var(--wait)'}"></span><span class="nm">${esc(school(c.from_id).name)}</span><span class="small muted">${c.inv_id}</span><span class="mt">${esc(c.status)}</span></a>`).join('')}</div></div>` : ''}`;
 }
 

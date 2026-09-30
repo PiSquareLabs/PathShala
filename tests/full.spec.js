@@ -6,7 +6,7 @@ const cont = page => page.locator('#fc-now').click();
 test('Full control drives the ordinary screens: one closing school in, AI research, field form (waits), policies, final report', async ({ page }) => {
   test.setTimeout(400000);
   await expect(page.locator('#nav a', { hasText: 'Full control' })).toHaveCount(0);      // a mode of the home page, not a tab
-  await page.locator('#mode-full').click(); await page.locator('#cpanel [data-s="PK2"]').click();
+  await page.locator('#mode-full').click(); await expect(page.locator('#demo-school')).toContainText('GPS Kasta'); await page.locator('#cpanel [data-s="PK2"]').click();
   await expect(page.locator('#cpanel')).toContainText('Start Full control'); await expect(page.locator('#cpanel')).toContainText('GPS Gushaini'); await page.locator('#cp-full').click();
   // Compare: the AI already chose the candidates
   await expect(page).toHaveURL(/case\/C\d+\/compare/); await expect(page.locator('#fc-banner')).toContainText('chose the candidate schools'); await expect(page.locator('.cmptbl')).toBeVisible();
@@ -94,4 +94,10 @@ test('Field questions differ by school: they come from each school\'s own terrai
   expect(new Set(sets).size).toBe(sets.length);            // no two schools get the same terrain questions
   for (const v of Object.values(r.out)) { expect(v.steps).toContain('terrain_profile'); expect(v.qs.length).toBeGreaterThan(2); }
   expect(r.out.JYN.qs.join(' ')).toContain('Slope failures after long rain'); expect(r.out.BHM.qs.join(' ')).toContain('Ankle to knee deep'); expect(r.out.SDY.qs.join(' ')).toContain('Stream runs high');
+});
+
+test('Full control: GPS Kasta is pinned on the home page in every district and has three candidates', async ({ page }) => {
+  await page.locator('#mode-full').click();
+  for (const d of ['Kangra', 'Bilaspur', 'All']) { await page.locator(`.maplegend [data-d="${d}"]`).click(); await page.locator('#mode-full').click(); await expect(page.locator('#demo-school')).toBeVisible(); }
+  await page.locator('#demo-school').click(); await expect(page.locator('#cpanel')).toContainText('GPS Dobhi'); await expect(page.locator('#cpanel')).toContainText('GPS Kukari'); await expect(page.locator('#cpanel')).toContainText('GPS Soyal'); await expect(page.locator('#cp-full')).toBeEnabled();
 });
