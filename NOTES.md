@@ -33,6 +33,6 @@
 
 ## Saved data
 
-The app saves its SQLite database in `localStorage` (`pathshala.db.v6`). When the seed schema changes, `openDb()` compares the saved
+The app saves its SQLite database in `localStorage` (`pathshala.db.v7`). When the seed schema changes, `openDb()` compares the saved
 tables and columns with the seed's and discards a stale save (and deletes older keys), so an old browser copy can never cause
 errors such as "no such column". Bump `STORE` in `src/db/sqlite.js` as well when you change the schema.
