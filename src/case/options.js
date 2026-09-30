@@ -1,18 +1,19 @@
-/* A case is one sending school and one or more candidate receiving schools that are compared side by side.
-   `cases.to_id` holds the option the officer chose to investigate further; case_options holds all candidates. */
+/* An investigation is one closing school and one or more candidate receiving schools. Each candidate is a "track":
+   a row of `cases` (id like C1-GSH) with its own findings, field answers, policy choices and report. The agents, the
+   repository and the pages all work on a track. The officer chooses ONE school at the end, after comparing the totals
+   (`investigations.chosen_id`). */
 import { haversine, linkOf, logCase, school, today } from '../ui/helpers.js';
 import { q, q1, run, save } from '../db/sqlite.js';
 import { screen, walkProfile } from './analysis.js';
 
-export const CASE_RESULT_TABLES = ['findings', 'evidence', 'field_questions', 'interventions', 'reports', 'agent_steps'];
+export const RESULT_TABLES = ['findings', 'evidence', 'field_questions', 'interventions', 'reports', 'agent_steps'];
 
-export const caseRow = cid => q1('SELECT * FROM cases WHERE case_id = ?', [cid]);
-
-/* Candidate receiving schools of a case, in the order they were added. */
-export function optionIds(cid) {
-  const rows = q('SELECT school_id FROM case_options WHERE case_id = ? ORDER BY seq', [cid]).map(r => r.school_id);
-  return rows.length ? rows : [caseRow(cid).to_id];
-}
+export const invRow = inv => q1('SELECT * FROM investigations WHERE inv_id = ?', [inv]);
+export const trackRow = tid => q1('SELECT * FROM cases WHERE case_id = ?', [tid]);
+export const tracks = inv => q('SELECT * FROM cases WHERE inv_id = ? ORDER BY seq', [inv]);
+export const trackId = (inv, schoolId) => `${inv}-${schoolId}`;
+export const optionIds = inv => tracks(inv).map(t => t.to_id);
+export const hasResults = tid => !!q1('SELECT 1 AS x FROM findings WHERE case_id = ?', [tid]);
 
 /* Route facts for a pair; never invents data: without a surveyed link the numbers are straight-line estimates. */
 export function routeInfo(aId, bId) {
@@ -27,51 +28,62 @@ export function routeInfo(aId, bId) {
   };
 }
 
-const nextCaseId = () => 'C' + (1 + Math.max(0, ...q('SELECT case_id FROM cases').map(x => +x.case_id.slice(1) || 0)));
+const nextInvId = () => 'C' + (1 + Math.max(0, ...q('SELECT inv_id FROM investigations').map(x => +x.inv_id.slice(1) || 0)));
+const addTrack = (inv, aId, bId, seq, status = 'Open') => run('INSERT INTO cases VALUES (?,?,?,?,?,?,?,?,?)', [trackId(inv, bId), inv, seq, aId, bId, status, today(), null, 'DEO Kullu']);
 
-/* Open an investigation: one sending school, several candidate receivers. Reuses an open case with the same set. */
+/* Open an investigation. Reuses an open one with the same closing school and the same candidates. */
 export function createCase(aId, bIds) {
   const ids = [...new Set([].concat(bIds))];
   if (!ids.length) throw new Error('Pick at least one receiving school');
   const key = ids.slice().sort().join(',');
-  const ex = q("SELECT case_id FROM cases WHERE from_id = ? AND status != 'Withdrawn'", [aId]).find(c => optionIds(c.case_id).slice().sort().join(',') === key);
-  if (ex) return ex.case_id;
-  const A = school(aId), ranked = ids.map(id => screen(A, school(id))).sort((x, y) => y.score - x.score).map(x => x.s.school_id), best = ranked[0];
-  const cid = nextCaseId();
-  run('INSERT INTO cases VALUES (?,?,?,?,?,?,?)', [cid, aId, best, 'Open', today(), null, 'DEO Kullu']);
-  ranked.forEach((id, i) => run('INSERT INTO case_options VALUES (?,?,?)', [cid, id, i + 1]));
-  logCase(cid, 'Officer', 'Opened investigation', `${A.name}: comparing ${ranked.map(id => school(id).name).join(', ')}`);
+  const ex = q("SELECT inv_id FROM investigations WHERE from_id = ? AND status != 'Withdrawn'", [aId]).find(i => optionIds(i.inv_id).slice().sort().join(',') === key);
+  if (ex) return ex.inv_id;
+  const A = school(aId), ranked = ids.map(id => screen(A, school(id))).sort((x, y) => y.score - x.score).map(x => x.s.school_id);
+  const inv = nextInvId();
+  run('INSERT INTO investigations VALUES (?,?,?,?,?,?,?)', [inv, aId, null, 'Open', today(), null, 'DEO Kullu']);
+  ranked.forEach((id, i) => addTrack(inv, aId, id, i + 1));
+  logCase(inv, 'Officer', 'Opened investigation', `${A.name}: comparing ${ranked.map(id => school(id).name).join(', ')}`);
   save();
-  return cid;
+  return inv;
 }
 
-export function hasResults(cid) { return !!q1('SELECT 1 AS x FROM findings WHERE case_id = ?', [cid]); }
-
-/* Choosing a different receiver invalidates the investigation results (they describe one specific route). */
-export function chooseOption(cid, schoolId) {
-  const c = caseRow(cid);
-  if (c.to_id === schoolId) return false;
-  const cleared = hasResults(cid);
-  CASE_RESULT_TABLES.forEach(t => run(`DELETE FROM ${t} WHERE case_id = ?`, [cid]));
-  run('UPDATE cases SET to_id = ? WHERE case_id = ?', [schoolId, cid]);
-  logCase(cid, 'Officer', 'Chose receiving school', school(schoolId).name + (cleared ? ' (earlier investigation results cleared)' : ''));
-  save();
-  return cleared;
-}
-
-export function addOption(cid, schoolId) {
-  if (optionIds(cid).includes(schoolId)) return;
-  if (!q1('SELECT 1 AS x FROM case_options WHERE case_id = ?', [cid])) run('INSERT INTO case_options VALUES (?,?,?)', [cid, caseRow(cid).to_id, 1]);
-  run('INSERT INTO case_options VALUES (?,?,?)', [cid, schoolId, 1 + q1('SELECT max(seq) AS n FROM case_options WHERE case_id = ?', [cid]).n]);
-  logCase(cid, 'Officer', 'Added school to compare', school(schoolId).name);
+export function addOption(inv, schoolId) {
+  if (optionIds(inv).includes(schoolId)) return;
+  addTrack(inv, invRow(inv).from_id, schoolId, 1 + q1('SELECT max(seq) AS n FROM cases WHERE inv_id = ?', [inv]).n);
+  logCase(inv, 'Officer', 'Added school to compare', school(schoolId).name);
   save();
 }
 
-export function removeOption(cid, schoolId) {
-  const ids = optionIds(cid);
-  if (ids.length < 2 || !ids.includes(schoolId)) return;
-  run('DELETE FROM case_options WHERE case_id = ? AND school_id = ?', [cid, schoolId]);
-  logCase(cid, 'Officer', 'Removed school from comparison', school(schoolId).name);
-  if (caseRow(cid).to_id === schoolId) chooseOption(cid, ids.find(id => id !== schoolId));
+export function removeOption(inv, schoolId) {
+  if (optionIds(inv).length < 2 || !optionIds(inv).includes(schoolId)) return;
+  const tid = trackId(inv, schoolId);
+  RESULT_TABLES.forEach(t => run(`DELETE FROM ${t} WHERE case_id = ?`, [tid]));
+  run('DELETE FROM case_log WHERE case_id = ?', [tid]);
+  run('DELETE FROM cases WHERE case_id = ?', [tid]);
+  if (invRow(inv).chosen_id === schoolId) run('UPDATE investigations SET chosen_id = NULL WHERE inv_id = ?', [inv]);
+  logCase(inv, 'Officer', 'Removed school from comparison', school(schoolId).name);
   save();
+}
+
+/* The officer's final choice, made after the field report and policy selection of every option. Nothing is cleared. */
+export function chooseFinal(inv, schoolId) {
+  run('UPDATE investigations SET chosen_id = ? WHERE inv_id = ?', [schoolId, inv]);
+  logCase(inv, 'Officer', 'Chose receiving school', school(schoolId).name);
+  save();
+}
+
+/* Per option: how far the investigation got, what it found and what the selected interventions cost. */
+export function optionSummary(inv) {
+  return tracks(inv).map(t => {
+    const sel = q('SELECT * FROM interventions WHERE case_id = ? AND selected = 1', [t.case_id]);
+    const fq = q('SELECT answer, note FROM field_questions WHERE case_id = ?', [t.case_id]);
+    const F = q('SELECT status, kind FROM findings WHERE case_id = ? AND removed = 0', [t.case_id]);
+    const sum = ty => sel.filter(s => s.cost_type === ty).reduce((a, s) => a + s.cost_inr, 0);
+    return {
+      track: t, school: school(t.to_id), investigated: hasResults(t.case_id), policyDone: !!q1('SELECT 1 AS x FROM interventions WHERE case_id = ?', [t.case_id]),
+      answered: fq.filter(x => x.answer || x.note).length, questions: fq.length,
+      confirmed: F.filter(f => f.kind !== 'context' && /Confirmed|Verified/.test(f.status)).length, issues: F.filter(f => f.kind !== 'context').length,
+      selected: sel, yearly: sum('per year'), oneTime: sum('one-time'), unpriced: sel.filter(s => s.cost_type === 'unpriced').length,
+    };
+  });
 }

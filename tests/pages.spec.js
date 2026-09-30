@@ -38,26 +38,36 @@ test('every page of a fresh app loads without errors', async ({ page }) => {
   console.log(`checked ${9 + ids.merges.length * 3 + ids.groups.length + ids.items.length + ids.schools.length * 2} pages`);
 });
 
-test('every case page loads, for every closing school and several receivers', async ({ page }) => {
+test('every case page loads, for every closing school, every receiver and the final choice', async ({ page }) => {
+  test.setTimeout(600000);
   await page.goto('/'); await page.waitForSelector('#hmap');
   const senders = await page.evaluate(() => window.__pathshala.q("SELECT school_id FROM schools WHERE district = 'Kullu'").map(x => x.school_id));
   const bad = []; let n = 0;
   for (const s of senders) {
-    const cid = await page.evaluate(async sid => {
+    const made = await page.evaluate(async sid => {
       const { q, createCase } = window.__pathshala;
       const near = q('SELECT school_id FROM schools WHERE school_id != ? AND level_code = (SELECT level_code FROM schools WHERE school_id = ?)', [sid, sid]).map(x => x.school_id).slice(0, 3);
-      return near.length ? createCase(sid, near) : null;
+      if (!near.length) return null;
+      const inv = createCase(sid, near);
+      return { inv, tracks: q('SELECT case_id, to_id FROM cases WHERE inv_id = ? ORDER BY seq', [inv]) };
     }, s);
-    if (!cid) continue;
-    for (const step of ['compare', 'evidence', 'investigate']) { await visit(page, `case/${cid}/${step}`, bad); n++; }
-    await page.evaluate(async id => { await window.__pathshala.runInvestigation(id); await window.__pathshala.runPolicy(id); }, cid);
-    for (const step of ['investigate', 'policy', 'report', 'compare', 'evidence']) { await visit(page, `case/${cid}/${step}`, bad); n++; }
-    // every receiver of the case can be chosen and shown
-    const opts = await page.evaluate(id => window.__pathshala.q('SELECT school_id FROM case_options WHERE case_id = ?', [id]).map(x => x.school_id), cid);
-    expect(opts.length).toBeGreaterThan(0);
+    if (!made) continue;
+    const inv = made.inv;
+    for (const step of ['compare', 'evidence', 'investigate', 'policy', 'report']) { await visit(page, `case/${inv}/${step}`, bad); n++; }     // before any results
+    for (const t of made.tracks) await page.evaluate(async id => { await window.__pathshala.runInvestigation(id); await window.__pathshala.runPolicy(id); }, t.case_id);
+    for (const t of made.tracks) {
+      await page.evaluate(([i, id]) => { window.__pathshala.state.opt[i] = id; }, [inv, t.to_id]);
+      for (const step of ['evidence', 'investigate', 'policy']) { await visit(page, `case/${inv}/${step}`, bad); n++; }
+    }
+    for (const t of made.tracks) {                                                                                                            // every option can be the final choice
+      await page.evaluate(([i, id]) => window.__pathshala.chooseFinal(i, id), [inv, t.to_id]);
+      await visit(page, `case/${inv}/report`, bad); n++;
+      await page.locator('#rp-ok, .card').first().waitFor();
+    }
+    await visit(page, `case/${inv}/compare`, bad); n++;
   }
   expect(bad).toEqual([]);
-  expect(n).toBeGreaterThan(20);
+  expect(n).toBeGreaterThan(40);
 });
 
 test('a database saved by an older build is discarded, not loaded', async ({ page }) => {
@@ -66,10 +76,10 @@ test('a database saved by an older build is discarded, not loaded', async ({ pag
   const saved = await page.evaluate(sql => window.__pathshala.makeSavedDb(sql), old);
   expect(saved.length).toBeGreaterThan(1000);
   // stale copy under the current key, and another under the previous key
-  await page.evaluate(b => { localStorage.setItem('pathshala.db.v6', b); localStorage.setItem('pathshala.db.v5', b); }, saved);
+  await page.evaluate(b => { localStorage.setItem('pathshala.db.v7', b); localStorage.setItem('pathshala.db.v6', b); localStorage.setItem('pathshala.db.v5', b); }, saved);
   await page.reload(); await page.waitForSelector('#cpanel .srow');
   expect(await page.evaluate(() => window.__pathshala.q("SELECT name FROM pragma_table_info('citizen_feedback')").map(c => c.name))).toContain('about_id');
-  expect(await page.evaluate(() => localStorage.getItem('pathshala.db.v5'))).toBeNull();
+  expect(await page.evaluate(() => [localStorage.getItem('pathshala.db.v6'), localStorage.getItem('pathshala.db.v5')])).toEqual([null, null]);
   const bad = [];
   for (const h of ['', 'merges', 'problems', 'm/M5', 'inbox', 'rules', 'sql']) await visit(page, h, bad);
   expect(bad).toEqual([]);
@@ -81,6 +91,7 @@ test('a current save is kept across a reload', async ({ page }) => {
   await page.evaluate(() => { location.hash = '#/rules'; });
   await page.locator('.rl input').first().fill('4'); await page.locator('#rl-go').click();
   await page.reload(); await page.waitForSelector('#nav');
-  expect(await page.evaluate(() => window.__pathshala.q('SELECT count(*) AS n FROM cases')[0].n)).toBe(1);
+  expect(await page.evaluate(() => window.__pathshala.q('SELECT count(*) AS n FROM investigations')[0].n)).toBe(1);
+  expect(await page.evaluate(() => window.__pathshala.q('SELECT count(*) AS n FROM cases')[0].n)).toBe(2);
   expect(await page.evaluate(() => window.__pathshala.q("SELECT param_value AS v FROM rules ORDER BY rule_id LIMIT 1")[0].v)).toBe(4);
 });

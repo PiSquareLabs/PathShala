@@ -42,7 +42,7 @@ export const STEPS = [['compare', 'Compare'], ['evidence', 'Evidence'], ['invest
 export const EV_LBL = { reported: 'Reported', verified: 'Verified', calculated: 'Calculated', needs: 'Needs verification' };
 export const evChip = s => `<span class="evs ${s}">${EV_LBL[s] || s}</span>`;
 export const caseState = { sel: null, picks: new Set(), district: 'Kullu', theme: null, layers: { river: true, road: true, route: true, habs: true, hazards: true } };
-export const state = { inboxGroup: 'all', qFilter: 'open', sqlText: '', sqlResult: null, lastRun: nowTime(), draft: null, probFilter: 'all', plan: null };
+export const state = { opt: {}, inboxGroup: 'all', qFilter: 'open', sqlText: '', sqlResult: null, lastRun: nowTime(), draft: null, probFilter: 'all', plan: null };
 export const route = () => location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
 export const go = path => { location.hash = '#/' + path; };
 export const HC = { green: 'var(--ok)', amber: 'var(--warn)', red: 'var(--risk)', pending: 'var(--wait)' };

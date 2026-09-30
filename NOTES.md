@@ -2,11 +2,12 @@
 
 ## Changes from the original prototype
 
-- **Investigate flow.** The prototype compared one closing school with one receiving school. A case is now one closing school and
-  one or more candidate receiving schools, compared side by side; the officer chooses one for the evidence, investigation, policy
-  and report steps (`cases.to_id` is the choice, `case_options` holds all candidates). Choosing a different school after an
-  investigation ran clears its results, after a second click.
-- **Fewer steps and less clutter.** Six steps became five (Access and Community are one Evidence step). Secondary detail sits in
+- **Investigate flow.** The prototype compared one closing school with one receiving school. An investigation (`investigations`) is now
+  one closing school and one or more candidate receiving schools. Each candidate is a track (a row of `cases`, id like `C1-GSH`) with its
+  own findings, field answers, interventions and report. Nothing is chosen on the compare screen: the officer investigates every
+  school, answers the field questions and picks interventions for each, compares the totals on the last step, and only then chooses
+  one (`investigations.chosen_id`). The report is written for the chosen school.
+- **Fewer steps and less clutter.** Six steps became five (Access and Community are one Evidence step; the last step is choose and report). Secondary detail sits in
   collapsible sections (`ui/kit.js` `fold`). The header has three tabs (Investigate, Merges, To do) and a More menu (Feedback,
   Rules, SQLite, Reset). Problems and Field surveys are tabs of one To do page.
 - **Data audit** (see README): no field is shown without a source. Data that is not available says "Data unavailable".

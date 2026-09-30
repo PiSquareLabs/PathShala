@@ -11,7 +11,7 @@ const SEND_BADGE = s => (s.enrol_total <= 10 ? 'var(--risk)' : 'var(--accent)');
 /* Investigate home: pick ONE sending school, then tick SEVERAL receiving schools to compare side by side. */
 export function renderCaseHome(app) {
   const sel = caseState.sel ? school(caseState.sel) : null;
-  const cases = hasTable('cases') ? q('SELECT * FROM cases ORDER BY case_id DESC') : [];
+  const cases = hasTable('investigations') ? q('SELECT * FROM investigations ORDER BY CAST(substr(inv_id, 2) AS INTEGER) DESC') : [];
   app.innerHTML = `<div class="home">
     <div class="mapwrap"><div id="hmap" role="img" aria-label="District map of schools"></div>
       <div class="maplegend">
@@ -43,7 +43,7 @@ function startPanel(cases) {
   return `<div><div class="eyebrow">${caseState.district === 'All' ? 'Himachal Pradesh' : caseState.district + ' district'}</div><h1 class="ptitle">Which school might close?</h1>
       <p class="lead" style="margin-top:6px">Click a school on the map, or start with one that needs review.</p></div>
     <div class="rlist">${list.map(s => `<button class="srow" data-s="${s.school_id}" style="text-align:left;cursor:pointer;font:inherit"><span class="fd" style="background:${SEND_BADGE(s)}"></span><span class="nm">${esc(s.name)}</span><span class="small muted">${s.enrol_total} students</span><span class="mt">${esc(s.block)} block · ${esc(facts(s.school_id).building || 'building condition not recorded')}</span></button>`).join('')}</div>
-    ${cases.length ? `<div><div class="eyebrow">Continue</div><div class="rlist" style="margin-top:8px">${cases.map(c => `<a class="srow" href="#/case/${c.case_id}"><span class="fd" style="background:${c.status === 'Ready for administrative review' ? 'var(--ok)' : 'var(--wait)'}"></span><span class="nm">${esc(school(c.from_id).name)}</span><span class="small muted">${c.case_id}</span><span class="mt">${esc(c.status)}</span></a>`).join('')}</div></div>` : ''}`;
+    ${cases.length ? `<div><div class="eyebrow">Continue</div><div class="rlist" style="margin-top:8px">${cases.map(c => `<a class="srow" href="#/case/${c.inv_id}"><span class="fd" style="background:${c.status === 'Ready for administrative review' ? 'var(--ok)' : 'var(--wait)'}"></span><span class="nm">${esc(school(c.from_id).name)}</span><span class="small muted">${c.inv_id}</span><span class="mt">${esc(c.status)}</span></a>`).join('')}</div></div>` : ''}`;
 }
 
 function senderPanel(s) {

@@ -1,6 +1,7 @@
 import { runFieldUpdate, runInvestigation, runPolicy } from '../../agent/runner.js';
+import { optionIds, tracks } from '../../case/options.js';
 import { q, q1, save } from '../../db/sqlite.js';
-import { $, $$, esc, evChip } from '../helpers.js';
+import { $, $$, esc, evChip, school } from '../helpers.js';
 import { fold } from '../kit.js';
 import { render } from '../router.js';
 import { toast } from '../toast.js';
@@ -11,10 +12,11 @@ export function stepInvestigate(el, c, A, B) {
   const fq = q('SELECT * FROM field_questions WHERE case_id = ? ORDER BY seq', [c.case_id]);
   const answered = fq.some(x => x.answer || x.note);
   el.innerHTML = `<div class="card"><div class="ivtop"><h2 style="margin:0">Investigate ${esc(B.name)}</h2>
-      <button class="btn ${F.length ? '' : 'primary'}" id="ag-run">${F.length ? 'Run again' : 'Investigate case'}</button></div>
+      <span class="actions"><button class="btn ${F.length ? '' : 'primary'}" id="ag-run">${F.length ? 'Run again' : 'Investigate case'}</button>${optionIds(c.inv_id).length > 1 ? `<button class="btn" id="ag-run-all">Investigate all ${optionIds(c.inv_id).length} schools</button>` : ''}</span></div>
     <ol class="agent" id="ag-list">${steps.map(s => agentRow(s, true)).join('') || '<li class="muted small" style="list-style:none">Not run yet. The agent checks students, routes, GIS layers, transport, feedback and field observations.</li>'}</ol></div>
     <div id="ag-out">${F.length ? findingsHtml(c, F, fq, answered) : ''}</div>`;
   $('#ag-run').onclick = () => runAgent(c);
+  const all = $('#ag-run-all'); if (all) all.onclick = () => runAll(c);
   $$('.agent li', el).forEach(li => li.onclick = () => li.classList.toggle('open'));
   wireField(c);
 }
@@ -22,22 +24,34 @@ export function agentRow(s, done) {
   return `<li class="${done ? 'ok' : 'busy'}"><span class="ck">${done ? '✓' : '…'}</span><span><b>${esc(s.label)}</b> <code>${esc(s.tool)}</code><div class="small muted">${esc(s.summary || '')}</div>
     <pre class="io">${esc('input  ' + (typeof s.input === 'string' ? s.input : JSON.stringify(s.input)) + '\noutput ' + (typeof s.output === 'string' ? s.output : JSON.stringify(s.output)).slice(0, 900))}</pre></span></li>`;
 }
+const listRow = (ev, list, st) => {
+  if (ev.type === 'start') { st.busy = document.createElement('li'); st.busy.className = 'busy'; st.busy.innerHTML = `<span class="ck">…</span><span><b>${esc(ev.label)}</b> <code>${esc(ev.tool)}</code></span>`; list.appendChild(st.busy); }
+  else st.busy.outerHTML = agentRow(ev, true);
+};
+
+/* Investigate the school being viewed. */
 export async function runAgent(c) {
   const btn = $('#ag-run'); btn.disabled = true; btn.textContent = 'Investigating…';
-  const list = $('#ag-list'); list.innerHTML = '';
-  let busy = null;
-  try {
-    await runInvestigation(c.case_id, ev => {
-      if (ev.type === 'start') { busy = document.createElement('li'); busy.className = 'busy'; busy.innerHTML = `<span class="ck">…</span><span><b>${esc(ev.label)}</b> <code>${esc(ev.tool)}</code></span>`; list.appendChild(busy); }
-      else busy.outerHTML = agentRow(ev, true);
-    });
-  } catch (e) {
-    console.error(e); save(); render();
-    toast('Investigation failed', [String(e.message || e)]);
-    return;
-  }
+  const all = $('#ag-run-all'); if (all) all.disabled = true;
+  const list = $('#ag-list'); list.innerHTML = ''; const st = {};
+  try { await runInvestigation(c.case_id, ev => listRow(ev, list, st)); }
+  catch (e) { console.error(e); save(); render(); toast('Investigation failed', [String(e.message || e)]); return; }
   save(); render();
-  toast('Investigation complete', ['Potential issue detected: transport and seasonal access', '5 targeted field questions generated']);
+  toast('Investigation complete', [`${esc(school(c.to_id).name)}: 5 field questions generated`]);
+}
+
+/* Investigate every candidate school, one after the other. The steps of the school being viewed are shown live. */
+export async function runAll(c) {
+  const btn = $('#ag-run-all'), ts = tracks(c.inv_id); btn.disabled = true; $('#ag-run').disabled = true;
+  const list = $('#ag-list'); list.innerHTML = ''; const st = {};
+  try {
+    for (let i = 0; i < ts.length; i++) {
+      btn.textContent = `Investigating ${i + 1} of ${ts.length}: ${school(ts[i].to_id).name}…`;
+      await runInvestigation(ts[i].case_id, ts[i].case_id === c.case_id ? ev => listRow(ev, list, st) : undefined);
+    }
+  } catch (e) { console.error(e); save(); render(); toast('Investigation failed', [String(e.message || e)]); return; }
+  save(); render();
+  toast('Investigation complete', [`${ts.length} schools investigated`, 'Answer the field questions and choose interventions for each school']);
 }
 export function findingsHtml(c, F, fq, answered) {
   const ev = q('SELECT * FROM evidence WHERE case_id = ? ORDER BY CAST(substr(eid, 2) AS INTEGER)', [c.case_id]);

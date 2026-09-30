@@ -12,8 +12,9 @@ CREATE TABLE IF NOT EXISTS merge_summary (merge_id TEXT PRIMARY KEY, receiving_i
 CREATE TABLE IF NOT EXISTS problems (merge_id TEXT, group_id TEXT, seq INTEGER, severity TEXT, title TEXT, detail TEXT, kind TEXT, link TEXT);
 CREATE TABLE IF NOT EXISTS unknowns (merge_id TEXT, group_id TEXT, field TEXT, label TEXT, unit TEXT, current TEXT, target TEXT);`;
 export const CASE_DDL = `
-CREATE TABLE IF NOT EXISTS cases (case_id TEXT PRIMARY KEY, from_id TEXT, to_id TEXT, status TEXT, created_on TEXT, submitted_on TEXT, officer TEXT);
-CREATE TABLE IF NOT EXISTS case_options (case_id TEXT, school_id TEXT, seq INTEGER, PRIMARY KEY (case_id, school_id));
+CREATE TABLE IF NOT EXISTS investigations (inv_id TEXT PRIMARY KEY, from_id TEXT, chosen_id TEXT, status TEXT, created_on TEXT, submitted_on TEXT, officer TEXT);
+-- one row per candidate receiving school of an investigation (its own findings, field answers, policy choices and report)
+CREATE TABLE IF NOT EXISTS cases (case_id TEXT PRIMARY KEY, inv_id TEXT, seq INTEGER, from_id TEXT, to_id TEXT, status TEXT, created_on TEXT, submitted_on TEXT, officer TEXT);
 CREATE TABLE IF NOT EXISTS case_log (case_id TEXT, ts TEXT, actor TEXT, action TEXT, detail TEXT);
 CREATE TABLE IF NOT EXISTS agent_steps (case_id TEXT, seq INTEGER, label TEXT, tool TEXT, input TEXT, output TEXT, summary TEXT);
 CREATE TABLE IF NOT EXISTS findings (case_id TEXT, fid TEXT, title TEXT, kind TEXT, severity TEXT, summary TEXT, status TEXT, removed INTEGER DEFAULT 0, PRIMARY KEY (case_id, fid));

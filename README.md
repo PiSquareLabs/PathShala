@@ -3,14 +3,17 @@
 A school-consolidation investigation tool for district education officers in Himachal Pradesh.
 
 1. **Pick one closing school** on the map.
-2. **Tick several receiving schools** (two, three or more) and compare them **side by side**: distance and walking time, hazards on the route, free seats, teachers, building, facilities, citizen feedback. Green marks the best value in each row.
-3. **Choose one** and investigate it: evidence (route and citizen feedback), agent findings, field questions, policy and cost, and a referenced report that only the officer can approve and submit.
+2. **Tick several receiving schools** (two, three or more) and **compare them side by side**: distance and walking time, hazards on the route, free seats, teachers, building, facilities, citizen feedback. Nothing is chosen yet.
+3. **Investigate every school.** Each candidate gets its own evidence, agent findings, field questions and answers, and its own choice of interventions (switch between them with the school tabs, or run "Investigate all").
+4. **Choose one, last.** The final step shows every option's totals side by side (questions answered, concerns confirmed, interventions, cost per year, one-time cost, first-year total). Choose one school; only then is its referenced report written, approved and submitted by the officer.
 
 A second half of the app tracks existing merges (success score, problems, field surveys).
 
 Every value on screen has a real source (UDISE+, Routes and Elevation APIs, GIS layers, RTE Rules, Samagra Shiksha norms, precedents) or is labelled synthetic; where there is no data it says **Data unavailable** and nothing is invented. See "Data audit" below.
 
 ![Compare receiving schools side by side](docs/screens/03_compare.png)
+
+![Choose one school with the totals in view](docs/screens/08_choose.png)
 
 Built with Vite and vanilla JavaScript on SQLite (sql.js) in the browser, with a clean seam for connecting Gemini later.
 
@@ -33,7 +36,7 @@ After changing the source, run `npm run pages` and commit the new `index.html`. 
 optional Google Fonts stylesheet (system fonts are used if that is blocked).
 
 Everything runs in the browser, from that one file: SQLite (WebAssembly, with an asm.js fallback), the rules engine and the agents. The database
-is saved to `localStorage` (`pathshala.db.v6`) after every write; **Reset demo** reloads it from `src/db/seed.sql`.
+is saved to `localStorage` (`pathshala.db.v7`) after every write; **Reset demo** reloads it from `src/db/seed.sql`.
 
 Deploy `dist/` anywhere: `firebase deploy` (see `firebase.json`), or `docker build -t pathshala . && docker run -p 8080:8080 pathshala`
 (nginx, works on Cloud Run).
@@ -42,7 +45,7 @@ Deploy `dist/` anywhere: `firebase deploy` (see `firebase.json`), or `docker bui
 
 ```bash
 npx playwright install chromium       # once (or set PW_CHROMIUM=/path/to/chromium)
-npx playwright test                   # 47 tests: acceptance flow, every button, agents, guardrails, data audit
+npx playwright test                   # acceptance flow, every button, every page, agents, guardrails, data audit
 node tests/gen-fixtures.mjs           # regenerates src/agent/fixtures/C1/*.json
 ```
 
@@ -92,7 +95,7 @@ src/
 
 ### Routes
 
-`#/` investigate (pick a school) · `#/cases` · `#/case/:id/{compare,evidence,investigate,policy,report}` · `#/merges` · `#/m/:merge` ·
+`#/` investigate (pick a school) · `#/cases` · `#/case/:id/{compare,evidence,investigate,policy,report}` (the last step is "choose and report") · `#/merges` · `#/m/:merge` ·
 `#/m/:merge/g/:group` · `#/m/:merge/p/:group/:code` · `#/m/:merge/{survey,feedback}` · `#/problems` and `#/surveys` (the To do tabs) · `#/new` ·
 `#/s/:school` · `#/inbox` · `#/rules` · `#/sql`
 

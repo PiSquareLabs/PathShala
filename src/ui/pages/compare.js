@@ -1,11 +1,10 @@
 import { nearby, routeHazards } from '../../case/analysis.js';
-import { addOption, chooseOption, hasResults, optionIds, removeOption, routeInfo } from '../../case/options.js';
+import { addOption, optionIds, removeOption, routeInfo } from '../../case/options.js';
 import { q, q1 } from '../../db/sqlite.js';
 import { $, $$, P, capOf, esc, facts, school } from '../helpers.js';
 import { fold, scoreBar } from '../kit.js';
 import { caseMapPanel } from '../map/caseMap.js';
 import { render } from '../router.js';
-import { toast } from '../toast.js';
 
 const yn = v => (v == null ? 'Not recorded' : v ? '<span class="yes">Yes</span>' : '<span class="no">No</span>');
 
@@ -18,8 +17,8 @@ function columnData(A, id) {
   return { B, rt, f, cap, avail, hz, fb };
 }
 
-export function stepCompare(el, c, A) {
-  const R = P(), ids = optionIds(c.case_id), cols = ids.map(id => columnData(A, id)), fa = facts(A.school_id);
+export function stepCompare(el, I) {
+  const inv = I.inv_id, A = school(I.from_id), R = P(), ids = optionIds(inv), cols = ids.map(id => columnData(A, id)), fa = facts(A.school_id);
   const limit = A.level_code === 'primary' ? R.walk_limit_primary_km : R.walk_limit_upper_km;
   const many = cols.length > 1;
   const scored = nearby(A.school_id, 99), score = cols.map(x => scored.find(n => n.s.school_id === x.B.school_id)?.score ?? 0);
@@ -57,20 +56,14 @@ export function stepCompare(el, c, A) {
       ${caseMapPanel()}</div>
     <div class="row"><h2 style="font-size:20px">${many ? `Compare ${cols.length} receiving schools` : 'Receiving school'}</h2>
       <div class="adder">${others.length ? `<select id="cmp-add" aria-label="Add a school to compare"><option value="">Add another school…</option>${others.slice(0, 10).map(n => `<option value="${n.s.school_id}">${esc(n.s.name)} · ${n.road} km</option>`).join('')}</select><button class="btn sm" id="cmp-add-go">Add</button>` : ''}</div></div>
-    <div class="cmpwrap"><table class="cmptbl"><thead><tr><th></th>${cols.map(x => `<th class="${x.B.school_id === c.to_id ? 'chosen' : ''}"><div class="oh"><b>${esc(x.B.name)}</b><span class="small muted">${esc(x.B.block)} block · <span class="tag ${x.B.source}">${x.B.source}</span></span>
-        <div class="row">${x.B.school_id === c.to_id ? '<span class="pill s-pending">Chosen</span>' : `<button class="btn sm primary" data-choose="${x.B.school_id}">Choose</button>`}${many ? `<button class="btn sm ghost" data-remove="${x.B.school_id}" aria-label="Remove ${esc(x.B.name)}">Remove</button>` : ''}</div></div></th>`).join('')}</tr></thead>
+    <div class="cmpwrap"><table class="cmptbl"><thead><tr><th></th>${cols.map(x => `<th><div class="oh"><b>${esc(x.B.name)}</b><span class="small muted">${esc(x.B.block)} block · <span class="tag ${x.B.source}">${x.B.source}</span></span>
+        ${many ? `<div class="row"><button class="btn sm ghost" data-remove="${x.B.school_id}" aria-label="Remove ${esc(x.B.name)}">Remove</button></div>` : ''}</div></th>`).join('')}</tr></thead>
       <tbody>${rows.map(([label, cell, val, dir]) => {
         if (!cell) return `<tr class="grp"><th colspan="${cols.length + 1}">${label}</th></tr>`;
         const b = best(val, dir);
-        return `<tr><th scope="row">${label}</th>${cols.map((x, i) => `<td class="${b.has(i) ? 'best' : ''} ${x.B.school_id === c.to_id ? 'chosen' : ''}">${cell(x, i)}</td>`).join('')}</tr>`;
+        return `<tr><th scope="row">${label}</th>${cols.map((x, i) => `<td class="${b.has(i) ? 'best' : ''}">${cell(x, i)}</td>`).join('')}</tr>`;
       }).join('')}</tbody></table></div>
-    <p class="small muted">* straight-line estimate, route not surveyed. Green marks the best value in a row. The score is a screening aid, not a recommendation: the officer chooses.</p>`;
-  const cid = c.case_id;
-  $$('[data-choose]', el).forEach(b => b.onclick = () => {
-    if (hasResults(cid) && !b.dataset.armed) { b.dataset.armed = 1; b.textContent = 'Click again: clears results'; return; }
-    const cleared = chooseOption(cid, b.dataset.choose); render();
-    if (cleared) toast('Investigation cleared', ['The earlier results described a different school.']);
-  });
-  $$('[data-remove]', el).forEach(b => b.onclick = () => { removeOption(cid, b.dataset.remove); render(); });
-  const add = $('#cmp-add-go', el); if (add) add.onclick = () => { const v = $('#cmp-add').value; if (v) { addOption(cid, v); render(); } };
+    <p class="small muted">* straight-line estimate, route not surveyed. Green marks the best value in a row. The score is a screening aid, not a recommendation. Investigate every school, then choose one on the last step.</p>`;
+  $$('[data-remove]', el).forEach(b => b.onclick = () => { removeOption(inv, b.dataset.remove); render(); });
+  const add = $('#cmp-add-go', el); if (add) add.onclick = () => { const v = $('#cmp-add').value; if (v) { addOption(inv, v); render(); } };
 }

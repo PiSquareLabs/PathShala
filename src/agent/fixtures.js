@@ -12,7 +12,7 @@ export const C1_ANSWERS = {
 
 /* Run the whole reference investigation without UI delays. Returns {agent: output} and validation errors. */
 export async function captureC1Outputs(fromId = 'PK2', toId = 'GSH') {
-  const cid = createCase(fromId, [toId]), out = {}, errors = {};
+  const inv = createCase(fromId, [toId]), cid = inv + '-' + toId, out = {}, errors = {};
   const plan = agentPlan(cid), ctx = plan[0].ctx;
   for (const s of plan) await s.run();
   const call = async (id, c) => { const o = await AGENTS[id].simulate(c); const e = validate(AGENTS[id].outputSchema, o); if (e) errors[id] = e; out[id] = o; return o; };

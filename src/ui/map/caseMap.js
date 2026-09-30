@@ -55,7 +55,7 @@ export function caseMapPanel() {
 }
 
 export function drawCaseMap(c, step) {
-  const A = school(c.from_id), opts = optionIds(c.case_id).map(school);
+  const A = school(c.from_id), opts = optionIds(c.inv_id).map(school);
   const map = baseMap('cmap', { scrollWheelZoom: false });
   const habs = q('SELECT * FROM habitations WHERE school_id = ?', [A.school_id]);
   const pts = [[A.lat, A.lng], ...opts.map(o => [o.lat, o.lng]), ...habs.map(h => [h.lat, h.lng])];
@@ -63,7 +63,7 @@ export function drawCaseMap(c, step) {
   districts(map, new Set([A.district]), false);
   geoLayers(map, caseState.layers);
   if (caseState.layers.route) opts.forEach(o => {
-    const lk = linkOf(A.school_id, o.school_id), chosen = o.school_id === c.to_id;
+    const lk = linkOf(A.school_id, o.school_id), chosen = o.school_id === c.to_id && step !== 'compare' && step !== 'report';
     if (lk && chosen) {
       L.polyline(roadPts(lk), { color: css('--accent'), weight: step === 'evidence' ? 5 : 3, opacity: 0.9 }).bindTooltip(`Road ${lk.road_km} km`, { className: 'slabel' }).addTo(map);
       L.polyline(JSON.parse(lk.route_walk).map(p => [p[0], p[1]]), { color: css('--ink'), weight: step === 'evidence' ? 4 : 2.5, dashArray: '6 6' }).bindTooltip(`Footpath ${lk.walk_km} km`, { className: 'slabel' }).addTo(map);
@@ -77,9 +77,9 @@ export function drawCaseMap(c, step) {
         .bindTooltip(`${h.name}${step === 'evidence' ? ` · ${n} responses${caseState.theme ? ' on ' + caseState.theme.toLowerCase() : ''}` : ''}`, { className: 'slabel', direction: 'left', offset: [-8, 0] }).addTo(map);
     });
   }
-  const mk = (s, col, label, right) => L.circleMarker([s.lat, s.lng], { radius: s.school_id === c.to_id ? 11 : 9, color: '#fff', weight: 2.5, fillColor: col, fillOpacity: 1 })
-    .bindTooltip(label, { permanent: true, className: 'rlabel' + (s.school_id === c.to_id ? ' on' : ''), direction: right ? 'right' : 'left', offset: right ? [12, 0] : [-12, 0] }).addTo(map);
+  const mk = (s, col, label, right) => L.circleMarker([s.lat, s.lng], { radius: s.school_id === c.to_id && step !== 'compare' && step !== 'report' ? 11 : 9, color: '#fff', weight: 2.5, fillColor: col, fillOpacity: 1 })
+    .bindTooltip(label, { permanent: true, className: 'rlabel' + (s.school_id === c.to_id && step !== 'compare' && step !== 'report' ? ' on' : ''), direction: right ? 'right' : 'left', offset: right ? [12, 0] : [-12, 0] }).addTo(map);
   mk(A, css('--risk'), `Closing: ${A.name}`, A.lng < Math.max(...opts.map(o => o.lng)));
-  opts.forEach(o => mk(o, css('--accent'), o.school_id === c.to_id && opts.length > 1 ? `${o.name} · chosen` : o.name, o.lng > A.lng));
+  opts.forEach(o => mk(o, css('--accent'), o.school_id === c.to_id && opts.length > 1 && step !== 'compare' && step !== 'report' ? `${o.name} · viewing` : o.name, o.lng > A.lng));
   $$('.lyr input').forEach(i => i.onchange = () => { caseState.layers[i.dataset.l] = i.checked; render(); });
 }

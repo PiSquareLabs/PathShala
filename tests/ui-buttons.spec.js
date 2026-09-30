@@ -22,16 +22,18 @@ async function newCase(page, sender = 'GPS Pekhri-2', receivers = ['GPS Gushaini
   await page.locator('#cp-go').click();
   await expect(page).toHaveURL(/#\/case\/C\d+\/compare/);
 }
-const choose = async (page, name) => {
-  const th = page.locator('.cmptbl thead th', { hasText: name });
-  if (await th.locator('[data-choose]').count()) await th.locator('[data-choose]').click();
-  await expect(page.locator('.cmptbl thead th.chosen')).toContainText(name);
-};
-async function investigate(page, chosen = 'GPS Gushaini') {
-  await choose(page, chosen);
-  await go(page, page.url().split('#/')[1].replace('compare', 'investigate'));
+const tab = (page, name) => page.locator('.opttabs button', { hasText: name });
+/* Investigate one receiving school (its tab) on the Investigate step. */
+async function investigate(page, name = 'GPS Gushaini') {
+  await go(page, page.url().split('#/')[1].replace(/\/[a-z]+$/, '/investigate'));
+  await tab(page, name).click();
   await page.locator('#ag-run').click();
   await expect(page.locator('.fq')).toHaveCount(5, { timeout: 30000 });
+}
+async function choosePolicy(page, name, titles) {
+  await go(page, page.url().split('#/')[1].replace(/\/[a-z]+$/, '/policy'));
+  await tab(page, name).click(); await page.locator('.ivc').first().waitFor();
+  for (const t of titles) await page.locator('.ivc', { hasText: t }).locator('input').check();
 }
 
 test('header: brand, three tabs and the More menu', async ({ page }) => {
@@ -61,7 +63,7 @@ test('reset demo: two clicks, wipes changes and localStorage', async ({ page }) 
   await go(page, 'rules');
   await page.locator('.rl input').first().fill('7');
   await page.locator('#rl-go').click(); await expect(toast(page)).toBeVisible();
-  expect(await page.evaluate(() => Object.keys(localStorage).find(k => k.startsWith('pathshala.db')))).toBe('pathshala.db.v6');
+  expect(await page.evaluate(() => Object.keys(localStorage).find(k => k.startsWith('pathshala.db')))).toBe('pathshala.db.v7');
   await page.locator('#more summary').click();
   await page.locator('#reset').click(); await expect(page.locator('#reset')).toHaveText('Click again to reset');
   await page.locator('#reset').click(); await expect(page.locator('#reset')).toHaveText('Reset demo');
@@ -103,33 +105,24 @@ test('investigate home: districts, one closing school, several receivers, map', 
   await page.locator('#cpanel a.srow').click(); await expect(page).toHaveURL(/case\/C1/);
 });
 
-test('compare: choose, remove, add, best values, clears results only after confirming', async ({ page }) => {
+test('compare: nothing to choose here; remove and add schools', async ({ page }) => {
   await newCase(page, 'GPS Pekhri-2', ['GPS Gushaini', 'GPS Nagini', 'GPS Banjar']);
   await expect(page.locator('.cmptbl thead th b')).toHaveText(['GPS Nagini', 'GPS Gushaini', 'GPS Banjar']);
-  await expect(page.locator('.cmptbl thead th.chosen')).toContainText('GPS Nagini');
-  await choose(page, 'GPS Gushaini');
+  await expect(page.locator('[data-choose]')).toHaveCount(0); await expect(page.locator('.cmptbl th.chosen')).toHaveCount(0);
   await expect(page.locator('.cmptbl td.best').first()).toBeVisible();
-  // remove one, add one
   await page.locator('[data-remove]').nth(2).click(); await expect(page.locator('.cmptbl thead th b')).toHaveCount(2);
   await expect(page.locator('h1').first()).toContainText('2 schools to compare');
-  const opts = await page.locator('#cmp-add option').count(); expect(opts).toBeGreaterThan(2);
-  await page.locator('#cmp-add-go').click(); await expect(page.locator('.cmptbl thead th b')).toHaveCount(2);   // nothing chosen: no-op
+  expect(await page.locator('#cmp-add option').count()).toBeGreaterThan(2);
+  await page.locator('#cmp-add-go').click(); await expect(page.locator('.cmptbl thead th b')).toHaveCount(2);   // nothing picked: no-op
   await page.locator('#cmp-add').selectOption({ index: 1 }); await page.locator('#cmp-add-go').click();
   await expect(page.locator('.cmptbl thead th b')).toHaveCount(3);
-  // removing down to one leaves no Remove button
   await page.locator('[data-remove]').last().click(); await page.locator('[data-remove]').last().click();
   await expect(page.locator('.cmptbl thead th b')).toHaveCount(1); await expect(page.locator('[data-remove]')).toHaveCount(0);
   await expect(page.locator('h1').first()).not.toContainText('to compare');
-  // add two back, run the investigation, then choose another school: needs a second click
   await page.locator('#cmp-add').selectOption({ index: 1 }); await page.locator('#cmp-add-go').click();
-  await page.locator('#cmp-add').selectOption({ index: 1 }); await page.locator('#cmp-add-go').click();
-  await expect(page.locator('.cmptbl thead th b')).toHaveCount(3);
-  await investigate(page, 'GPS Gushaini');
-  await go(page, 'case/C1/compare');
-  const other = page.locator('[data-choose]').first(); await other.click();
-  await expect(other).toHaveText('Click again: clears results'); await expect(page.locator('.cmptbl thead th.chosen')).toContainText('GPS Gushaini');
-  await other.click(); await expect(toast(page)).toContainText('Investigation cleared');
-  await go(page, 'case/C1/investigate'); await expect(page.locator('#ag-run')).toHaveText('Investigate case');
+  await expect(page.locator('.cmptbl thead th b')).toHaveCount(2);
+  // a school added later gets its own investigation
+  await go(page, 'case/C1/investigate'); await expect(page.locator('.opttabs button')).toHaveCount(2);
 });
 
 test('case pages: map layers, five steps, next and back buttons, breadcrumbs', async ({ page }) => {
@@ -144,45 +137,65 @@ test('case pages: map layers, five steps, next and back buttons, breadcrumbs', a
   }
   await page.locator('#cmap .leaflet-control-zoom-in').click(); await page.locator('#cmap .leaflet-control-zoom-out').click();
   for (const t of ['Evidence', 'Investigate', 'Policy & cost', 'Report', 'Compare']) { await page.locator('.steps a', { hasText: t }).click(); await expect(page.locator('.steps a[aria-current="step"]')).toContainText(t); }
-  await page.locator('a.btn.primary', { hasText: /^Continue with/ }).click(); await expect(page).toHaveURL(/evidence/);
+  await page.locator('a.btn.primary', { hasText: /^Next: Evidence/ }).click(); await expect(page).toHaveURL(/evidence/);
   await page.locator('a.btn', { hasText: '← Compare' }).click(); await expect(page).toHaveURL(/compare/);
   await page.locator('.crumbs a', { hasText: 'Investigate' }).click(); await expect(page).toHaveURL(/#\/$/);
   await go(page, 'case/C1/access'); await expect(page).toHaveURL(/access/); await expect(page.locator('.steps a[aria-current="step"]')).toContainText('Evidence'); // old route still works
   await go(page, 'cases'); await page.locator('a.lcard').first().click(); await expect(page).toHaveURL(/case\/C1/);
 });
 
-test('evidence: theme messages open and close, profile fold, no timetable invented', async ({ page }) => {
-  await newCase(page); await choose(page, 'GPS Gushaini');
-  await page.locator('.steps a', { hasText: 'Evidence' }).click(); await expect(app(page)).toContainText('Getting to GPS Gushaini');
+test('evidence: tabs, theme messages, profile fold, no timetable invented', async ({ page }) => {
+  await newCase(page);
+  await page.locator('.steps a', { hasText: 'Evidence' }).click(); await expect(page.locator('.opttabs button')).toHaveCount(2);
+  await tab(page, 'GPS Gushaini').click(); await expect(app(page)).toContainText('Getting to GPS Gushaini');
   await expect(app(page)).toContainText('Data unavailable (no timetable source)');
   await expect(app(page)).not.toContainText('HRTC'); await expect(app(page)).not.toContainText('Shared taxi');
-  await page.locator('.fold summary', { hasText: 'Elevation profile' }).click(); await expect(page.locator('#cmain svg')).toBeVisible();
+  await page.locator('.fold summary', { hasText: 'Elevation profile' }).click(); await expect(page.locator('#cstep svg')).toBeVisible();
   await expect(app(page)).toContainText('Tobler');
   const t = page.locator('.theme').first(); await t.click(); await expect(page.locator('.msg').first()).toBeVisible();
+  await expect(page.locator('#ev-profile[open]')).toHaveCount(1);                  // fold state survives the re-render
   await t.click(); await expect(page.locator('.msg')).toHaveCount(0);
   await page.locator('.theme').nth(1).click(); await page.locator('#th-clear').click(); await expect(page.locator('.msg')).toHaveCount(0);
+  await tab(page, 'GPS Nagini').click(); await expect(app(page)).toContainText('Getting to GPS Nagini');
   await page.screenshot({ path: SHOT + 'evidence.png', fullPage: true });
 });
 
 test('a receiving school with no feedback or bridge shows Data unavailable, not another school\'s data', async ({ page }) => {
   await newCase(page, 'GPS Pekhri-2', ['GPS Gushaini', 'GPS Nagini']);
-  await choose(page, 'GPS Nagini');
-  await page.locator('.steps a', { hasText: 'Evidence' }).click();
+  await page.locator('.steps a', { hasText: 'Evidence' }).click(); await tab(page, 'GPS Nagini').click();
   await expect(app(page)).toContainText('no citizen feedback recorded about moving to this school');
   await expect(app(page)).not.toContainText('Baridropa');
-  await go(page, 'case/C1/investigate'); await page.locator('#ag-run').click(); await expect(page.locator('.fq')).toHaveCount(5, { timeout: 30000 });
+  await investigate(page, 'GPS Nagini');
   const text = await page.locator('#findings').innerText();
   expect(text).not.toMatch(/Baridropa|Tirthan|seasonal bridge/i);
   await expect(page.locator('.finding', { hasText: 'Seasonal access' })).toContainText('Not enough data');
+});
+
+test('each school keeps its own field answers, interventions and totals', async ({ page }) => {
+  await newCase(page, 'GPS Pekhri-2', ['GPS Gushaini', 'GPS Nagini']);
+  await go(page, 'case/C1/investigate'); await page.locator('#ag-run-all').click();
+  await expect(toast(page)).toContainText('2 schools investigated', { timeout: 60000 });
+  await expect(page.locator('.opttabs button .ok')).toHaveCount(2);
+  await tab(page, 'GPS Gushaini').click(); await page.locator('.fq[data-q="Q2"] .fv').fill('24'); await page.locator('#fq-go').click();
+  await expect(toast(page)).toContainText('Evidence updated');
+  await tab(page, 'GPS Nagini').click(); await expect(page.locator('.fq[data-q="Q2"] .fv')).toHaveValue('');
+  await tab(page, 'GPS Gushaini').click(); await expect(page.locator('.fq[data-q="Q2"] .fv')).toHaveValue('24');
+  await choosePolicy(page, 'GPS Gushaini', ['School transport support']);
+  await tab(page, 'GPS Nagini').click(); await expect(page.locator('.ivc.on')).toHaveCount(0);   // Nagini's selections are separate
+  await expect(page.locator('#opt-table')).toContainText('₹1.44 lakh');
+  await page.locator('.ivc', { hasText: 'School transport support' }).locator('input').check();
+  await expect(page.locator('#opt-table')).toContainText('₹1.62 lakh');                            // 27 students on the school roll
+  await expect(page.locator('#opt-table td.best')).not.toHaveCount(0);
 });
 
 test('investigate: run again, guards, choice buttons and photo caption', async ({ page }) => {
   await newCase(page);
   await go(page, 'case/C1/policy'); await expect(app(page)).toContainText('Run the investigation first');
   await page.locator('a.btn.primary', { hasText: 'Go to Investigate' }).click();
-  await go(page, 'case/C1/report'); await expect(app(page)).toContainText('Run the investigation first');
+  await go(page, 'case/C1/report'); await expect(app(page)).toContainText('Choose a school first');
+  await page.locator('[data-final]').first().click(); await expect(app(page)).toContainText('first');
   await page.locator('a.btn.primary', { hasText: 'Go to Investigate' }).click();
-  await page.locator('#ag-run').click(); await expect(page.locator('.fq')).toHaveCount(5, { timeout: 30000 });
+  await tab(page, 'GPS Nagini').click(); await page.locator('#ag-run').click(); await expect(page.locator('.fq')).toHaveCount(5, { timeout: 30000 });
   await page.locator('.fq[data-q="Q2"] .fv').fill('12'); await page.locator('#fq-go').click();
   await expect(page.locator('#ag-run')).toHaveText('Run again');
   await page.locator('#ag-run').click(); await expect(page.locator('.fq')).toHaveCount(5, { timeout: 30000 });
@@ -198,7 +211,7 @@ test('investigate: run again, guards, choice buttons and photo caption', async (
 
 test('report: leave a finding out, tick evidence, references, comment, re-draft, guards, submit', async ({ page }) => {
   await newCase(page); await investigate(page);
-  await go(page, 'case/C1/report'); await page.locator('#rp-ok').waitFor();
+  await go(page, 'case/C1/report'); await page.locator('[data-final]').nth(1).click(); await page.locator('#rp-ok').waitFor();
   await page.locator('#rp-ok').check(); await expect(page.locator('#rp-submit')).toBeDisabled();       // no intervention yet
   await page.locator('#rp-ok').uncheck();
   await page.locator('[data-f="F1"]').uncheck(); await page.locator('[data-f="F2"]').uncheck();
@@ -216,9 +229,7 @@ test('report: leave a finding out, tick evidence, references, comment, re-draft,
   await page.locator('#rp-text').fill('My own text.'); await page.locator('#rp-save').click();
   await expect(toast(page)).toContainText('Draft saved'); await expect(page.locator('#rp-text')).toHaveValue('My own text.');
   await page.locator('#rp-reset').click(); await expect(page.locator('#rp-text')).not.toHaveValue('My own text.');
-  await go(page, 'case/C1/policy'); await page.locator('.ivc').first().waitFor();
-  await page.locator('.ivc', { hasText: 'replace the building' }).locator('input').check();
-  await page.locator('.ivc', { hasText: 'School transport support' }).locator('input').check();
+  await choosePolicy(page, 'GPS Gushaini', ['replace the building', 'School transport support']);
   await go(page, 'case/C1/report'); await page.locator('#rp-ok').waitFor();
   await expect(app(page)).toContainText('one-time'); await expect(page.locator('#rp-submit')).toBeDisabled();
   await page.locator('#rp-ok').check(); await expect(page.locator('#rp-submit')).toBeEnabled();
@@ -319,7 +330,7 @@ test('to do: problems filters, surveys tab, tab counts', async ({ page }) => {
   await go(page, 'problems');
   await page.locator('.tabs a', { hasText: 'Field surveys' }).click(); await expect(page).toHaveURL(/#\/surveys/);
   await expect(page.locator('#nav a[aria-current="page"]')).toContainText('To do');
-  expect(await page.locator('a.lcard').count()).toBe(5);
+  await expect(page.locator('a.lcard')).toHaveCount(5);
   await page.locator('a.lcard').first().click(); await expect(page).toHaveURL(/survey$/);
   await go(page, 'surveys'); await page.locator('.tabs a', { hasText: 'Problems' }).click(); await expect(page).toHaveURL(/#\/problems/);
 });

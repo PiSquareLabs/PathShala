@@ -1,13 +1,25 @@
 import { runDraft } from '../../agent/runner.js';
-import { hasResults, routeInfo } from '../../case/options.js';
+import { chooseFinal, hasResults, invRow, optionIds, routeInfo, trackId, trackRow } from '../../case/options.js';
 import { q, q1, run, save } from '../../db/sqlite.js';
-import { $, $$, costText, esc, evChip, inr, logCase, nowTs, today } from '../helpers.js';
+import { $, $$, costText, esc, evChip, inr, logCase, nowTs, school, today } from '../helpers.js';
 import { fold, tile } from '../kit.js';
 import { render } from '../router.js';
 import { toast } from '../toast.js';
+import { optionsTable, wireOptionsTable } from './options.js';
 
-export async function stepReport(el, c, A, B) {
-  if (!hasResults(c.case_id)) { el.innerHTML = `<div class="card"><h2>Run the investigation first</h2><p style="margin-top:10px"><a class="btn primary" href="#/case/${c.case_id}/investigate">Go to Investigate</a></p></div>`; return; }
+/* Last step: compare the options with their totals, choose ONE school, then write and submit its report. */
+export async function stepReport(el, I) {
+  const inv = I.inv_id, A = school(I.from_id), many = optionIds(inv).length > 1;
+  if (!I.chosen_id && !many) { chooseFinal(inv, optionIds(inv)[0]); I = invRow(inv); }
+  el.innerHTML = `${many ? `<section class="card"><h2>Compare the options and choose one <small>${I.chosen_id ? '' : 'after the field report and policy selection'}</small></h2><div id="opt-wrap">${optionsTable(inv, { choose: I.status !== 'Ready for administrative review' })}</div></section>` : ''}<div id="rp-body" class="tight"></div>`;
+  wireOptionsTable(el, inv);
+  if (!I.chosen_id) { $('#rp-body').innerHTML = '<div class="card"><h2>Choose a school first</h2><p class="muted">The report is written for the school you choose above.</p></div>'; return; }
+  await reportFor($('#rp-body'), I, trackRow(trackId(inv, I.chosen_id)), A, school(I.chosen_id));
+}
+
+async function reportFor(el, I, c, A, B) {
+  const inv = I.inv_id;
+  if (!hasResults(c.case_id)) { el.innerHTML = `<div class="card"><h2>Investigate ${esc(B.name)} first</h2><p class="muted">The report uses this school's findings and field answers.</p><p style="margin-top:10px"><a class="btn primary" href="#/case/${inv}/investigate">Go to Investigate</a></p></div>`; return; }
   const rt = routeInfo(c.from_id, c.to_id);
   const F = q('SELECT * FROM findings WHERE case_id = ? ORDER BY fid', [c.case_id]);
   const ev = q('SELECT * FROM evidence WHERE case_id = ? ORDER BY CAST(substr(eid, 2) AS INTEGER)', [c.case_id]);
@@ -18,9 +30,9 @@ export async function stepReport(el, c, A, B) {
   const parts = (await runDraft(c.case_id)).draft.sentences.map(x => [x.text, x.refs]), plain = parts.map(p => p[0]).join(' ');
   const draft = rep.edited ? rep.draft : plain;
   const comments = JSON.parse(rep.comments || '[]');
-  const log = q('SELECT * FROM case_log WHERE case_id = ? ORDER BY ts', [c.case_id]);
+  const log = q('SELECT * FROM case_log WHERE case_id IN (?, ?) ORDER BY ts', [c.case_id, inv]);
   const outstanding = [...ev.filter(e => e.status === 'needs' && !e.officer_verified).map(e => e.label), ...(!fq.find(x => x.qid === 'Q2')?.answer ? ['Students using the route'] : []), 'Applicable transport eligibility', ...(sel.some(s => s.code === 'TR') ? ['Final vehicle cost (appraised on actual cost)'] : [])];
-  const submitted = c.status === 'Ready for administrative review';
+  const submitted = I.status === 'Ready for administrative review';
   const nHabs = q1('SELECT count(*) AS n FROM habitations WHERE school_id = ?', [A.school_id]).n;
   const q1a = fq.find(x => x.qid === 'Q1')?.answer;
   const yearly = sel.filter(s => s.cost_type === 'per year').reduce((a, s) => a + s.cost_inr, 0), oneTime = sel.filter(s => s.cost_type === 'one-time').reduce((a, s) => a + s.cost_inr, 0);
@@ -43,7 +55,7 @@ export async function stepReport(el, c, A, B) {
         <td><label class="small"><input type="checkbox" data-v="${e.eid}" ${e.officer_verified ? 'checked' : ''} ${submitted ? 'disabled' : ''}> verified</label></td></tr>`).join('')}</tbody></table>`, { count: ev.length, cls: 'fold-plain', id: 'rp-evidence' })}</section>
     <section class="card"><h2>Review</h2>
       <div class="cmts">${comments.map(x => `<p class="small"><b>${esc(x.by)}</b> · ${esc(x.at)} — ${esc(x.text)}</p>`).join('') || '<p class="small muted">No comments.</p>'}</div>
-      ${submitted ? `<p><b class="t-green">Submitted ${esc(c.submitted_on)}.</b> Status: Ready for administrative review. The AI did not approve the merger or the intervention.</p>` : `
+      ${submitted ? `<p><b class="t-green">Submitted ${esc(I.submitted_on)}.</b> Status: Ready for administrative review. The AI did not approve the merger or the intervention.</p>` : `
       <div class="impl" style="margin-top:8px"><input type="text" id="rp-cmt" placeholder="Add a comment" style="flex:1"><button class="btn sm" id="rp-cmt-go">Add comment</button></div>
       <label class="impl" style="margin-top:12px"><input type="checkbox" id="rp-ok" ${rep.approved ? 'checked' : ''}> <b>I have reviewed the evidence and approve this draft.</b></label>
       <div class="row" style="margin-top:12px"><span class="small muted">The officer decides. The AI never approves a merger or an intervention.</span><button class="btn primary" id="rp-submit" ${rep.approved && sel.length ? '' : 'disabled'}>Submit investigation report</button></div>`}</section>
@@ -57,7 +69,7 @@ export async function stepReport(el, c, A, B) {
   const rs = $('#rp-reset'); if (rs) rs.onclick = () => { upRep({ draft: plain, edited: 0 }); render(); };
   const cm = $('#rp-cmt-go'); if (cm) cm.onclick = () => { const t = $('#rp-cmt').value.trim(); if (!t) return; const r = q1('SELECT comments FROM reports WHERE case_id = ?', [c.case_id]); const list = JSON.parse(r?.comments || '[]'); list.push({ by: 'DEO Kullu', at: nowTs().slice(0, 16), text: t }); upRep({ comments: JSON.stringify(list) }); logCase(c.case_id, 'Officer', 'Comment', t); save(); render(); };
   const ok = $('#rp-ok'); if (ok) ok.onchange = () => { upRep({ approved: ok.checked ? 1 : 0, draft: $('#rp-text').value, edited: rep.edited || ($('#rp-text').value !== plain ? 1 : 0) }); logCase(c.case_id, 'Officer', ok.checked ? 'Approved draft' : 'Withdrew approval'); save(); render(); };
-  const sb = $('#rp-submit'); if (sb) sb.onclick = () => { run("UPDATE cases SET status = 'Ready for administrative review', submitted_on = ? WHERE case_id = ?", [today(), c.case_id]); logCase(c.case_id, 'Officer', 'Submitted investigation report', 'Status: Ready for administrative review'); save(); render(); toast('Report submitted', ['Status: Ready for administrative review', 'The final decision stays with the administration.']); };
+  const sb = $('#rp-submit'); if (sb) sb.onclick = () => { run("UPDATE cases SET status = 'Ready for administrative review', submitted_on = ? WHERE case_id = ?", [today(), c.case_id]); run("UPDATE investigations SET status = 'Ready for administrative review', submitted_on = ? WHERE inv_id = ?", [today(), inv]); logCase(c.case_id, 'Officer', 'Submitted investigation report', 'Status: Ready for administrative review'); save(); render(); toast('Report submitted', ['Status: Ready for administrative review', 'The final decision stays with the administration.']); };
   function showRefs(ids) {
     const box = $('#refbox');
     box.innerHTML = `<div class="refs">${ids.map(id => { const e = ev.find(x => x.eid === id); if (e) return `<div>${evChip(e.status)} <b class="mono">${e.eid}</b> ${esc(e.label)}<div class="small muted">${esc(e.detail || '')}</div></div>`; const ch = q1('SELECT c.*, d.title AS doc_title, d.url FROM policy_chunks c JOIN policy_docs d USING (doc_id) WHERE chunk_id = ?', [id]); return ch ? `<div><span class="evs verified">Policy</span> <b class="mono">${id}</b> ${esc(ch.doc_title)}, ${esc(ch.section)}<div class="small">“${esc(ch.text)}” <a href="${esc(ch.url)}" target="_blank" rel="noopener">open source</a></div></div>` : ''; }).join('')}</div>`;

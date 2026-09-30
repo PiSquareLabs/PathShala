@@ -4,8 +4,8 @@ import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
 import { CASE_DDL, ENGINE_DDL, MERGE_DDL } from './schema.js';
 
 // Bump when the seed schema changes. openDb() also compares the saved schema with the seed's, so a stale save is never loaded.
-export const STORE = 'pathshala.db.v6';
-const OLD_STORES = ['pathshala.db.v5', 'pathshala.db.v2'];
+export const STORE = 'pathshala.db.v7';
+const OLD_STORES = ['pathshala.db.v6', 'pathshala.db.v5', 'pathshala.db.v2'];
 export let SQL, db;
 export const q = (sql, p = []) => { const st = db.prepare(sql); st.bind(p); const out = []; while (st.step()) out.push(st.getAsObject()); st.free(); return out; };
 export const q1 = (sql, p = []) => q(sql, p)[0];

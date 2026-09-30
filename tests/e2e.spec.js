@@ -56,14 +56,15 @@ test('02 pick one closing school, then tick several receiving schools', async ()
   await page.locator('#cpanel .pickrow', { hasText: 'GPS Banjar' }).locator('input').check();
 });
 
-test('03 compare the receiving schools side by side', async () => {
+test('03 compare the receiving schools side by side; nothing is chosen yet', async () => {
   await page.locator('#cp-go').click();
   await expect(page).toHaveURL(/#\/case\/C1\/compare/);
   await expect(page.locator('h1').first()).toContainText('3 schools to compare');
   const heads = await page.locator('.cmptbl thead th b').allInnerTexts();
   expect(heads).toEqual(['GPS Nagini', 'GPS Gushaini', 'GPS Banjar']);   // best screening score first
+  await expect(page.locator('[data-choose]')).toHaveCount(0);              // no choice on this screen
+  await expect(page.locator('.cmptbl th.chosen')).toHaveCount(0);
   await expect(page.locator('.cmp-top')).toContainText('Closing school');
-  await expect(page.locator('.cmp-top')).toContainText('GPS Pekhri-2');
   await expect(cell('By road', 1)).toContainText('3.8 km');
   await expect(cell('On foot', 1)).toContainText('4.6 km');
   await expect(cell('On foot', 1)).toContainText('82 min');
@@ -76,15 +77,12 @@ test('03 compare the receiving schools side by side', async () => {
   expect(await page.locator('.cmptbl td.best').count()).toBeGreaterThan(3);
   await page.waitForTimeout(600);
   await shot(page, '03_compare');
-  // best score is chosen by default; choose Gushaini
-  await expect(page.locator('.cmptbl thead th.chosen')).toContainText('GPS Nagini');
-  await page.locator('[data-choose]').first().click();
-  await expect(page.locator('.cmptbl thead th.chosen')).toContainText('GPS Gushaini');
-  await expect(page.locator('h1').first()).toContainText('3 schools to compare');
 });
 
-test('04 evidence: route and citizen feedback for the chosen school', async () => {
+test('04 evidence for each school, one tab per receiving school', async () => {
   await page.locator('.steps a', { hasText: 'Evidence' }).click();
+  await expect(page.locator('.opttabs button')).toHaveCount(3);
+  await page.locator('.opttabs button', { hasText: 'GPS Gushaini' }).click();
   await expect(app()).toContainText('Getting to GPS Gushaini');
   const t = await app().innerText();
   expect(t).toMatch(/82 min/); expect(t).toMatch(/3\.8 km/); expect(t).toMatch(/Data unavailable/);
@@ -97,16 +95,21 @@ test('04 evidence: route and citizen feedback for the chosen school', async () =
   await shot(page, '04_evidence');
   await page.locator('#th-clear').click();
   await expect(page.locator('.msg')).toHaveCount(0);
+  await page.locator('.opttabs button', { hasText: 'GPS Nagini' }).click();
+  await expect(app()).toContainText('Getting to GPS Nagini');
+  await expect(app()).toContainText('no citizen feedback recorded about moving to this school');
 });
 
-test('05 investigate: 8 steps, findings, field questions', async () => {
+test('05 investigate every school', async () => {
   await page.locator('.steps a', { hasText: 'Investigate' }).click();
-  await expect(page.locator('#ag-run')).toHaveText('Investigate case');
-  await page.locator('#ag-run').click();
-  await expect(page.locator('#ag-list li.ok')).toHaveCount(8, { timeout: 30000 });
+  await expect(page.locator('#ag-run-all')).toHaveText('Investigate all 3 schools');
+  await page.locator('#ag-run-all').click();
+  await expect(page.locator('#toast')).toContainText('3 schools investigated', { timeout: 60000 });
+  await expect(page.locator('.opttabs button .ok')).toHaveCount(3);        // every tab ticked
+  await page.locator('.opttabs button', { hasText: 'GPS Gushaini' }).click();
+  await expect(page.locator('#ag-list li.ok')).toHaveCount(8);
   await expect(page.locator('.finding')).toHaveCount(5);
   await expect(page.locator('.fq')).toHaveCount(5);
-  await expect(page.locator('#toast')).toContainText('Investigation complete');
   await page.locator('.agent li').nth(3).click();                          // transport step: no timetable source
   await expect(page.locator('.agent li.open')).toContainText('Data unavailable');
   await page.locator('.agent li').nth(3).click();
@@ -116,7 +119,7 @@ test('05 investigate: 8 steps, findings, field questions', async () => {
   await shot(page, '05_investigate');
 });
 
-test('06 field verification updates the evidence', async () => {
+test('06 field verification, per school', async () => {
   const fq = n => page.locator(`.fq[data-q="Q${n}"]`);
   await fq(1).locator('button[data-v="Seasonal"]').click();
   await fq(2).locator('.fv').fill('24');
@@ -132,10 +135,18 @@ test('06 field verification updates the evidence', async () => {
   expect(cards.find(c => c.startsWith('Transport'))).toMatch(/Confirmed concern/);
   expect(cards.find(c => c.startsWith('Seasonal access'))).toMatch(/Verified/);
   await shot(page, '06_field_verified', false);
+  // Nagini: a different answer, its own evidence
+  await page.locator('.opttabs button', { hasText: 'GPS Nagini' }).click();
+  await expect(page.locator('.fq[data-q="Q2"] .fv')).toHaveValue('');       // Gushaini's answers did not leak
+  await fq(3).locator('button[data-v="Yes"]').click();
+  await fq(2).locator('.fv').fill('20');
+  await page.locator('#fq-go').click();
+  await expect(page.locator('#toast')).toContainText('Evidence updated');
 });
 
-test('07 policy and cost', async () => {
+test('07 policy and cost, per school, with the totals of every option', async () => {
   await page.locator('.steps a', { hasText: 'Policy' }).click();
+  await page.locator('.opttabs button', { hasText: 'GPS Gushaini' }).click();
   await expect(page.locator('.ivc')).toHaveCount(4);
   const tr = page.locator('.ivc', { hasText: 'School transport support' });
   await tr.locator('input[type=checkbox]').check();
@@ -146,14 +157,32 @@ test('07 policy and cost', async () => {
   await expect(tr).not.toContainText('seats');                            // no invented vehicle count
   const ret = page.locator('.ivc', { hasText: 'replace the building' });
   await expect(ret.locator('.ivcost')).toContainText('₹27 lakh');         // 3 existing classrooms × ₹9 lakh (PAB)
+  await ret.locator('input[type=checkbox]').check();
+  // the totals table updates as interventions are ticked
+  await expect(page.locator('#opt-table')).toContainText('₹1.44 lakh');
+  await page.locator('.opttabs button', { hasText: 'GPS Nagini' }).click();
+  const tr2 = page.locator('.ivc', { hasText: 'School transport support' });
+  await expect(tr2.locator('.ivcost')).toContainText('₹1.2 lakh');         // Nagini: 20 students by the field count
+  await tr2.locator('input[type=checkbox]').check();
+  await expect(page.locator('#opt-table')).toContainText('₹1.2 lakh');
   await shot(page, '07_policy');
   const es = page.locator('.ivc', { hasText: 'Escort for young children' });
   await es.locator('input[type=checkbox]').check(); await es.locator('input[type=checkbox]').uncheck();
   await expect(es).not.toHaveClass(/on/);
 });
 
-test('08 report: draft, approve, submit', async () => {
+test('08 choose ONE school with the totals in view, then write and submit its report', async () => {
   await page.locator('.steps a', { hasText: 'Report' }).click();
+  await expect(app()).toContainText('Compare the options and choose one');
+  await expect(page.locator('[data-final]')).toHaveCount(3);
+  await expect(page.locator('#rp-ok')).toHaveCount(0);                     // no report until a school is chosen
+  const t = page.locator('#opt-table');
+  await expect(t).toContainText('₹1.44 lakh'); await expect(t).toContainText('₹27 lakh'); await expect(t).toContainText('₹1.2 lakh');
+  await expect(page.locator('#opt-table td.best').first()).toBeVisible();
+  await shot(page, '08_choose');
+  await page.locator('[data-final]').nth(1).click();                        // Gushaini
+  await expect(page.locator('#opt-table th.chosen')).toContainText('GPS Gushaini');
+  await expect(page.locator('h1').first()).toContainText('GPS Gushaini');
   await expect(page.locator('#rp-submit')).toBeDisabled();
   await shot(page, '08_report_draft');
   await page.locator('.ref').first().click();
@@ -163,6 +192,7 @@ test('08 report: draft, approve, submit', async () => {
   await page.locator('#rp-submit').click();
   await expect(app()).toContainText('Ready for administrative review');
   await expect(page.locator('#rp-submit')).toHaveCount(0);
+  await expect(page.locator('[data-final]')).toHaveCount(0);               // choice is locked once submitted
   await page.waitForTimeout(500);
   await shot(page, '09_report_submitted');
 });
@@ -179,12 +209,13 @@ test('09 a second investigation compares two schools for a sender with no survey
   await expect(cell('On foot', 0)).toContainText('estimate');
   await expect(cell('Climb', 0)).toContainText('Data unavailable');
   await page.locator('.steps a', { hasText: 'Investigate' }).click();
-  await page.locator('#ag-run').click();
-  await expect(page.locator('.fq')).toHaveCount(5, { timeout: 30000 });
+  await page.locator('#ag-run-all').click();
+  await expect(page.locator('#toast')).toContainText('2 schools investigated', { timeout: 60000 });
   await expect(app()).toContainText('The route has not been surveyed');
   await page.locator('.steps a', { hasText: 'Evidence' }).click();
   await expect(app()).toContainText('Data unavailable');
   await page.locator('.steps a', { hasText: 'Report' }).click();
+  await page.locator('[data-final]').first().click();
   await page.locator('#rp-ok').waitFor();
   await expect(page.locator('.card.err')).toHaveCount(0);
 });

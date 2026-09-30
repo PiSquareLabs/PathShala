@@ -564,3 +564,11 @@ blockquote cite { display: block; font-style: normal; font-size: 12px; color: va
 .home-stats .stat b { font-size: 21px; }
 .fold.solo { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 2px 18px; }
 .fold.solo .fold-b { padding-bottom: 16px; }
+
+/* switch between the candidate receiving schools */
+.opttabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.opttabs button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; font-weight: 600; font-size: 14px; cursor: pointer; }
+.opttabs button:hover { border-color: var(--muted); }
+.opttabs button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.opttabs .ok { color: var(--ok); font-weight: 700; }
+.opttabs button[aria-pressed="true"] .ok { color: #9fe0b5; }

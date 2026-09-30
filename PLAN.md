@@ -1,7 +1,7 @@
 # PLAN: prototype function to module map
 
 > This map describes the first port of the prototype. The case flow was later redesigned (see NOTES.md): `case/options.js` holds the
-> multi-receiver case model, `ui/pages/compare.js` the side-by-side comparison, `ui/pages/evidence.js` replaces the access and community
+> multi-receiver case model (an investigation with one track per candidate school), `ui/pages/compare.js` the side-by-side comparison, `ui/pages/evidence.js` replaces the access and community
 > pages, and `ui/kit.js` holds the shared UI pieces.
 
 The prototype (`reference/PathShala_app.html`, readable source `app_template_v5.html`) is one IIFE with about 2,400 lines
