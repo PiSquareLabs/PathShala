@@ -63,7 +63,7 @@ test('reset demo: two clicks, wipes changes and localStorage', async ({ page }) 
   await go(page, 'rules');
   await page.locator('.rl input').first().fill('7');
   await page.locator('#rl-go').click(); await expect(toast(page)).toBeVisible();
-  expect(await page.evaluate(() => Object.keys(localStorage).find(k => k.startsWith('pathshala.db')))).toBe('pathshala.db.v7');
+  expect(await page.evaluate(() => Object.keys(localStorage).find(k => k.startsWith('pathshala.db')))).toBe('pathshala.db.v8');
   await page.locator('#more summary').click();
   await page.locator('#reset').click(); await expect(page.locator('#reset')).toHaveText('Click again to reset');
   await page.locator('#reset').click(); await expect(page.locator('#reset')).toHaveText('Reset demo');
@@ -125,7 +125,7 @@ test('compare: nothing to choose here; remove and add schools', async ({ page })
   await go(page, 'case/C1/investigate'); await expect(page.locator('.opttabs button')).toHaveCount(2);
 });
 
-test('case pages: map layers, five steps, next and back buttons, breadcrumbs', async ({ page }) => {
+test('case pages: map layers, six steps, next and back buttons, breadcrumbs', async ({ page }) => {
   await newCase(page);
   await page.locator('#cmap .leaflet-map-pane').waitFor({ state: 'attached' });
   await page.locator('.lyrs summary').click();
@@ -136,8 +136,8 @@ test('case pages: map layers, five steps, next and back buttons, breadcrumbs', a
     await page.locator('.lyrs summary').click();
   }
   await page.locator('#cmap .leaflet-control-zoom-in').click(); await page.locator('#cmap .leaflet-control-zoom-out').click();
-  for (const t of ['Evidence', 'Investigate', 'Policy & cost', 'Report', 'Compare']) { await page.locator('.steps a', { hasText: t }).click(); await expect(page.locator('.steps a[aria-current="step"]')).toContainText(t); }
-  await page.locator('a.btn.primary', { hasText: /^Next: Evidence/ }).click(); await expect(page).toHaveURL(/evidence/);
+  for (const t of ['Feedback', 'Evidence', 'Investigate', 'Policy & cost', 'Report', 'Compare']) { await page.locator('.steps a', { hasText: t }).click(); await expect(page.locator('.steps a[aria-current="step"]')).toContainText(t); }
+  await page.locator('a.btn.primary', { hasText: /^Next: Feedback/ }).click(); await expect(page).toHaveURL(/feedback/);
   await page.locator('a.btn', { hasText: '← Compare' }).click(); await expect(page).toHaveURL(/compare/);
   await page.locator('.crumbs a', { hasText: 'Investigate' }).click(); await expect(page).toHaveURL(/#\/$/);
   await go(page, 'case/C1/access'); await expect(page).toHaveURL(/access/); await expect(page.locator('.steps a[aria-current="step"]')).toContainText('Evidence'); // old route still works
@@ -394,7 +394,7 @@ test('school page, inbox deep link, unknown routes', async ({ page }) => {
 
 test('every page lists its data sources; synthesised data names PathShala', async ({ page }) => {
   await page.evaluate(() => window.__pathshala.createCase('PK2', ['GSH', 'NGN']));
-  for (const h of ['', 'merges', 'cases', 'm/M5', 's/UCH', 'new', 'inbox', 'rules', 'sql', 'case/C1/compare', 'case/C1/evidence', 'case/C1/investigate', 'case/C1/policy', 'case/C1/report']) {
+  for (const h of ['', 'merges', 'cases', 'm/M5', 's/UCH', 'new', 'inbox', 'rules', 'sql', 'ai', 'case/C1/compare', 'case/C1/feedback', 'case/C1/evidence', 'case/C1/investigate', 'case/C1/policy', 'case/C1/report']) {
     await go(page, h); await expect(page.locator('#srcs')).toHaveCount(1);
     await page.locator('#srcs summary').click(); await expect(page.locator('#srcs')).toContainText(/UDISE|Rules|RTE|PathShala|officer/);
   }
@@ -407,4 +407,33 @@ test('mock tags read "PathShala (synthesised)"', async ({ page }) => {
   await page.evaluate(() => window.__pathshala.createCase('PK2', ['GSH', 'NGN']));
   await go(page, 'case/C1/compare'); await expect(page.locator('.tag.mock').first()).toHaveText('PathShala (synthesised)');
   await expect(page.locator('.tag', { hasText: /^mock$/i })).toHaveCount(0);
+});
+
+test('feedback step: classify with sentiment and stance, category agents, carried forward', async ({ page }) => {
+  await page.evaluate(() => window.__pathshala.createCase('PK2', ['GSH', 'NGN']));
+  await go(page, 'case/C1/feedback'); await expect(page.locator('.empty')).toContainText('Data unavailable');   // Nagini first: no feedback about it
+  await page.locator('.opttabs button', { hasText: 'Gushaini' }).click();
+  await expect(page.locator('.cat')).toHaveCount(5); await expect(page.locator('.cat').first()).toBeDisabled(); await expect(page.locator('#fb-agents')).toBeDisabled();
+  await page.locator('#fb-classify').click(); await expect(page.locator('.stanceall')).toContainText('support');
+  const cats = await page.locator('.cat b').allTextContents(); expect(cats.reduce((a, n) => a + +n, 0)).toBe(87);
+  await page.locator('.cat', { hasText: 'Transportation' }).click(); await expect(page.locator('#fb-Transportation')).toHaveJSProperty('open', true);
+  await expect(page.locator('#fb-Transportation .msg').first()).toContainText('about');
+  await page.locator('#fb-agents').click();
+  await expect(page.locator('.ctile')).toHaveCount(5); await expect(page.locator('.ctile .pill').first()).toContainText(/merging|Mixed|Neutral/);
+  await go(page, 'case/C1/evidence'); await page.locator('.opttabs button', { hasText: 'Gushaini' }).click(); await expect(page.locator('#concerns .ctile')).toHaveCount(5);
+  await go(page, 'case/C1/investigate'); await page.locator('.opttabs button', { hasText: 'Gushaini' }).click(); await expect(page.locator('#concerns')).toContainText('Carried forward');
+  await go(page, 'case/C1/feedback'); await page.locator('.opttabs button', { hasText: 'Gushaini' }).click();
+  await page.screenshot({ path: 'docs/screens/13-feedback.png' });
+});
+
+test('feedback reaches the report draft with a reference the critic accepts; stance rules', async ({ page }) => {
+  const r = await page.evaluate(async () => {
+    const P = window.__pathshala; const inv = P.createCase('PK2', ['GSH']); const cid = inv + '-GSH';
+    await P.runClassify(cid); await P.runCategoryAgents(cid);
+    const d = P.draftSentences(cid).filter(s => s.refs.some(x => x.startsWith('K:')));
+    const crit = await P.callAgent('reportCritic', { cid, sentences: P.draftSentences(cid) });
+    return { n: d.length, refs: d.map(s => s.refs[0]), pass: crit.pass, issues: crit.issues.filter(i => P.draftSentences(cid)[i.sentence_index]?.refs.some(x => x.startsWith('K:'))), st: [P.stanceOf('receiver', 'positive'), P.stanceOf('receiver', 'negative'), P.stanceOf('sender', 'positive'), P.stanceOf('sender', 'negative'), P.stanceOf('merger', 'neutral')], rule: P.classifyByRules('Our village school is our identity.') };
+  });
+  expect(r.n).toBe(5); expect(r.st).toEqual(['support', 'oppose', 'oppose', 'support', 'neutral']); expect(r.rule.category).toBe('Social');
+  expect(r.issues).toEqual([]);
 });

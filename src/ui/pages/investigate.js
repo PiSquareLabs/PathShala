@@ -5,6 +5,7 @@ import { $, $$, esc, evChip, school } from '../helpers.js';
 import { fold } from '../kit.js';
 import { render } from '../router.js';
 import { toast } from '../toast.js';
+import { concernsCard } from './feedback.js';
 
 export function stepInvestigate(el, c, A, B) {
   const F = q('SELECT * FROM findings WHERE case_id = ? ORDER BY fid', [c.case_id]);
@@ -14,6 +15,7 @@ export function stepInvestigate(el, c, A, B) {
   el.innerHTML = `<div class="card"><div class="ivtop"><h2 style="margin:0">Investigate ${esc(B.name)}</h2>
       <span class="actions"><button class="btn ${F.length ? '' : 'primary'}" id="ag-run">${F.length ? 'Run again' : 'Investigate case'}</button>${optionIds(c.inv_id).length > 1 ? `<button class="btn" id="ag-run-all">Investigate all ${optionIds(c.inv_id).length} schools</button>` : ''}</span></div>
     <ol class="agent" id="ag-list">${steps.map(s => agentRow(s, true)).join('') || '<li class="muted small" style="list-style:none">Not run yet. The agent checks students, routes, GIS layers, transport, feedback and field observations.</li>'}</ol></div>
+    ${concernsCard(c.case_id, 'Carried forward from the Feedback step')}
     <div id="ag-out">${F.length ? findingsHtml(c, F, fq, answered) : ''}</div>`;
   $('#ag-run').onclick = () => runAgent(c);
   const all = $('#ag-run-all'); if (all) all.onclick = () => runAll(c);

@@ -3,6 +3,7 @@ import { $, $$, caseState, esc, go, mergeOf, mergeRow, route, state } from './he
 import { maps, resetMaps } from './map/baseMap.js';
 import { renderCase } from './pages/case.js';
 import { renderCaseHome } from './pages/caseHome.js';
+import { renderAi } from './pages/ai.js';
 import { renderCases } from './pages/cases.js';
 import { renderHome } from './pages/home.js';
 import { renderInbox } from './pages/inbox.js';
@@ -21,7 +22,7 @@ import { dbStatus } from './toast.js';
 export function render(scrollTop) {
   const r = route(), app = $('#app');
   maps.forEach(m => m.remove()); resetMaps();
-  const top = { inbox: 'more', rules: 'more', sql: 'more', merges: 'merges', m: 'merges', new: 'merges', s: 'merges' }[r[0]] || 'home';
+  const top = { inbox: 'more', ai: 'more', rules: 'more', sql: 'more', merges: 'merges', m: 'merges', new: 'merges', s: 'merges' }[r[0]] || 'home';
   $$('#nav a').forEach(a => a.setAttribute('aria-current', a.dataset.v === top ? 'page' : 'false'));
   $('#more summary').setAttribute('aria-current', top === 'more' ? 'page' : 'false'); $('#more').open = false;
   const pg = () => { app.innerHTML = '<div class="page" id="pg"></div>'; return $('#pg'); };
@@ -43,6 +44,7 @@ export function render(scrollTop) {
     else if (r[0] === 's' && r[1]) renderSchool(pg(), r[1]);
     else if (r[0] === 'new') renderPlanner(pg(), r[1]);
     else if (r[0] === 'inbox') { if (r[1]) { state.inboxGroup = r[1]; state.draft = Object.assign({}, state.draft, { group: r[1] }); } renderInbox(pg()); }
+    else if (r[0] === 'ai') renderAi(pg());
     else if (r[0] === 'rules') renderRules(pg());
     else if (r[0] === 'sql') renderSql(pg());
     else go('');

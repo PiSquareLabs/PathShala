@@ -10,7 +10,7 @@ export const SRC = {
   rules: ['Rules and unit costs', 'RTE Rules 2010, HP Directorate of School Education, Samagra Shiksha financial norms, The Tribune (HP proposal)'],
   feedback: ['Citizen feedback', 'PathShala (synthesised for demo from real complaint patterns)'],
   outcomes: ['Attendance, success scores, survey answers', 'PathShala (synthesised for demo)'],
-  agents: ['Agent findings and drafts', 'PathShala agents (simulated provider), reading only the sources above'],
+  agents: ['Agent findings and drafts', 'PathShala agents (rules, or Gemini when an AI key is connected), reading only the sources above'],
   officer: ['Field answers, choices, report', 'Entered by the officer in this app'],
 };
 const BY_ROUTE = {
@@ -22,8 +22,9 @@ const BY_ROUTE = {
   new: ['udise', 'coords', 'routes', 'rules'],
   inbox: ['feedback', 'officer'],
   rules: ['rules'],
+  ai: ['agents'],
   sql: ['udise', 'merge_list', 'routes', 'feedback', 'outcomes', 'rules'],
 };
-const CASE = { compare: ['udise', 'coords', 'routes', 'gis', 'hab', 'rules', 'feedback'], evidence: ['udise', 'routes', 'gis', 'hab', 'feedback', 'agents'], investigate: ['agents', 'officer', 'feedback', 'routes'], policy: ['rules', 'agents', 'officer'], report: ['agents', 'officer', 'rules', 'udise'] };
+const CASE = { compare: ['udise', 'coords', 'routes', 'gis', 'hab', 'rules', 'feedback'], feedback: ['feedback', 'agents'], evidence: ['udise', 'routes', 'gis', 'hab', 'feedback', 'agents'], investigate: ['agents', 'officer', 'feedback', 'routes'], policy: ['rules', 'agents', 'officer'], report: ['agents', 'officer', 'rules', 'udise'] };
 export const sourcesFor = r => (r[0] === 'case' ? CASE[{ access: 'evidence', community: 'evidence' }[r[2]] || r[2]] || CASE.compare : BY_ROUTE[r[0] || ''] || BY_ROUTE['']).map(k => SRC[k]);
 export const sourcesHtml = r => `<details class="srcs" id="srcs"><summary>Sources of data on this page</summary><dl>${sourcesFor(r).map(([l, s]) => `<dt>${l}</dt><dd class="${/PathShala \(/.test(s) ? 'syn' : ''}">${s}</dd>`).join('')}</dl></details>`;

@@ -4,6 +4,7 @@ import { q } from '../../db/sqlite.js';
 import { $, $$, P, caseState, esc, evChip } from '../helpers.js';
 import { fold, tile } from '../kit.js';
 import { render } from '../router.js';
+import { concernsCard } from './feedback.js';
 
 /* Evidence for the chosen receiving school: the route, what is on it, and what citizens say. */
 export function stepEvidence(el, c, A, B) {
@@ -23,6 +24,7 @@ export function stepEvidence(el, c, A, B) {
       <div class="hz">${route.map(([h, where]) => `<div><i class="sev-${h.kind === 'bridge' ? 'high' : 'medium'}"></i><span><b>${esc(h.name)}</b> — ${esc(h.detail)}${h.source_url ? ` · <a href="${esc(h.source_url)}" target="_blank" rel="noopener">source</a>` : ''}</span><small>${esc(h.season || h.status || '')} · ${where}</small></div>`).join('') || `<p class="muted">${Lk ? 'No mapped hazards.' : 'Data unavailable: the route has not been mapped.'}</p>`}</div>
       <dl class="kv2" style="margin-top:12px"><dt>Public transport</dt><dd>Data unavailable (no timetable source). Asked as a field question.</dd>
         <dt>Not connected yet</dt><dd>Snow cover (MODIS), rainfall (CHIRPS)</dd></dl></div>
+    ${concernsCard(c.case_id)}
     <div class="card"><h2>What people say <small>${fb.length ? `${fb.length} messages · synthesised for the demo` : ''}</small></h2>
       ${fb.length ? `<div class="themes">${order.map(([k, v]) => `<button class="theme ${sel === k ? 'on' : ''}" data-t="${esc(k)}"><b>${v.n}</b><span>${esc(k)}</span><small>${v.v ? v.v + ' verified' : 'all reported'}</small></button>`).join('')}</div>` : '<p class="muted">Data unavailable: no citizen feedback recorded about moving to this school.</p>'}
       ${sel ? `<div class="row" style="margin-top:12px"><b>${esc(sel)}</b><button class="btn sm ghost" id="th-clear">Close</button></div><div class="msgs">${list.map(f => `<div class="msg"><span class="who">${esc(f.sender_role)} · ${esc(f.hab || '')} · ${esc(f.channel)} · ${esc(f.received)}</span>

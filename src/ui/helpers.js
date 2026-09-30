@@ -38,7 +38,7 @@ export const segKm = (a, b) => haversine({ lat: a[0], lng: a[1] }, { lat: b[0], 
 
 /* Tool: walking time from the elevation profile (Tobler's hiking function, scaled to a young child). */
 export const sleep = ms => new Promise(r => setTimeout(r, ms));
-export const STEPS = [['compare', 'Compare'], ['evidence', 'Evidence'], ['investigate', 'Investigate'], ['policy', 'Policy & cost'], ['report', 'Report']];
+export const STEPS = [['compare', 'Compare'], ['feedback', 'Feedback'], ['evidence', 'Evidence'], ['investigate', 'Investigate'], ['policy', 'Policy & cost'], ['report', 'Report']];
 export const EV_LBL = { reported: 'Reported', verified: 'Verified', calculated: 'Calculated', needs: 'Needs verification' };
 export const evChip = s => `<span class="evs ${s}">${EV_LBL[s] || s}</span>`;
 export const caseState = { sel: null, picks: new Set(), district: 'Kullu', theme: null, layers: { river: true, road: true, route: true, habs: true, hazards: true } };

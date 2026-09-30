@@ -29,7 +29,7 @@ test('every page of a fresh app loads without errors', async ({ page }) => {
       items: q('SELECT p.group_id, p.code, g.merge_id FROM plan_items p JOIN merge_groups g USING (group_id)').map(x => [x.merge_id, x.group_id, x.code]), schools: q('SELECT school_id FROM schools').map(x => x.school_id) };
   });
   const bad = [];
-  for (const h of ['', 'cases', 'merges', 'inbox', 'rules', 'sql', 'new']) await visit(page, h, bad);
+  for (const h of ['', 'ai', 'cases', 'merges', 'inbox', 'rules', 'sql', 'new']) await visit(page, h, bad);
   for (const m of ids.merges) for (const sub of ['', '/survey', '/feedback']) await visit(page, `m/${m}${sub}`, bad);
   for (const [m, g] of ids.groups) await visit(page, `m/${m}/g/${g}`, bad);
   for (const [m, g, c] of ids.items) await visit(page, `m/${m}/p/${g}/${c}`, bad);
@@ -53,11 +53,11 @@ test('every case page loads, for every closing school, every receiver and the fi
     }, s);
     if (!made) continue;
     const inv = made.inv;
-    for (const step of ['compare', 'evidence', 'investigate', 'policy', 'report']) { await visit(page, `case/${inv}/${step}`, bad); n++; }     // before any results
+    for (const step of ['compare', 'feedback', 'evidence', 'investigate', 'policy', 'report']) { await visit(page, `case/${inv}/${step}`, bad); n++; }     // before any results
     for (const t of made.tracks) await page.evaluate(async id => { await window.__pathshala.runInvestigation(id); await window.__pathshala.runPolicy(id); }, t.case_id);
     for (const t of made.tracks) {
       await page.evaluate(([i, id]) => { window.__pathshala.state.opt[i] = id; }, [inv, t.to_id]);
-      for (const step of ['evidence', 'investigate', 'policy']) { await visit(page, `case/${inv}/${step}`, bad); n++; }
+      for (const step of ['feedback', 'evidence', 'investigate', 'policy']) { await visit(page, `case/${inv}/${step}`, bad); n++; }
     }
     for (const t of made.tracks) {                                                                                                            // every option can be the final choice
       await page.evaluate(([i, id]) => window.__pathshala.chooseFinal(i, id), [inv, t.to_id]);

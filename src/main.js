@@ -1,3 +1,5 @@
+import { classifyByRules, runCategoryAgents, runClassify, stanceOf } from './agent/feedbackAgents.js';
+import { draftSentences } from './case/draft.js';
 import 'leaflet/dist/leaflet.css';
 import './styles/app.css';
 import { STORE, bootSql, db, freshDb, openDb, save, setDb } from './db/sqlite.js';
@@ -33,4 +35,4 @@ bootSql().then(engine => {
 });
 
 // Debug and test hook (used by tests/agents.spec.js); not used by the app itself.
-window.__pathshala = { q, state, chooseFinal, createCase, runInvestigation, runPolicy, makeSavedDb: sql => { const d = new SQL.Database(); d.exec(sql); return b64(d.export()); }, AGENTS, tools, toolSchemas, callAgent, validate, schemas, captureC1Outputs, CONFIG, GeminiProvider, SimulatedProvider };
+window.__pathshala = { runClassify, runCategoryAgents, draftSentences, classifyByRules, stanceOf, q, state, chooseFinal, createCase, runInvestigation, runPolicy, makeSavedDb: sql => { const d = new SQL.Database(); d.exec(sql); return b64(d.export()); }, AGENTS, tools, toolSchemas, callAgent, validate, schemas, captureC1Outputs, CONFIG, GeminiProvider, SimulatedProvider };

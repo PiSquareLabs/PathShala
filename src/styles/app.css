@@ -579,3 +579,16 @@ blockquote cite { display: block; font-style: normal; font-size: 12px; color: va
 .srcs dl { display: grid; grid-template-columns: minmax(150px, 220px) 1fr; gap: 4px 14px; margin: 8px 0 0; }
 .srcs dt { font-weight: 600; color: var(--ink); } .srcs dd { margin: 0; } .srcs dd.syn { color: var(--wait); }
 .cmptbl .src { display: block; font-weight: 400; font-size: 11px; color: var(--faint, var(--muted)); }
+.cats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 10px 0; }
+.cat { display: grid; gap: 4px; text-align: left; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); font: inherit; cursor: pointer; border-left-width: 5px; }
+.cat:disabled { opacity: .55; cursor: default; }
+.cat b { font-family: var(--f-display); font-size: 24px; line-height: 1; }
+.cat span { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+.k-tr { border-left-color: #2a6f9e; } .k-sf { border-left-color: var(--risk); } .k-tw { border-left-color: #5b7f3a; } .k-so { border-left-color: #7a5aa6; } .k-ot { border-left-color: var(--muted); }
+.ctiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin-top: 10px; }
+.ctile { padding: 12px 14px; border: 1px solid var(--line); border-left: 5px solid var(--line); border-radius: var(--r); background: var(--surface); display: grid; gap: 6px; align-content: start; }
+.ctile p { margin: 0; font-size: 13.5px; } .ctile ul { margin: 0; padding-left: 18px; font-size: 13px; } .ctile ul small { color: var(--muted); }
+.sbar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--sunk); }
+.sbar .s-sup { background: var(--ok); } .sbar .s-neu { background: var(--line); } .sbar .s-opp { background: var(--risk); }
+.stanceall { margin: 6px 0 10px; }
+.msg .vf { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
