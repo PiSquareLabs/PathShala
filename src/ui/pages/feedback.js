@@ -1,60 +1,43 @@
-import { CATEGORIES, CAT_AGENT, STANCE_LABEL, classified, concernsOf, feedbackAbout, runCategoryAgents, runClassify } from '../../agent/feedbackAgents.js';
+import { CATEGORIES, STANCE_LABEL, classified, concernsOf, ensureFeedback, feedbackAbout, runCategoryAgents } from '../../agent/feedbackAgents.js';
 import { llmConfigured } from '../../agent/llm.js';
 import { q1, save } from '../../db/sqlite.js';
-import { $, $$, esc, evChip } from '../helpers.js';
+import { $, esc } from '../helpers.js';
 import { fold } from '../kit.js';
 import { render } from '../router.js';
 import { toast } from '../toast.js';
 
 const CLS = { Transportation: 'k-tr', Safety: 'k-sf', 'Terrain and weather': 'k-tw', Social: 'k-so', Others: 'k-ot' };
-const modeBadge = () => '<span class="pill s-green">Hardcoded classification</span>';
-const agentBadge = () => (llmConfigured() ? '<span class="pill s-green">Gemini summaries</span>' : '<span class="pill s-pending">Rule summaries · <a href="#/ai">connect Gemini</a></span>');
+const PILL = { support: 's-green', oppose: 's-red', neutral: '', mixed: 's-amber' };
 const SUBJ = { sender: 'closing school', receiver: 'receiving school', merger: 'the merger' };
+const SHORT = { support: 'Supports', oppose: 'Does not support', neutral: 'Neutral', mixed: 'Mixed' };
 
 /* Stance bar: how many messages support merging, are neutral, or do not support it. */
 export const stanceBar = (sup, neu, opp) => { const t = sup + neu + opp || 1; return `<span class="sbar" role="img" aria-label="${sup} support, ${neu} neutral, ${opp} do not support"><i class="s-sup" style="width:${sup / t * 100}%"></i><i class="s-neu" style="width:${neu / t * 100}%"></i><i class="s-opp" style="width:${opp / t * 100}%"></i></span>`; };
-const tally = c => `<div class="small stancel"><span class="t-green">${c.sup} support</span> · <span class="muted">${c.n - c.sup - c.opp} neutral</span> · <span class="t-red">${c.opp} do not support</span></div>`;
+const totals = cs => cs.reduce((a, c) => [a[0] + c.sup, a[1] + c.n - c.sup - c.opp, a[2] + c.opp], [0, 0, 0]);
+const summaryLine = c => `<span class="fbrow-h"><b class="fbn">${esc(c.category)}</b><span class="fbc">${c.n}</span>${stanceBar(c.sup, c.n - c.sup - c.opp, c.opp)}<span class="pill ${PILL[c.stance]}">${SHORT[c.stance]}</span></span><span class="fbs1">${esc(c.summary)}</span>`;
 
-const concernTile = c => `<div class="ctile ${CLS[c.category]}" data-stance="${c.stance}"><div class="row"><b>${esc(c.category)}</b><span class="pill ${c.stance === 'support' ? 's-green' : c.stance === 'oppose' ? 's-red' : 's-amber'}">${STANCE_LABEL[c.stance]}</span></div>
-  ${stanceBar(c.sup, c.n - c.sup - c.opp, c.opp)}${tally(c)}<p>${esc(c.summary)}</p><ul>${c.points.map(p => `<li>${esc(p.text)} <small>(${p.fb_ids.length})</small></li>`).join('')}</ul>
-  <div class="small muted">${c.pos} positive · ${c.neg} negative · ${c.neu} neutral · ${esc(c.agent)} · ${c.src === 'gemini' ? 'Gemini' : 'rules'}</div></div>`;
-
-/* Concerns carried forward, used by the Evidence, Investigate and Report steps. */
-export function concernsCard(cid, title = 'Concerns from citizen feedback') {
+/* Compact list used by the Evidence and Investigate steps: one line per category. */
+export function concernsCard(cid, title = 'What people say') {
   const cs = concernsOf(cid); if (!cs.length) return '';
-  return `<section class="card" id="concerns"><h2>${esc(title)} <small>one agent per category</small></h2><div class="ctiles">${cs.map(concernTile).join('')}</div></section>`;
+  const t = totals(cs);
+  return `<section class="card" id="concerns"><div class="row"><h2>${esc(title)}</h2><span class="small muted"><b class="t-green">${t[0]}</b> support · ${t[1]} neutral · <b class="t-red">${t[2]}</b> do not</span></div>
+    <div class="fbrows">${cs.map(c => `<div class="fbrow static ${CLS[c.category]}">${summaryLine(c)}</div>`).join('')}</div><a class="small" href="#/case/${cid.replace(/-.*/, '')}/feedback">Details in the Feedback step</a></section>`;
 }
 
-/* The Feedback step: pool the messages about both schools, classify them, then one agent per category summarises. */
-export function stepFeedback(el, c, A, B) {
-  const msgs = feedbackAbout(c.case_id), cls = classified(c.case_id), cons = concernsOf(c.case_id), by = Object.fromEntries(cls.map(x => [x.fb_id, x]));
+/* The Feedback step. Nothing to press: messages are classified and summarised as the page opens. */
+export async function stepFeedback(el, c, A, B) {
+  const msgs = feedbackAbout(c.case_id);
   if (!msgs.length) { el.innerHTML = `<div class="card"><h2>Feedback about ${esc(A.name)} and ${esc(B.name)}</h2><p class="empty">Data unavailable: no citizen feedback is recorded about either school. Ask about it on the field visit.</p></div>`; return; }
-  const aboutA = msgs.filter(m => m.about_id === A.school_id).length, aboutB = msgs.length - aboutA;
-  const groups = Object.fromEntries(CATEGORIES.map(k => [k, msgs.filter(m => by[m.fb_id]?.category === k)]));
-  const tot = ['support', 'neutral', 'oppose'].map(s => cls.filter(x => x.stance === s).length);
-  el.innerHTML = `<div class="card"><div class="ivtop"><h2 style="margin:0">1 · Classify the feedback</h2><span class="actions">${modeBadge()}<button class="btn ${cls.length ? '' : 'primary'}" id="fb-classify">${cls.length ? 'Classify again' : `Classify ${msgs.length} messages`}</button></span></div>
-      <p class="small muted">${msgs.length} messages pooled from both sides of this comparison: ${aboutA} about ${esc(A.name)} (closing), ${aboutB} about ${esc(B.name)} (receiving). Synthesised for the demo by PathShala. The messages are about the schools, not necessarily about merging, so each gets a category, a sentiment, and a stance: good about the receiving school or bad about the closing school supports merging; the reverse does not.</p>
-      <div class="cats" id="cats">${CATEGORIES.map(k => `<button class="cat ${CLS[k]}" data-cat="${esc(k)}" ${cls.length ? '' : 'disabled'}><b>${cls.length ? groups[k].length : '–'}</b><span>${esc(k)}</span>${cls.length && groups[k].length ? stanceBar(...['support', 'neutral', 'oppose'].map(s => groups[k].filter(m => by[m.fb_id].stance === s).length)) : ''}</button>`).join('')}</div>
-      ${cls.length ? `<p class="stanceall">Overall: <b class="t-green">${tot[0]} support</b> · <b>${tot[1]} neutral</b> · <b class="t-red">${tot[2]} do not support</b> merging</p>` : ''}
-      ${cls.length ? CATEGORIES.map(k => groups[k].length ? fold(`${k} messages`, `<div class="msgs">${groups[k].slice(0, 40).map(f => { const x = by[f.fb_id]; return `<div class="msg"><span class="who">${esc(f.sender_role)} · ${esc(f.hab || '')}</span><span class="en">“${esc(f.text_en)}”</span><span class="vf"><span class="pill ${x.sentiment === 'positive' ? 's-green' : x.sentiment === 'negative' ? 's-red' : ''}">${x.sentiment} about ${SUBJ[x.subject]}</span> <span class="pill">${STANCE_LABEL[x.stance === 'oppose' ? 'oppose' : x.stance]}</span> ${evChip(f.status)}</span></div>`; }).join('')}</div>${groups[k].length > 40 ? `<p class="small muted">Showing 40 of ${groups[k].length}.</p>` : ''}`, { count: groups[k].length, id: 'fb-' + k }) : '').join('') : '<p class="small muted">Not classified yet.</p>'}</div>
-    <div class="card"><div class="ivtop"><h2 style="margin:0">2 · Category agents summarise the concerns</h2><span class="actions">${agentBadge()}<button class="btn ${cls.length && !cons.length ? 'primary' : ''}" id="fb-agents" ${cls.length ? '' : 'disabled'}>${cons.length ? 'Run agents again' : 'Run category agents'}</button></span></div>
-      <p class="small muted">${CATEGORIES.map(k => CAT_AGENT[k]).join(' · ')}. Each summarises its category and whether it supports merging. These carry forward into Evidence, Investigate and the report.</p>
-      <ol class="agent" id="fb-list">${cons.length ? '' : '<li class="muted small" style="list-style:none">Not run yet.</li>'}</ol>${cons.length ? `<div class="ctiles">${cons.map(concernTile).join('')}</div>` : ''}</div>`;
-  $('#fb-classify').onclick = async () => {
-    const b = $('#fb-classify'); b.disabled = true; b.textContent = 'Classifying…';
-    try { const r = await runClassify(c.case_id); save(); render(); toast('Feedback classified', [`${r.n} messages`]); }
-    catch (e) { console.error(e); render(); toast('Classification failed', [String(e.message || e)]); }
-  };
-  const ag = $('#fb-agents'); if (ag) ag.onclick = async () => {
-    ag.disabled = true; ag.textContent = 'Agents working…'; const list = $('#fb-list'); list.innerHTML = ''; const rows = {};
-    try {
-      await runCategoryAgents(c.case_id, ev => {
-        if (ev.type === 'start') { const li = document.createElement('li'); li.className = 'busy'; li.innerHTML = `<span class="ck">…</span><span><b>${esc(ev.agent)}</b> <code>${esc(ev.category)}</code></span>`; list.appendChild(li); rows[ev.category] = li; }
-        else if (rows[ev.category]) { rows[ev.category].className = 'ok'; rows[ev.category].innerHTML = `<span class="ck">✓</span><span><b>${esc(ev.agent)}</b> <code>${esc(ev.category)}</code> <span class="small muted">${ev.src === 'gemini' ? 'Gemini' : 'rules'}</span></span>`; }
-      });
-      save(); render(); toast('Concerns summarised', ['They now appear in Evidence, Investigate and the report']);
-    } catch (e) { console.error(e); render(); toast('Category agents failed', [String(e.message || e)]); }
-  };
-  $$('.cat', el).forEach(b => b.onclick = () => { const f = document.getElementById('fb-' + b.dataset.cat); if (f) { f.open = true; f.scrollIntoView({ block: 'nearest' }); } });
+  if (!concernsOf(c.case_id).length) { el.innerHTML = '<div class="card"><p class="muted">Reading the feedback…</p></div>'; await ensureFeedback(c.case_id); }
+  const cons = concernsOf(c.case_id), cls = classified(c.case_id), by = Object.fromEntries(cls.map(x => [x.fb_id, x])), t = totals(cons);
+  const aboutA = msgs.filter(m => m.about_id === A.school_id).length;
+  el.innerHTML = `<section class="card" id="fbsum"><div class="row"><h2>What people say</h2><span class="small muted">${msgs.length} messages · ${aboutA} about ${esc(A.name)}, ${msgs.length - aboutA} about ${esc(B.name)}</span></div>
+      <div class="fbtop">${stanceBar(...t)}<span class="stanceall"><b class="t-green">${t[0]} support</b> · <b>${t[1]} neutral</b> · <b class="t-red">${t[2]} do not support</b> merging</span></div>
+      <div class="fbrows">${cons.map(k => fold(summaryLine(k), `<ul class="fbpts">${k.points.slice(0, 3).map(p => `<li>${esc(p.text)} <small>×${p.fb_ids.length}</small></li>`).join('')}</ul>
+        ${fold('Messages', `<div class="fbmsgs">${cls.filter(x => x.category === k.category).slice(0, 8).map(x => { const m = msgs.find(y => y.fb_id === x.fb_id); return m ? `<div><i class="dot d-${x.stance}"></i>“${esc(m.text_en)}” <small>${esc(m.hab || m.sender_role)} · ${x.sentiment} about ${SUBJ[x.subject]}</small></div>` : ''; }).join('')}</div>`, { count: k.n, id: 'fbm-' + k.category })}
+        <div class="small muted">${k.pos} positive · ${k.neg} negative · ${k.neu} neutral · ${k.src === 'gemini' ? 'summarised by Gemini' : 'summarised by rules'}</div>`, { cls: `fbrow ${CLS[k.category]}`, id: 'fb-' + k.category })).join('')}</div>
+      ${fold('How this is worked out', `<p class="small muted">Every message is put in one category and given a sentiment about the closing school, the receiving school or the merger itself. Good about the receiving school, or bad about the closing school, counts as supporting merging; the reverse does not. The classification is a fixed table, not a model. ${llmConfigured() ? 'Gemini writes the summaries.' : 'Summaries are rule-based; connect Gemini under More → AI connection for written summaries.'} Messages are synthesised for the demo by PathShala.</p>${llmConfigured() ? '<button class="btn sm" id="fb-resum">Summarise again</button>' : ''}`, { id: 'fb-how' })}
+    </section>`;
+  const r = $('#fb-resum'); if (r) r.onclick = async () => { r.disabled = true; r.textContent = 'Summarising…'; try { await runCategoryAgents(c.case_id); save(); render(); } catch (e) { render(); toast('Summaries failed', [String(e.message || e)]); } };
 }
 export const hasConcerns = cid => (q1('SELECT count(*) AS n FROM concerns WHERE case_id = ?', [cid]).n || 0) > 0;

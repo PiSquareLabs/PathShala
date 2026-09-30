@@ -1,7 +1,6 @@
 /* Quick demo: a coach panel that walks a first-time user through every input of an investigation.
    Each step highlights the control to use and explains it. "Do it for me" performs that step's input;
    Next moves on, so the user can also do each step by hand. The demo case is GPS Pekhri-2 with two candidate receivers. */
-import { runCategoryAgents, runClassify } from '../agent/feedbackAgents.js';
 import { runFieldUpdate, runInvestigation, runPolicy } from '../agent/runner.js';
 import { chooseFinal, tracks } from '../case/options.js';
 import { q, run, save } from '../db/sqlite.js';
@@ -22,10 +21,7 @@ const STEPS = [
   { title: 'Start the comparison', text: 'This creates the investigation, with one track per receiving school.', target: '#cp-go',
     act: async () => { if (!caseState.picks.size) { RECEIVERS.forEach(id => caseState.picks.add(id)); render(); await wait(() => $('#cp-go')); } $('#cp-go').click(); } },
   { title: 'Compare side by side', text: 'Distance, climb, hazards, free seats and facilities for each school. Green marks the best value in a row. Each row names its data source underneath. Use Remove or "Add another school" to change the list.', path: i => `case/${i}/compare`, target: '.cmptbl' },
-  { title: 'Classify the feedback', text: 'Citizen messages about both schools are put into categories (transportation, safety, terrain and weather, social, others), each with a sentiment and whether it supports merging. This is a fixed, hardcoded classification.', path: i => `case/${i}/feedback`, target: '#fb-classify',
-    act: async () => { for (const t of tracks(inv())) await runClassify(t.case_id); save(); render(); } },
-  { title: 'Category agents summarise', text: 'One agent per category summarises the concerns. These summaries carry forward into Evidence, Investigate and the report. With a Gemini key connected (More → AI connection) Gemini writes them; otherwise rules do.', target: '#fb-agents',
-    act: async () => { for (const t of tracks(inv())) await runCategoryAgents(t.case_id); save(); render(); } },
+  { title: 'Feedback, already sorted', text: 'Nothing to press: citizen messages about both schools are classified for you into transportation, safety, terrain and weather, social and others, each with whether it supports merging. Tap a row to see its main concerns and messages. Gemini writes the summaries if connected (More → AI connection).', path: i => `case/${i}/feedback`, target: '#fbsum' },
   { title: 'Evidence for each school', text: 'The route, what is on it, and what people say. Use the tabs to switch between receiving schools. The concerns from the last step appear here.', path: i => `case/${i}/evidence`, target: '#concerns' },
   { title: 'Run the investigation', text: 'The agents check students, routes, map layers, transport, feedback and gaps, then write findings and field questions. Each step is a real tool call you can expand.', path: i => `case/${i}/investigate`, target: '#ag-run-all',
     act: async () => { for (const t of tracks(inv())) await runInvestigation(t.case_id); save(); render(); } },

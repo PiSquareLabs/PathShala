@@ -5,6 +5,7 @@ import { applyEvidenceUpdate, saveFieldAnswers, saveInterventions, writeFindings
 import { run } from '../db/sqlite.js';
 import { logCase, sleep } from '../ui/helpers.js';
 import { AGENTS } from './agents/index.js';
+import { ensureFeedback } from './feedbackAgents.js';
 import { agentPlan } from './plan.js';
 import { CONFIG, getProvider } from './provider.js';
 import { validate } from './validate.js';
@@ -37,6 +38,7 @@ function checkGrounding(id, out, ctx) {
 
 /* The investigation: 8 tool steps, then the specialists and the Coordinator. onEvent({type:'start'|'step', label, tool, input, output, summary}) */
 export async function runInvestigation(cid, onEvent = () => {}) {
+  await ensureFeedback(cid);
   run('DELETE FROM agent_steps WHERE case_id = ?', [cid]);
   logCase(cid, 'Officer', 'Started agent investigation');
   const plan = agentPlan(cid), ctx = plan[0].ctx;

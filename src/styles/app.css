@@ -602,3 +602,18 @@ blockquote cite { display: block; font-style: normal; font-size: 12px; color: va
 .demo-hl { outline: 3px solid #f5b301; outline-offset: 4px; border-radius: 8px; animation: dmpulse 1.4s ease-in-out infinite; }
 @keyframes dmpulse { 50% { outline-color: rgb(245 179 1 / .35); } }
 @media (max-width: 640px) { #demo { bottom: 8px; right: 8px; left: 8px; width: auto; } }
+.fbtop { display: grid; gap: 6px; margin: 4px 0 10px; } .fbtop .sbar { height: 12px; }
+.fbrows { display: grid; gap: 6px; }
+.fbrow { border: 1px solid var(--line); border-left: 5px solid var(--line); border-radius: var(--r); background: var(--surface); padding: 0; }
+.fbrow.static { padding: 8px 12px; display: grid; gap: 2px; }
+.fbrow > summary { padding: 8px 12px; display: grid; gap: 2px; }
+.fbrow .fold-b { padding: 0 12px 10px; }
+.fbrow-h { display: grid; grid-template-columns: minmax(130px, 190px) 40px minmax(60px, 1fr) auto; gap: 10px; align-items: center; }
+.fbn { font-size: 14.5px; } .fbc { font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 700; text-align: right; }
+.fbs1 { font-size: 12.5px; color: var(--muted); }
+.fbpts { margin: 4px 0 6px; padding-left: 18px; font-size: 13px; } .fbpts small { color: var(--muted); }
+.fbmsgs { display: grid; gap: 4px; font-size: 12.5px; } .fbmsgs small { color: var(--muted); }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--line); }
+.dot.d-support { background: var(--ok); } .dot.d-oppose { background: var(--risk); }
+@media (max-width: 640px) { .fbrow-h { grid-template-columns: 1fr auto; } .fbrow-h .sbar { display: none; } }
+.fbrow > summary { list-style: none; cursor: pointer; } .fbrow > summary::-webkit-details-marker { display: none; }

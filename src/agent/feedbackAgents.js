@@ -4,7 +4,7 @@
        Whether it SUPPORTS the merger follows from those by a fixed rule (below), never from the model.
    (2) One agent per category summarises the concerns; the counts come from the database.
    Step (1) is always hardcoded. With an AI key the Gemini proxy only writes the step (2) summaries; without one, rules do. */
-import { q, run } from '../db/sqlite.js';
+import { q, run, save } from '../db/sqlite.js';
 import { logCase } from '../ui/helpers.js';
 import { llmConfigured, llmJson } from './llm.js';
 
@@ -127,4 +127,14 @@ export async function runCategoryAgents(cid, onEvent = () => {}) {
     onEvent({ type: 'done', agent: CAT_AGENT[cat], category: cat, src });
   }
   logCase(cid, 'Agent', 'Category agents summarised the feedback', concernsOf(cid).map(c => `${c.category}: ${c.n} (${c.sup} support, ${c.opp} do not)`).join(' · '));
+}
+
+/* Classify and summarise on demand, so the officer never has to press anything. Returns true if it did any work. */
+export async function ensureFeedback(cid) {
+  if (!feedbackAbout(cid).length) return false;
+  let did = false;
+  if (!classified(cid).length) { await runClassify(cid); did = true; }
+  if (!concernsOf(cid).length) { await runCategoryAgents(cid); did = true; }
+  if (did) save();
+  return did;
 }

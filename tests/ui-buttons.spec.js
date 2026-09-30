@@ -408,20 +408,20 @@ test('mock tags read "PathShala (synthesised)"', async ({ page }) => {
   await expect(page.locator('.tag', { hasText: /^mock$/i })).toHaveCount(0);
 });
 
-test('feedback step: classify with sentiment and stance, category agents, carried forward', async ({ page }) => {
+test('feedback step: classified automatically, compact rows, carried forward', async ({ page }) => {
   await page.evaluate(() => window.__pathshala.createCase('PK2', ['GSH', 'NGN']));
-  await go(page, 'case/C1/feedback'); await expect(page.locator('#fb-classify')).toContainText('Classify');   // Nagini first: its own messages plus those about Pekhri-2
+  await go(page, 'case/C1/feedback'); await expect(page.locator('#fbsum')).toBeVisible();   // Nagini first: its own messages plus those about Pekhri-2
+  await expect(page.locator('#fbsum button')).toHaveCount(0);                                  // nothing to press
   await page.locator('.opttabs button', { hasText: 'Gushaini' }).click();
-  await expect(page.locator('.cat')).toHaveCount(5); await expect(page.locator('.cat').first()).toBeDisabled(); await expect(page.locator('#fb-agents')).toBeDisabled();
-  await page.locator('#fb-classify').click(); await expect(page.locator('.stanceall')).toContainText('support');
-  const cats = await page.locator('.cat b').allTextContents(); expect(cats.reduce((a, n) => a + +n, 0)).toBe(await page.evaluate(() => window.__pathshala.q("SELECT count(*) AS n FROM citizen_feedback WHERE about_id IN ('PK2','GSH')")[0].n));
-  await page.locator('.cat', { hasText: 'Transportation' }).click(); await expect(page.locator('#fb-Transportation')).toHaveJSProperty('open', true);
-  await expect(page.locator('#fb-Transportation .msg').first()).toContainText('about');
-  await page.locator('#fb-agents').click();
-  await expect(page.locator('.ctile')).toHaveCount(5); await expect(page.locator('.ctile .pill').first()).toContainText(/merging|Mixed|Neutral/);
-  await go(page, 'case/C1/evidence'); await page.locator('.opttabs button', { hasText: 'Gushaini' }).click(); await expect(page.locator('#concerns .ctile')).toHaveCount(5);
-  await go(page, 'case/C1/investigate'); await page.locator('.opttabs button', { hasText: 'Gushaini' }).click(); await expect(page.locator('#concerns')).toContainText('Carried forward');
-  await go(page, 'case/C1/feedback'); await page.locator('.opttabs button', { hasText: 'Gushaini' }).click();
+  await expect(page.locator('.fbrow')).toHaveCount(5); await expect(page.locator('.stanceall')).toContainText('support');
+  const total = await page.evaluate(() => window.__pathshala.q("SELECT count(*) AS n FROM citizen_feedback WHERE about_id IN ('PK2','GSH')")[0].n);
+  await expect(page.locator('#fbsum')).toContainText(`${total} messages`);
+  await page.locator('#fb-Transportation > summary').click(); await expect(page.locator('#fb-Transportation .fbpts li').first()).toBeVisible();
+  await page.locator('#fbm-Transportation summary').click(); await expect(page.locator('#fbm-Transportation .fbmsgs > div').first()).toContainText('about');
+  await expect(page.locator('.fbrow .pill').first()).toContainText(/Supports|Does not|Mixed|Neutral/);
+  await go(page, 'case/C1/evidence'); await page.locator('.opttabs button', { hasText: 'Gushaini' }).click(); await expect(page.locator('#concerns .fbrow')).toHaveCount(5);
+  await go(page, 'case/C1/investigate'); await page.locator('.opttabs button', { hasText: 'Gushaini' }).click(); await expect(page.locator('#concerns')).toContainText('Feedback carried forward');
+  await go(page, 'case/C1/feedback'); await page.locator('.opttabs button', { hasText: 'Gushaini' }).click(); await expect(page.locator('#fbsum')).toBeVisible();
   await page.screenshot({ path: 'docs/screens/13-feedback.png' });
 });
 
@@ -439,19 +439,17 @@ test('feedback reaches the report draft with a reference the critic accepts; sta
 
 test('quick demo: guides through every input with "Do it for me", back, exit', async ({ page }) => {
   test.setTimeout(240000);
-  await page.locator('#demo-start').click(); await expect(page.locator('#demo')).toContainText('step 1 of 12');
+  await page.locator('#demo-start').click(); await expect(page.locator('#demo')).toContainText('step 1 of 11');
   await expect(page.locator('.demo-hl')).toHaveCount(1);
   await page.locator('#dm-do').click(); await expect(page.locator('#cpanel')).toContainText('Closing school');
-  await page.locator('#dm-next').click(); await expect(page.locator('#demo')).toContainText('step 2 of 12');
+  await page.locator('#dm-next').click(); await expect(page.locator('#demo')).toContainText('step 2 of 11');
   await page.locator('#dm-do').click(); await expect(page.locator('#cp-go')).toContainText('Compare 2 schools');
   await page.locator('#dm-next').click(); await page.locator('#dm-do').click(); await expect(page).toHaveURL(/case\/C\d+\/compare/);
-  await expect(page.locator('#demo')).toContainText('step 3 of 12'); await page.locator('#dm-next').click();
+  await expect(page.locator('#demo')).toContainText('step 3 of 11'); await page.locator('#dm-next').click();
   await expect(page.locator('#demo')).toContainText('Compare side by side'); await expect(page.locator('.cmptbl')).toBeVisible();
-  await page.locator('#dm-back').click(); await expect(page.locator('#demo')).toContainText('step 3 of 12'); await page.locator('#dm-next').click();
-  await page.locator('#dm-next').click(); await expect(page).toHaveURL(/feedback/);
-  await page.locator('#dm-do').click(); await expect(page.locator('#fb-agents')).toBeEnabled({ timeout: 20000 });
-  await page.locator('#dm-next').click(); await page.locator('#dm-do').click(); await expect(page.locator('.ctile').first()).toBeVisible({ timeout: 30000 });
-  await page.locator('#dm-next').click(); await expect(page).toHaveURL(/evidence/); await expect(page.locator('#concerns')).toBeVisible();
+  await page.locator('#dm-back').click(); await expect(page.locator('#demo')).toContainText('step 3 of 11'); await page.locator('#dm-next').click();
+  await page.locator('#dm-next').click(); await expect(page).toHaveURL(/feedback/); await expect(page.locator('#fbsum')).toBeVisible({ timeout: 20000 });
+  await page.locator('#dm-next').click(); await expect(page).toHaveURL(/evidence/); await expect(page.locator('#concerns')).toBeVisible({ timeout: 20000 });
   await page.locator('#dm-next').click(); await expect(page).toHaveURL(/investigate/);
   await page.locator('#dm-do').click(); await expect(page.locator('.fq')).toHaveCount(5, { timeout: 90000 });
   await page.locator('#dm-next').click(); await page.locator('#dm-do').click(); await expect(page.locator('#fq')).toContainText('Answered', { timeout: 30000 });
@@ -459,7 +457,7 @@ test('quick demo: guides through every input with "Do it for me", back, exit', a
   await page.locator('#dm-do').click(); await expect(page.locator('.ivsel input:checked').first()).toBeVisible({ timeout: 30000 });
   await page.locator('#dm-next').click(); await expect(page).toHaveURL(/report/);
   await page.locator('#dm-do').click(); await expect(page.locator('#opt-table th.chosen')).toHaveCount(1, { timeout: 20000 });
-  await page.locator('#dm-next').click(); await expect(page.locator('#demo')).toContainText('step 12 of 12'); await expect(page.locator('#rp-text')).toBeVisible();
+  await page.locator('#dm-next').click(); await expect(page.locator('#demo')).toContainText('step 11 of 11'); await expect(page.locator('#rp-text')).toBeVisible();
   await page.screenshot({ path: 'docs/screens/15-demo.png' });
   await page.locator('#dm-next').click(); await expect(page.locator('#demo')).toBeHidden();
   await go(page, ''); await page.locator('#demo-start').click(); await page.locator('#dm-exit').click(); await expect(page.locator('#demo')).toBeHidden();
