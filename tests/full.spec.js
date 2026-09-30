@@ -5,12 +5,13 @@ const cont = page => page.locator('#fc-now').click();
 
 test('Full control drives the ordinary screens: one closing school in, AI research, field form (waits), policies, final report', async ({ page }) => {
   test.setTimeout(400000);
-  await page.locator('#nav a', { hasText: 'Full control' }).click(); await expect(page).toHaveURL(/#\/full$/);
-  await page.locator('#fc-school').selectOption('PK2'); await expect(page.locator('#fc-cands')).toContainText('GPS Gushaini'); await page.locator('#fc-start').click();
+  await expect(page.locator('#nav a', { hasText: 'Full control' })).toHaveCount(0);      // a mode of the home page, not a tab
+  await page.locator('#mode-full').click(); await page.locator('#cpanel [data-s="PK2"]').click();
+  await expect(page.locator('#cpanel')).toContainText('Start Full control'); await expect(page.locator('#cpanel')).toContainText('GPS Gushaini'); await page.locator('#cp-full').click();
   // Compare: the AI already chose the candidates
   await expect(page).toHaveURL(/case\/C\d+\/compare/); await expect(page.locator('#fc-banner')).toContainText('chose the candidate schools'); await expect(page.locator('.cmptbl')).toBeVisible();
   const cands = await page.locator('.cmptbl thead th b').count(); expect(cands).toBe(3);
-  await expect(page.locator('#fc-count')).toContainText('Continuing in');
+  await expect(page.locator('#fc-count')).toContainText('Moving on in'); await expect(page.locator('#fc-track li.now .fcwho')).toHaveText('AI'); await expect(page.locator('.fcsay')).toContainText('You do not need to click Next');
   await page.locator('#fc-pause').click(); await expect(page.locator('#fc-count')).toHaveText('Paused'); await page.locator('#fc-pause').click();
   // Feedback: the AI classifies, summarises and checks claims, then the real Feedback screen appears
   await cont(page); await expect(page).toHaveURL(/feedback/); await expect(page.locator('#fbsum, #rs-feedbackChecker').first()).toBeVisible({ timeout: 120000 });
@@ -37,13 +38,14 @@ test('Full control drives the ordinary screens: one closing school in, AI resear
   // after the answers: evidence updated, then Policy and cost with the best policies selected
   await expect(page.locator('#fc-banner')).toContainText('field answers are recorded', { timeout: 120000 });
   await cont(page); await expect(page).toHaveURL(/policy/); await expect(page.locator('#fc-banner')).toContainText('best policies', { timeout: 120000 });
-  await expect(page.locator('.ivsel input:checked').first()).toBeVisible();
-  const st2 = await page.evaluate(() => { const q = window.__pathshala.q; return { sel: q('SELECT count(*) n FROM interventions WHERE selected = 1')[0].n, auto: q('SELECT count(*) n FROM auto_choices')[0].n, chosen: q('SELECT chosen_id FROM investigations')[0].chosen_id }; });
+  await expect(page.locator('.ivsel input:checked').first()).toBeVisible(); await expect(page.locator('#fc-pick')).toContainText('AI picked the best policies'); expect(await page.locator('.aiwhy').count()).toBeGreaterThan(1); await expect(page.locator('.aiwhy').first()).toContainText(/The AI (chose|did not choose) this/);
+  const st2 = await page.evaluate(() => { const q = window.__pathshala.q; return { sel: q('SELECT count(*) n FROM interventions WHERE selected = 1')[0].n, auto: q("SELECT count(*) n FROM auto_choices WHERE code != '_mode' AND reason NOT LIKE 'not:%'")[0].n, chosen: q('SELECT chosen_id FROM investigations')[0].chosen_id }; });
   expect(st2.sel).toBe(st2.auto); expect(st2.chosen).toBeNull();
+  await page.locator('.ivsel input:checked').first().uncheck(); await expect(page.locator('#fc-pick-note')).toContainText('You changed'); await expect(page.locator('#fc-count')).toHaveText('Paused'); await page.locator('#fc-pause').click();
   await cont(page); await expect(page).toHaveURL(/report/); await expect(page.locator('.fcrec')).toBeVisible({ timeout: 180000 });
   await expect(page.locator('.fcrec .eyebrow')).toContainText('a suggestion, the officer decides');
   await expect(page.locator('#fc-compare thead th')).toHaveCount(4); await expect(page.locator('#fc-compare')).toContainText('Confirmed concerns');
-  expect(await page.locator('.fcwhycard').count()).toBeGreaterThan(0); await expect(page.locator('#fc-budget')).toContainText('Three-year total');
+  expect(await page.locator('.fcwhycard').count()).toBeGreaterThan(0); await expect(page.locator('#fc-budget')).toContainText('Three-year total'); await expect(page.locator('#fc-budget-notes')).toContainText('Policies were chosen school by school'); await expect(page.locator('#fc-report')).toContainText('Budget compared across schools');
   expect(await page.locator('#fc-report h3').count()).toBeGreaterThanOrEqual(5); await expect(page.locator('#fc-report')).toContainText('Still to be confirmed');
   await expect(page.locator('#opt-table')).toBeVisible();      // the ordinary Report step is still there for the officer's decision
   const st3 = await page.evaluate(() => { const q = window.__pathshala.q; return { stage: q('SELECT stage FROM full_runs')[0].stage, chosen: q('SELECT chosen_id FROM investigations')[0].chosen_id, status: q('SELECT status FROM investigations')[0].status }; });
@@ -70,6 +72,5 @@ test('Full control: research agents all complete for every school (no failed ste
 });
 
 test('Full control: start page lists the schools and their candidates', async ({ page }) => {
-  await page.evaluate(() => { location.hash = '#/full'; }); await expect(page.locator('#fc-start')).toBeVisible(); await page.locator('#srcs summary').click(); await expect(page.locator('#srcs')).toContainText('UDISE');
-  await page.locator('#fc-school').selectOption('NHN'); await expect(page.locator('#fc-cands')).toContainText(/No suitable receiving school|Candidate receiving schools/);
+  await page.evaluate(() => { location.hash = '#/full'; }); await expect(page.locator('#mode-full')).toHaveAttribute('aria-pressed', 'true'); await page.locator('#cpanel [data-s]').first().click(); await expect(page.locator('#cp-full')).toBeVisible(); await page.locator('#srcs summary').click(); await expect(page.locator('#srcs')).toContainText('UDISE');
 });

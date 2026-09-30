@@ -54,3 +54,5 @@ errors such as "no such column". Bump `STORE` in `src/db/sqlite.js` as well when
 
 - Home page has a "Quick demo: guide me" button (`src/ui/demo.js`): a 12-step coach panel that highlights each input and offers "Do it for me" per step (GPS Pekhri-2 with Gushaini and Nagini).
 - The local-storage key now carries a fingerprint of the seed, so browsers with a save from an older seed (for example before feedback was added for every school) start from the current data.
+
+- Full control is a mode on the home page (Step by step or Full control), not a header tab. A progress strip tags each stage AI or You (only the field form is You). Policies are chosen by Gemini when a key is set (rules otherwise), each with a reason, and the officer can change any tick. The final report compares the budgets of all schools.

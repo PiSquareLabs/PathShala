@@ -24,7 +24,7 @@ import { dbStatus } from './toast.js';
 export function render(scrollTop) {
   const r = route(), app = $('#app');
   maps.forEach(m => m.remove()); resetMaps();
-  const top = { full: 'full', inbox: 'more', ai: 'more', rules: 'more', sql: 'more', merges: 'merges', m: 'merges', new: 'merges', s: 'merges' }[r[0]] || 'home';
+  const top = { inbox: 'more', ai: 'more', rules: 'more', sql: 'more', merges: 'merges', m: 'merges', new: 'merges', s: 'merges' }[r[0]] || 'home';
   $$('#nav a').forEach(a => a.setAttribute('aria-current', a.dataset.v === top ? 'page' : 'false'));
   $('#more summary').setAttribute('aria-current', top === 'more' ? 'page' : 'false'); $('#more').open = false;
   const pg = () => { app.innerHTML = '<div class="page" id="pg"></div>'; return $('#pg'); };

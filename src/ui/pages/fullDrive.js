@@ -1,9 +1,11 @@
-import { AUTO_NEXT, adoptRecommendation, fieldForm, fullRow, needsWork, nextAfter, reportText, runWork, submitFieldForm } from '../../agent/fullControl.js';
+import { adoptRecommendation, fieldForm, fullRow, needsWork, nextAfter, policyChoice, reopenReport, reportText, runWork, selectBestPolicies, submitFieldForm } from '../../agent/fullControl.js';
+import { tracks } from '../../case/options.js';
 import { $, $$, esc, inr, school } from '../helpers.js';
 import { fold } from '../kit.js';
 import { render } from '../router.js';
 import { toast } from '../toast.js';
 import { fieldQ } from './investigate.js';
+import { activeTrack } from './options.js';
 
 /* Full control drives the ordinary case screens. The banner says what the AI just did and what comes next;
    the working panel shows a screen's automatic work; the field form is where the flow waits for the officer. */
@@ -22,21 +24,33 @@ const MSG = {
   policy: 'The AI picked the best policies for each school and priced them.',
   report: 'The final recommendation, comparison and report are ready. The officer decides.',
 };
+/* The whole run at a glance: who does each stage (AI or you) and where it is now. */
+const PHASES = [['Closing school', 'You'], ['Candidate schools', 'AI'], ['Citizen feedback', 'AI'], ['Evidence and transport', 'AI'], ['Investigation', 'AI'], ['Field form', 'You'], ['Policies and budget', 'AI'], ['Report and comparison', 'AI']];
+function phaseNow(inv, f) {
+  if (f.stage === 'final') return 8; if (f.stage === 'report') return 7; if (f.stage === 'policy' || f.stage === 'answered') return 6; if (f.stage === 'field') return 5;
+  return needsWork(inv, 'feedback') ? 2 : needsWork(inv, 'evidence') ? 3 : 4;
+}
+export function fullTracker(inv) {
+  const f = fullRow(inv), cur = phaseNow(inv, f), yours = cur === 5;
+  return `<ol class="fctrack" id="fc-track" aria-label="Full control progress">${PHASES.map(([l, who], i) => `<li class="${i < cur ? 'done' : i === cur ? (who === 'You' ? 'you' : 'now') : ''}"><span class="fcwho">${i < cur ? '✓' : who}</span>${l}</li>`).join('')}</ol>
+    <p class="small muted fcsay">${cur >= 8 ? 'Everything the AI can do is finished. Read the recommendation, edit anything you disagree with, and decide.' : yours ? '<b>Your turn.</b> This is the only stop: fill in the field form below. Everything after it runs by itself.' : `The AI runs every screen and moves on by itself. <b>You do not need to click Next.</b> It stops once, at the field form.`}</p>`;
+}
 export function fullBanner(inv, step) {
   const f = fullRow(inv); if (!f) return '';
   const nx = nextAfter(inv, step), waiting = f.stage === 'field' && ['policy', 'report'].includes(step);
   const key = step === 'investigate' ? (f.stage === 'field' ? 'investigate:field' : f.stage === 'policy' ? 'investigate:policy' : 'investigate') : step;
   const text = waiting ? 'Waiting for the field form on the Investigate step. The policies and the report follow after it.' : needsWork(inv, step) ? 'The AI is working on this screen…' : (MSG[key] || 'Full control is on. Use the steps above to look around.');
   const label = { feedback: 'Feedback', evidence: 'Evidence', investigate: 'Investigate', policy: 'Policy and cost', report: 'Report' }[nx];
-  return `<div class="fcbanner" id="fc-banner" role="status"><span class="pill s-green">Full control</span><span>${esc(text)}</span>${nx && nx !== 'wait' ? `<span class="fcnext"><span id="fc-count"></span><button class="btn sm primary" id="fc-now">Continue to ${label}</button><button class="btn sm" id="fc-pause">Pause</button></span>` : ''}${waiting ? `<a class="btn sm" href="#/case/${inv}/investigate">Go to the field form</a>` : ''}</div>`;
+  return `<div class="fcbanner" id="fc-banner" role="status"><span class="pill s-green">Full control</span><span>${esc(text)}</span>${nx && nx !== 'wait' ? `<span class="fcnext"><span id="fc-count"></span><button class="btn sm primary" id="fc-now">Skip ahead: ${label}</button><button class="btn sm" id="fc-pause">Pause</button></span>` : ''}${waiting ? `<a class="btn sm" href="#/case/${inv}/investigate">Go to the field form</a>` : ''}</div>${fullTracker(inv)}`;
 }
 /* Wire the banner and start the countdown to the next screen. */
 export function fullWire(inv, step) {
   clearFullTimer(); const nx = nextAfter(inv, step); if (!nx || nx === 'wait' || !$('#fc-now')) return;
   const go_ = () => { clearFullTimer(); location.hash = `#/case/${inv}/${nx}`; };
   $('#fc-now').onclick = go_;
-  let left = 6; const show = () => { const c = $('#fc-count'); if (c) c.textContent = paused.has(inv) ? 'Paused' : `Continuing in ${left}s`; };
+  let left = step === 'investigate' && nx === 'policy' ? 5 : nx === 'report' ? 20 : 4; const show = () => { const c = $('#fc-count'); if (c) c.textContent = paused.has(inv) ? 'Paused' : `Moving on in ${left}s`; };
   const pb = $('#fc-pause'); pb.onclick = () => { paused.has(inv) ? paused.delete(inv) : paused.add(inv); pb.textContent = paused.has(inv) ? 'Resume' : 'Pause'; show(); }; pb.textContent = paused.has(inv) ? 'Resume' : 'Pause';
+  if (nx === 'report') { const pauseEdit = () => { if (!paused.has(inv)) { paused.add(inv); pb.textContent = 'Resume'; show(); } }; $('#cmain')?.addEventListener('change', pauseEdit); }
   show(); timer = setInterval(() => { if (paused.has(inv)) return; left--; if (left <= 0) go_(); else show(); }, 1000);
 }
 
@@ -99,7 +113,7 @@ export function finalInto(body, inv) {
       <tr><th scope="row">Per year</th>${cols.map(c => `<td><b>${c.yearly ? inr(c.yearly) : 'No cost'}</b></td>`).join('')}${keep ? '<td>—</td>' : ''}</tr>
       <tr><th scope="row">One-time</th>${cols.map(c => `<td><b>${c.oneTime ? inr(c.oneTime) : 'No cost'}</b></td>`).join('')}${keep ? `<td><b>${keep.cost_type === 'one-time' ? inr(keep.cost_inr) : 'No cost'}</b></td>` : ''}</tr>
       <tr><th scope="row">First-year total</th>${cols.map((c, i) => `<td><b>${c.firstYear ? inr(c.firstYear) : 'No cost'}</b></td>`).join('')}${keep ? `<td><b>${inr(keep.cost_inr)}</b></td>` : ''}</tr>
-      <tr><th scope="row">Three-year total</th>${cols.map(c => `<td><b>${c.threeYear ? inr(c.threeYear) : 'No cost'}</b></td>`).join('')}${keep ? `<td><b>${inr(keep.cost_inr)}</b></td>` : ''}</tr></tbody></table></div><p class="small muted">Three-year total = yearly costs counted three times plus one-time costs. Policies were chosen by a fixed rule: for each confirmed concern, the cheapest intervention that addresses it.</p></section>
+      <tr><th scope="row">Three-year total</th>${cols.map(c => `<td><b>${c.threeYear ? inr(c.threeYear) : 'No cost'}</b></td>`).join('')}${keep ? `<td><b>${inr(keep.cost_inr)}</b></td>` : ''}</tr></tbody></table></div><ul class="rsent" id="fc-budget-notes">${o.budget_notes.map(t => `<li>${esc(t)}</li>`).join('')}</ul><p class="small muted">Three-year total = yearly costs counted three times plus one-time costs. Policies were chosen by a fixed rule: for each confirmed concern, the cheapest intervention that addresses it.</p></section>
     <section class="card" id="fc-report"><div class="row"><h2 style="margin:0">Full report <small>for ${esc(o.best_if_merge_name)}${rec ? ' (if the merger goes ahead)' : ''}</small></h2><span class="actions"><span class="pill ${o.report.critique.pass ? 's-green' : 's-amber'}">${o.report.critique.pass ? 'Checked: every sentence cited' : 'Critic notes: ' + o.report.critique.issues.length}</span><button class="btn sm" id="fc-dl">Download text</button><button class="btn sm" id="fc-print2">Print or save as PDF</button></span></div>
       ${o.report.sections.map(s => `<h3 style="margin:12px 0 4px">${esc(s.title)}</h3><ul class="rsent">${s.sentences.map(x => `<li>${esc(x.text)} ${(x.refs || []).map(cite).join('')}</li>`).join('')}</ul>`).join('')}</section>
     ${fold('Open issues', `<ul class="rsent">${o.open_issues.length ? o.open_issues.map(t => `<li>${esc(t)}</li>`).join('') : '<li>None</li>'}</ul>`, { id: 'fc-open', count: o.open_issues.length })}
@@ -109,4 +123,20 @@ export function finalInto(body, inv) {
   const header = `PathShala Full control report: ${o.closing_school}`;
   $('#fc-dl').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([reportText(o, header)], { type: 'text/plain' })); a.download = `pathshala-${inv}-report.txt`; a.click(); };
   $('#fc-print2').onclick = () => window.print();
+}
+
+/* The Policy screen in Full control: what the AI chose for this school and why. Every tick can still be changed. */
+export function policyWhy(target, inv) {
+  const c = activeTrack(inv);
+  const ch = policyChoice(c.case_id); if (!ch) return;
+  $$('.ivc', target).forEach(card => {
+    const code = card.querySelector('input[data-c]')?.dataset.c, x = ch.by[code]; if (!x) return;
+    card.querySelector('.ivtop').insertAdjacentHTML('afterend', `<div class="aiwhy ${x.chosen ? '' : 'no'}" data-code="${esc(code)}"><b>${x.chosen ? 'The AI chose this' : 'The AI did not choose this'}${ch.mode === 'Gemini' ? ' (Gemini)' : ''}:</b> ${esc(x.reason)}</div>`);
+  });
+  const n = Object.values(ch.by).filter(x => x.chosen).length;
+  target.insertAdjacentHTML('afterbegin', `<section class="card aipick" id="fc-pick"><div class="eyebrow">The AI picked the best policies for this school${ch.mode === 'Gemini' ? ' (Gemini)' : ' (rules)'}</div>
+    <p style="margin:2px 0">${n ? `${n} chosen out of ${Object.keys(ch.by).length}.` : 'None needed for this school.'} The reason is under each option. <b>Tick or untick any option to change it</b>; the totals and the report use your final ticks. The flow moves on by itself unless you change something.</p>
+    <div class="row" style="justify-content:flex-start;gap:8px"><button class="btn sm" id="fc-reset-pick">Put back the AI's choice</button><span class="small muted" id="fc-pick-note"></span></div></section>`);
+  $('#fc-reset-pick').onclick = async () => { await selectBestPolicies(c.case_id); render(); };
+  $$('.ivsel input', target).forEach(i => i.addEventListener('change', () => { const n_ = $('#fc-pick-note'); if (n_) n_.textContent = 'You changed the AI’s choice. The report will use your ticks.'; const f = fullRow(inv); if (f.stage === 'final') { reopenReport(inv); } }));
 }

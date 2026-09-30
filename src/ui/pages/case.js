@@ -9,8 +9,8 @@ import { stepInvestigate } from './investigate.js';
 import { activeTrack, optTabs, wireOptTabs } from './options.js';
 import { stepPolicy } from './policy.js';
 import { stepReport } from './report.js';
-import { finalInto, fieldInto, fullBanner, fullWire, clearFullTimer, workingPanel } from './fullDrive.js';
-import { fullRow, needsWork } from '../../agent/fullControl.js';
+import { policyWhy, finalInto, fieldInto, fullBanner, fullWire, clearFullTimer, workingPanel } from './fullDrive.js';
+import { fullRow, needsWork, nextAfter } from '../../agent/fullControl.js';
 
 const PER_OPTION = ['feedback', 'evidence', 'investigate', 'policy'];
 
@@ -30,7 +30,7 @@ export function renderCase(pg, inv, step) {
     ${fullBanner(inv, step)}
     <nav class="steps" aria-label="Investigation steps">${STEPS.map(([k, l], i) => `<a href="#/case/${inv}/${k}" aria-current="${k === step ? 'step' : 'false'}" class="${done[k] && k !== step ? 'done' : ''}"><span class="sn">${done[k] && k !== step ? '✓' : i + 1}</span>${l}</a>`).join('')}</nav>
     ${['compare', 'feedback', 'report'].includes(step) ? '<div id="cmain" class="tight"></div>' : `<div class="cgrid"><div class="cmain" id="cmain"></div><div class="cside">${caseMapPanel()}</div></div>`}
-    <div class="row" style="margin-top:4px">${idx > 0 ? `<a class="btn" href="#/case/${inv}/${STEPS[idx - 1][0]}">← ${STEPS[idx - 1][1]}</a>` : '<span></span>'}${idx < STEPS.length - 1 ? `<a class="btn primary" href="#/case/${inv}/${STEPS[idx + 1][0]}">Next: ${STEPS[idx + 1][1]} →</a>` : ''}</div>`;
+    <div class="row" style="margin-top:4px">${idx > 0 ? `<a class="btn" href="#/case/${inv}/${STEPS[idx - 1][0]}">← ${STEPS[idx - 1][1]}</a>` : '<span></span>'}${idx < STEPS.length - 1 && !(fullRow(inv) && nextAfter(inv, step)) ? `<a class="btn primary" href="#/case/${inv}/${STEPS[idx + 1][0]}">Next: ${STEPS[idx + 1][1]} →</a>` : ''}</div>`;
   const main = $('#cmain'), FR = fullRow(inv);
   if (FR && needsWork(inv, step)) { workingPanel(main, inv, step); if ($('#cmap')) drawCaseMap({ case_id: c.case_id, inv_id: inv, from_id: c.from_id, to_id: c.to_id }, step); return; }
   let target = main;
@@ -40,6 +40,7 @@ export function renderCase(pg, inv, step) {
   Promise.resolve(stepFn()).then(() => {
     if (FR) {
       if (step === 'investigate' && FR.stage === 'field') { $('#fq')?.remove(); const box = document.createElement('div'); box.id = 'fc-fieldbox'; main.insertBefore(box, main.firstChild); fieldInto(box, inv); }
+      if (step === 'policy' && FR.stage !== 'field') policyWhy(target, inv);
       if (step === 'report' && FR.stage === 'final' && FR.out) { const box = document.createElement('div'); box.id = 'fc-final'; box.className = 'fcfinal'; target.insertBefore(box, target.firstChild); finalInto(box, inv); }
       fullWire(inv, step);
     }

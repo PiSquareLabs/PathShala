@@ -14,6 +14,7 @@ import { CONFIG } from './provider.js';
 import { runDraft, runFieldUpdate, runInvestigation, runPolicy } from './runner.js';
 import { tools } from './tools.js';
 import { savedRun } from './loop.js';
+import { llmConfigured, llmJson } from './llm.js';
 
 export const STAGES = [['school', 'Closing school'], ['research', 'AI research'], ['field', 'Field form'], ['policy', 'Policies and budget'], ['decision', 'Decision']];
 const now = () => new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -81,7 +82,7 @@ export async function runWork(inv, step, onLog = () => {}) {
     }
     return;
   }
-  if (step === 'policy') { await each(inv, log, async (t, B) => { log(`${B.name}: retrieving policy and pricing interventions`); await runPolicy(t.case_id); selectBestPolicies(t.case_id); log(`${B.name}: selected ${q('SELECT code FROM auto_choices WHERE case_id = ?', [t.case_id]).map(x => x.code).join(', ') || 'no intervention (none needed)'}`); }); setStage(inv, 'report'); return; }
+  if (step === 'policy') { await each(inv, log, async (t, B) => { log(`${B.name}: retrieving policy and pricing interventions`); await runPolicy(t.case_id); const r = await selectBestPolicies(t.case_id); log(`${B.name}: ${r.mode === 'Gemini' ? 'Gemini' : 'rules'} chose ${r.pick.join(', ') || 'no intervention (none needed)'}, with a reason for every option`); }); setStage(inv, 'report'); return; }
   if (step === 'report') {
     const old = CONFIG.stepDelayMs; CONFIG.stepDelayMs = 60;
     try {
@@ -92,22 +93,51 @@ export async function runWork(inv, step, onLog = () => {}) {
   }
 }
 
+/* The officer changed policies after the report was built: rebuild the report from the new ticks when it is next opened. */
+export function reopenReport(inv) { const f = fullRow(inv); if (f?.stage === 'final') setStage(inv, 'report'); }
+
 /* The officer submits the field form: answers are stored and the flow continues automatically. */
 export function submitFieldForm(inv, answers) { Object.entries(answers).forEach(([cid, a]) => saveFieldAnswers(cid, a)); setStage(inv, 'answered'); logCase(inv, 'Officer', 'Submitted the field form', 'Full control continues'); }
 
 export const fieldForm = inv => tracks(inv).map(t => ({ track: t, school: school(t.to_id), questions: q('SELECT * FROM field_questions WHERE case_id = ? ORDER BY seq', [t.case_id]) }));
 
-/* Best policies for one candidate by a fixed rule: for each confirmed concern take the cheapest intervention that addresses it. */
-export function selectBestPolicies(cid) {
-  run('DELETE FROM auto_choices WHERE case_id = ?', [cid]); run('UPDATE interventions SET selected = 0 WHERE case_id = ?', [cid]);
+/* Best policies for one candidate. The rule below always runs: for each confirmed concern take the cheapest intervention that
+   addresses it. With a Gemini key the model chooses from the same list and must give a reason for every option; its answer is
+   accepted only if every code exists, otherwise the rule's choice stands. The reasons are stored (auto_choices: a chosen code
+   holds its reason, "not:<reason>" a rejected one, "_mode" who chose) and shown on the Policy screen; the officer can change any tick. */
+function ruleChoice(cid) {
   const F = Object.fromEntries(q('SELECT fid, status, title FROM findings WHERE case_id = ? AND removed = 0', [cid]).map(f => [f.fid, f])), iv = Object.fromEntries(q('SELECT * FROM interventions WHERE case_id = ?', [cid]).map(v => [v.code, v]));
-  const confirmed = f => f && /Confirmed|Verified/.test(f.status), pick = (code, reason) => { run('UPDATE interventions SET selected = 1 WHERE case_id = ? AND code = ?', [cid, code]); run('INSERT INTO auto_choices VALUES (?,?,?)', [cid, code, reason]); };
+  const confirmed = f => f && /Confirmed|Verified/.test(f.status), pick = {}, no = {};
   if (confirmed(F.F1)) {
     const opts = ['TR', 'ES'].filter(c => iv[c]).sort((a, b) => iv[a].cost_inr - iv[b].cost_inr || a.localeCompare(b)), best = opts[0];
-    if (best) pick(best, `Addresses the confirmed concern "${F.F1.title}"; the cheapest of ${opts.map(c => `${c} (${iv[c].cost_inr})`).join(' and ')}`);
+    if (best) { pick[best] = `Addresses the confirmed concern "${F.F1.title}"; the cheapest of ${opts.map(c => `${c} (${fmt(iv[c].cost_inr)})`).join(' and ')}`; opts.slice(1).forEach(c => { no[c] = `Also addresses "${F.F1.title}" but costs more than ${best}`; }); }
+  } else ['TR', 'ES'].filter(c => iv[c]).forEach(c => { no[c] = 'The distance and travel concern is not confirmed, so no transport cost is needed'; });
+  if (iv.SEA) { if (confirmed(F.F2)) pick.SEA = `Addresses the verified concern "${F.F2.title}"; no new cost`; else no.SEA = 'No verified seasonal-access concern'; }
+  Object.keys(iv).forEach(c => { if (!pick[c] && !no[c]) no[c] = 'No confirmed concern needs it'; });
+  return { pick, no };
+}
+export async function selectBestPolicies(cid) {
+  const iv = q('SELECT code, title, cost_inr, cost_type, why FROM interventions WHERE case_id = ?', [cid]), base = ruleChoice(cid); let { pick, no } = base, mode = 'rules';
+  if (llmConfigured() && iv.length) {
+    try {
+      const fnd = q("SELECT fid, title, status FROM findings WHERE case_id = ? AND removed = 0", [cid]);
+      const out = await llmJson({ system: 'You choose school-merger interventions for a district education officer. Choose only from the listed codes. Prefer interventions that address a confirmed finding at the lowest cost. Reply as JSON: {"choices":[{"code":"TR","chosen":true,"reason":"one plain sentence"}]} with one entry for every listed code. Do not invent numbers.', messages: [{ role: 'user', content: JSON.stringify({ findings: fnd, interventions: iv }) }], max_tokens: 1024 }, 2);
+      const ch = out.choices; if (!Array.isArray(ch) || iv.some(v => !ch.find(c => c.code === v.code && typeof c.reason === 'string' && c.reason))) throw new Error('choices not understood');
+      pick = {}; no = {}; ch.filter(c => iv.find(v => v.code === c.code)).forEach(c => { (c.chosen ? pick : no)[c.code] = c.reason; }); mode = 'Gemini';
+    } catch (e) { addLogCase(cid, `Gemini policy choice not used (${e.message}); the rule's choice stands`); pick = base.pick; no = base.no; }
   }
-  if (confirmed(F.F2) && iv.SEA) pick('SEA', `Addresses the verified concern "${F.F2.title}"; no new cost`);
-  logCase(cid, 'Full control', 'Selected the best policies', q('SELECT code FROM auto_choices WHERE case_id = ?', [cid]).map(x => x.code).join(', ') || 'none needed');
+  run('DELETE FROM auto_choices WHERE case_id = ?', [cid]); run('UPDATE interventions SET selected = 0 WHERE case_id = ?', [cid]);
+  Object.entries(pick).forEach(([c, r]) => { run('UPDATE interventions SET selected = 1 WHERE case_id = ? AND code = ?', [cid, c]); run('INSERT INTO auto_choices VALUES (?,?,?)', [cid, c, r]); });
+  Object.entries(no).forEach(([c, r]) => run('INSERT INTO auto_choices VALUES (?,?,?)', [cid, c, 'not:' + r])); run('INSERT INTO auto_choices VALUES (?,?,?)', [cid, '_mode', mode]);
+  logCase(cid, 'Full control', `Selected the best policies (${mode})`, Object.keys(pick).join(', ') || 'none needed'); save();
+  return { pick: Object.keys(pick), mode };
+}
+const addLogCase = (cid, t) => logCase(cid, 'Full control', t, '');
+/* What the AI chose for one candidate, for the Policy screen. */
+export function policyChoice(cid) {
+  const rows = q('SELECT code, reason FROM auto_choices WHERE case_id = ?', [cid]); if (!rows.length) return null;
+  const by = {}; let mode = 'rules'; rows.forEach(r => { if (r.code === '_mode') mode = r.reason; else by[r.code] = r.reason.startsWith('not:') ? { chosen: false, reason: r.reason.slice(4) } : { chosen: true, reason: r.reason }; });
+  return { by, mode };
 }
 
 const fmt = n => Number(n).toLocaleString('en-IN');
@@ -117,11 +147,17 @@ function buildFinal(inv, C, S, sg) {
     const sel = q('SELECT * FROM interventions WHERE case_id = ? AND selected = 1', [t.case_id]), why = Object.fromEntries(q('SELECT code, reason FROM auto_choices WHERE case_id = ?', [t.case_id]).map(x => [x.code, x.reason]));
     const yearly = sel.filter(s => s.cost_type === 'per year').reduce((a, s) => a + s.cost_inr, 0), oneTime = sel.filter(s => s.cost_type === 'one-time').reduce((a, s) => a + s.cost_inr, 0);
     const con = q('SELECT sum(sup) s, sum(opp) o, sum(n) n FROM concerns WHERE case_id = ?', [t.case_id])[0], fc = savedRun(t.case_id, 'feedbackChecker')?.out?.counts;
-    return { school_id: t.to_id, name: school(t.to_id).name, case_id: t.case_id, items: sel.map(s => ({ code: s.code, title: s.title, cost_inr: s.cost_inr, cost_type: s.cost_type, formula: s.formula, reason: why[s.code] || '' })), yearly, oneTime, firstYear: yearly + oneTime, threeYear: yearly * 3 + oneTime,
+    return { school_id: t.to_id, name: school(t.to_id).name, case_id: t.case_id, items: sel.map(s => ({ code: s.code, title: s.title, cost_inr: s.cost_inr, cost_type: s.cost_type, formula: s.formula, reason: why[s.code] && !why[s.code].startsWith('not:') ? why[s.code] : 'Added by the officer' })), yearly, oneTime, firstYear: yearly + oneTime, threeYear: yearly * 3 + oneTime,
       stance: { support: con.s || 0, oppose: con.o || 0, messages: con.n || 0 }, claims: fc || null };
   });
   const ret = q("SELECT * FROM interventions WHERE code = 'RET' AND case_id IN (SELECT case_id FROM cases WHERE inv_id = ?) ORDER BY case_id LIMIT 1", [inv])[0];
   const keep = ret ? { title: ret.title, cost_inr: ret.cost_inr, cost_type: ret.cost_type, formula: ret.formula } : null;
+  const byCost = cols.slice().sort((a, b) => a.firstYear - b.firstYear || a.name.localeCompare(b.name)), notes = [];
+  const rc = cols.find(c => c.school_id === best.school_id);
+  notes.push(`Policies were chosen school by school (${cols.map(c => `${c.name}: ${c.items.length ? c.items.map(i => i.code).join(' + ') : 'none needed'}`).join('; ')}), then the budgets were compared.`);
+  if (byCost.length > 1) notes.push(`Lowest first-year cost: ${byCost[0].name} at ${byCost[0].firstYear ? '₹' + fmt(byCost[0].firstYear) : 'no new cost'}; highest: ${byCost[byCost.length - 1].name} at ${byCost[byCost.length - 1].firstYear ? '₹' + fmt(byCost[byCost.length - 1].firstYear) : 'no new cost'}.`);
+  if (rc && byCost.length > 1) { const d = rc.firstYear - byCost[0].firstYear; notes.push(d > 0 ? `${rc.name}, the best candidate if the merger goes ahead, costs ₹${fmt(d)} more in the first year than the cheapest option, ${byCost[0].name}.` : `${rc.name}, the best candidate if the merger goes ahead, is also the cheapest in the first year.`); }
+  if (keep) notes.push(`Keeping and repairing ${A.name} would cost ₹${fmt(keep.cost_inr)} ${keep.cost_type}.`);
   const winner = S.suggested === 'keep' ? null : C.options.find(o => o.school_id === S.suggested);
   const whyNot = C.options.filter(o => !winner || o.school_id !== winner.school_id).map(o => {
     const pts = [], ref = winner || best;
@@ -139,7 +175,7 @@ function buildFinal(inv, C, S, sg) {
   tracks(inv).forEach(t => { const B = school(t.to_id).name, un = q("SELECT count(*) n FROM field_questions WHERE case_id = ? AND answer = '' AND note = ''", [t.case_id])[0].n; if (un) open.push(`${B}: ${un} field question(s) left unanswered`);
     const tp = savedRun(t.case_id, 'transportPlanner')?.out; if (tp?.open_questions?.length) open.push(`${B}: bus timetable and pickup stops still need confirmation on the ground`);
     const fc = savedRun(t.case_id, 'feedbackChecker')?.out?.counts; if (fc?.unchecked) open.push(`${B}: ${fc.unchecked} citizen claims could not be checked`); });
-  return { ranking: S.ranking, recommended: S.suggested, recommended_name: S.suggested_name, best_if_merge: best.school_id, best_if_merge_name: best.name, closing_school: A.name, students: C.students, walk_limit_km: C.walk_limit_km, reasons, would_change: sg.would_change || [], comparison: C, why_not: whyNot, budget: { columns: cols, keep }, open_issues: open, mode: sg.mode };
+  return { ranking: S.ranking, recommended: S.suggested, recommended_name: S.suggested_name, best_if_merge: best.school_id, best_if_merge_name: best.name, closing_school: A.name, students: C.students, walk_limit_km: C.walk_limit_km, reasons, would_change: sg.would_change || [], comparison: C, why_not: whyNot, budget: { columns: cols, keep }, open_issues: open, mode: sg.mode, budget_notes: notes };
 }
 
 function buildReport(inv, out, cid, draftSentences, critique) {
@@ -149,6 +185,7 @@ function buildReport(inv, out, cid, draftSentences, critique) {
     { title: 'Rationale (drafted from the case evidence)', sentences: draftSentences },
     ...(fc ? [{ title: 'What citizens say and what checks show', sentences: fc.sentences }] : []), ...(tp ? [{ title: 'Transport plan', sentences: tp.sentences }] : []),
     { title: 'Why this option', sentences: [...out.reasons, ...out.would_change] },
+    { title: 'Budget compared across schools', sentences: out.budget_notes.map(t => ({ text: t, refs: [] })) },
     { title: 'Budget', sentences: (col?.items.length ? col.items.map(i => ({ text: `${i.title}: ${i.cost_inr ? `₹${fmt(i.cost_inr)} ${i.cost_type}` : 'no new cost'} (${i.formula}). ${i.reason}`, refs: [] })) : [{ text: 'No intervention was found necessary for this candidate.', refs: [] }]).concat(col ? [{ text: `First-year total ₹${fmt(col.firstYear)}; three-year total ₹${fmt(col.threeYear)} (yearly costs counted three times plus one-time costs).`, refs: [] }] : []) },
     { title: 'Still to be confirmed', sentences: (out.open_issues.length ? out.open_issues : ['No outstanding checks were found.']).map(t => ({ text: t, refs: [] })) },
   ];
