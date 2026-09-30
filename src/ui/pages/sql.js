@@ -14,7 +14,7 @@ export const SAMPLE_SQL = [
 ];
 export function renderSql(app) {
   const tables = q("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").map(t => ({ name: t.name, n: q1(`SELECT count(*) AS n FROM "${t.name}"`).n }));
-  const engine = ['checks', 'plan_items', 'questions', 'analysis', 'merge_summary', 'problems', 'unknowns', 'investigations', 'cases', 'case_log', 'feedback_class', 'concerns', 'research_runs', 'research_steps', 'research_evidence', 'suggestions', 'feedback_class', 'concerns', 'agent_steps', 'findings', 'evidence', 'field_questions', 'interventions', 'reports'];
+  const engine = ['checks', 'plan_items', 'questions', 'analysis', 'merge_summary', 'problems', 'unknowns', 'investigations', 'cases', 'case_log', 'feedback_class', 'concerns', 'research_runs', 'research_steps', 'research_evidence', 'suggestions', 'full_runs', 'auto_choices', 'feedback_class', 'concerns', 'agent_steps', 'findings', 'evidence', 'field_questions', 'interventions', 'reports'];
   const tbtn = t => `<button data-t="${t.name}"><span>${t.name}</span><span class="muted">${t.n}</span></button>`;
   app.innerHTML = `<div class="sqlgrid">
     <div class="card"><div class="tlist">

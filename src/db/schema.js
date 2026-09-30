@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS research_runs (case_id TEXT, agent TEXT, mode TEXT, s
 CREATE TABLE IF NOT EXISTS research_steps (case_id TEXT, agent TEXT, seq INTEGER, kind TEXT, tool TEXT, reason TEXT, input TEXT, output TEXT, passages TEXT, summary TEXT, src TEXT, PRIMARY KEY (case_id, agent, seq));
 CREATE TABLE IF NOT EXISTS research_evidence (case_id TEXT, agent TEXT, eid TEXT, label TEXT, source TEXT, status TEXT, ref TEXT, step INTEGER, PRIMARY KEY (case_id, agent, eid));
 CREATE TABLE IF NOT EXISTS suggestions (inv_id TEXT PRIMARY KEY, mode TEXT, suggested TEXT, out TEXT, accepted INTEGER DEFAULT 0, officer_choice TEXT, created TEXT);
+CREATE TABLE IF NOT EXISTS full_runs (inv_id TEXT PRIMARY KEY, stage TEXT, started TEXT, updated TEXT, log TEXT, out TEXT);
+CREATE TABLE IF NOT EXISTS auto_choices (case_id TEXT, code TEXT, reason TEXT, PRIMARY KEY (case_id, code));
 CREATE TABLE IF NOT EXISTS case_log (case_id TEXT, ts TEXT, actor TEXT, action TEXT, detail TEXT);
 CREATE TABLE IF NOT EXISTS agent_steps (case_id TEXT, seq INTEGER, label TEXT, tool TEXT, input TEXT, output TEXT, summary TEXT);
 CREATE TABLE IF NOT EXISTS findings (case_id TEXT, fid TEXT, title TEXT, kind TEXT, severity TEXT, summary TEXT, status TEXT, removed INTEGER DEFAULT 0, PRIMARY KEY (case_id, fid));

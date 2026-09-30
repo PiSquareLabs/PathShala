@@ -29,7 +29,7 @@ test('every page of a fresh app loads without errors', async ({ page }) => {
       items: q('SELECT p.group_id, p.code, g.merge_id FROM plan_items p JOIN merge_groups g USING (group_id)').map(x => [x.merge_id, x.group_id, x.code]), schools: q('SELECT school_id FROM schools').map(x => x.school_id) };
   });
   const bad = [];
-  for (const h of ['', 'ai', 'cases', 'merges', 'inbox', 'rules', 'sql', 'new']) await visit(page, h, bad);
+  for (const h of ['', 'ai', 'full', 'cases', 'merges', 'inbox', 'rules', 'sql', 'new']) await visit(page, h, bad);
   for (const m of ids.merges) for (const sub of ['', '/survey', '/feedback']) await visit(page, `m/${m}${sub}`, bad);
   for (const [m, g] of ids.groups) await visit(page, `m/${m}/g/${g}`, bad);
   for (const [m, g, c] of ids.items) await visit(page, `m/${m}/p/${g}/${c}`, bad);

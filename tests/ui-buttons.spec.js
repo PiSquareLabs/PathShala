@@ -36,14 +36,14 @@ async function choosePolicy(page, name, titles) {
   for (const t of titles) await page.locator('.ivc', { hasText: t }).locator('input').check();
 }
 
-test('header: brand, two tabs and the More menu', async ({ page }) => {
+test('header: brand, three tabs and the More menu', async ({ page }) => {
   const tabs = [['Investigate', /#\/$/, 'Which school might close'], ['Merges', /#\/merges/, 'Each tile is one merge']];
   for (const [label, url, text] of tabs) {
     await page.locator('#nav a', { hasText: label }).click();
     await expect(page).toHaveURL(url); await expect(app(page)).toContainText(text);
     await expect(page.locator('#nav a[aria-current="page"]')).toContainText(label);
   }
-  await expect(page.locator('#nav a')).toHaveCount(2);
+  await expect(page.locator('#nav a')).toHaveCount(3);
   const menu = [['Feedback inbox', /#\/inbox/, 'Log feedback'], ['Rules', /#\/rules/, 'Rules'], ['SQLite console', /#\/sql/, 'SQLite console']];
   for (const [label, url, text] of menu) {
     await page.locator('#more summary').click();

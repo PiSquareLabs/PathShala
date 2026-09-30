@@ -639,3 +639,13 @@ blockquote cite { display: block; font-style: normal; font-size: 12px; color: va
 @media (max-width: 640px) { .rstep > details > summary, .rstep.busy { grid-template-columns: 22px 1fr; } .rs { grid-column: 2; } .rr { grid-column: 2; } }
 .rstep .io { margin: 4px 0 8px; padding: 8px 10px; background: #16212a; color: #d9e4ea; border-radius: 8px; font-size: 11.5px; white-space: pre-wrap; word-break: break-word; }
 .agent li.muted { display: block; }
+/* Full control */
+.fcsteps span { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; font-weight: 600; color: var(--muted); }
+.fcsteps span[aria-current="step"] { color: var(--ink); } .fcsteps small { font-weight: 500; color: var(--muted); }
+.fclog { max-height: 280px; overflow: auto; background: #16212a; color: #d9e4ea; border-radius: 8px; padding: 8px 12px; font: 12.5px/1.5 ui-monospace, monospace; } .fclog small { color: #8ea2b0; }
+.fcflow { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.fcsec { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 10px; } .fcsec h3 { margin: 0 0 6px; }
+.fcprint { display: none; }
+.fcrec { border: 2px solid var(--accent); }
+.fcwhy { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 12px; } .fcwhycard { border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; background: var(--surface); } .fcwhycard ul { margin: 4px 0 0; padding-left: 18px; font-size: 13.5px; }
+@media print { header.bar, .steps, #demo, .no-print, .srcs, .row .actions, .btn, nav, .maplegend { display: none !important; } .fcprint { display: block !important; } body { background: #fff; } .card { border: 0; box-shadow: none; } .fq input[type=text], .fq input[type=number] { border-bottom: 1px solid #000; } }

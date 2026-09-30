@@ -16,6 +16,7 @@ export const SRC = {
 };
 const BY_ROUTE = {
   '': ['udise', 'coords', 'bounds', 'gis'],
+  full: ['udise', 'coords', 'routes', 'gis', 'feedback', 'reports', 'agents', 'rules', 'officer'],
   cases: ['udise', 'officer'],
   merges: ['merge_list', 'udise', 'outcomes', 'rules'],
   m: ['merge_list', 'udise', 'routes', 'gis', 'hab', 'outcomes', 'rules', 'officer'],

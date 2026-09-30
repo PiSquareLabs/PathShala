@@ -5,6 +5,7 @@ import { renderCase } from './pages/case.js';
 import { renderCaseHome } from './pages/caseHome.js';
 import { renderAi } from './pages/ai.js';
 import { renderCases } from './pages/cases.js';
+import { renderFull } from './pages/full.js';
 import { renderHome } from './pages/home.js';
 import { renderInbox } from './pages/inbox.js';
 import { renderItem } from './pages/item.js';
@@ -23,7 +24,7 @@ import { dbStatus } from './toast.js';
 export function render(scrollTop) {
   const r = route(), app = $('#app');
   maps.forEach(m => m.remove()); resetMaps();
-  const top = { inbox: 'more', ai: 'more', rules: 'more', sql: 'more', merges: 'merges', m: 'merges', new: 'merges', s: 'merges' }[r[0]] || 'home';
+  const top = { full: 'full', inbox: 'more', ai: 'more', rules: 'more', sql: 'more', merges: 'merges', m: 'merges', new: 'merges', s: 'merges' }[r[0]] || 'home';
   $$('#nav a').forEach(a => a.setAttribute('aria-current', a.dataset.v === top ? 'page' : 'false'));
   $('#more summary').setAttribute('aria-current', top === 'more' ? 'page' : 'false'); $('#more').open = false;
   const pg = () => { app.innerHTML = '<div class="page" id="pg"></div>'; return $('#pg'); };
@@ -31,6 +32,7 @@ export function render(scrollTop) {
     if (!r.length) renderCaseHome(app);
     else if (r[0] === 'merges') renderHome(app);
     else if (r[0] === 'case' && r[1]) renderCase(pg(), r[1], { access: 'evidence', community: 'evidence' }[r[2]] || r[2]);
+    else if (r[0] === 'full') renderFull(pg(), r[1]);
     else if (r[0] === 'cases') renderCases(pg());
     else if (r[0] === 'm' && r[1]) {
       const m = mergeRow(r[1]);

@@ -6,7 +6,7 @@ import { haversine, linkOf, logCase, school, today } from '../ui/helpers.js';
 import { q, q1, run, save } from '../db/sqlite.js';
 import { screen, walkProfile } from './analysis.js';
 
-export const RESULT_TABLES = ['findings', 'evidence', 'field_questions', 'interventions', 'reports', 'agent_steps', 'feedback_class', 'concerns', 'research_runs', 'research_steps', 'research_evidence'];
+export const RESULT_TABLES = ['findings', 'evidence', 'field_questions', 'interventions', 'reports', 'agent_steps', 'feedback_class', 'concerns', 'research_runs', 'research_steps', 'research_evidence', 'auto_choices'];
 
 export const invRow = inv => q1('SELECT * FROM investigations WHERE inv_id = ?', [inv]);
 export const trackRow = tid => q1('SELECT * FROM cases WHERE case_id = ?', [tid]);
