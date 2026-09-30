@@ -1,6 +1,6 @@
-"""PathShala LLM backend: a small FastAPI service that proxies requests to Gemini.
+"""PathShala LLM backend: a small FastAPI service that proxies requests to OpenAI.
 
-Your frontend calls this service; the Gemini API key stays on the server.
+Your frontend calls this service; the OpenAI API key stays on the server.
 """
 
 import json
@@ -12,14 +12,13 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from google import genai
-from google.genai import errors, types
+from openai import APIError, APIStatusError, AsyncOpenAI
 from pydantic import BaseModel, Field
 
 load_dotenv()  # reads backend/.env locally; on Render, env vars come from the dashboard
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 APP_API_KEY = os.getenv("APP_API_KEY")  # shared secret your frontend sends; unset = no auth
 ALLOWED_ORIGINS = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "*").split(",")]
 SYSTEM_PROMPT = os.getenv(
@@ -27,13 +26,13 @@ SYSTEM_PROMPT = os.getenv(
     "You are PathShala's assistant. Answer clearly and concisely.",
 )
 
-if not GEMINI_API_KEY:
-    raise RuntimeError("GEMINI_API_KEY is not set (add it to backend/.env or Render env vars)")
+if not OPENAI_API_KEY:
+    raise RuntimeError("OPENAI_API_KEY is not set (add it to backend/.env or Render env vars)")
 
 logger = logging.getLogger("pathshala")
 logging.basicConfig(level=logging.INFO)
 
-client = genai.Client(api_key=GEMINI_API_KEY)
+client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 app = FastAPI(title="PathShala LLM API")
 app.add_middleware(
@@ -69,34 +68,24 @@ def check_api_key(x_api_key: str | None = Header(default=None)) -> None:
 
 
 def build_request(req: ChatRequest) -> dict:
-    # Gemini calls the assistant role "model"
-    contents = [
-        types.Content(
-            role="model" if m.role == "assistant" else "user",
-            parts=[types.Part(text=m.content)],
-        )
-        for m in req.messages
-    ]
-    config = types.GenerateContentConfig(
-        system_instruction=req.system or SYSTEM_PROMPT,
-        max_output_tokens=req.max_tokens,
-        automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
-    )
-    return {"model": MODEL, "contents": contents, "config": config}
+    messages = [{"role": "system", "content": req.system or SYSTEM_PROMPT}]
+    messages += [{"role": m.role, "content": m.content} for m in req.messages]
+    return {"model": MODEL, "messages": messages, "max_completion_tokens": req.max_tokens}
 
 
-def to_http_error(e: errors.APIError) -> HTTPException:
-    # Log the real Gemini error server-side; only a safe summary goes to the client.
-    logger.error("Gemini API error (code=%s): %s", e.code, e.message)
-    if e.code == 429:
+def to_http_error(e: APIError) -> HTTPException:
+    # Log the real OpenAI error server-side; only a safe summary goes to the client.
+    status = e.status_code if isinstance(e, APIStatusError) else None
+    logger.error("OpenAI API error (status=%s): %s", status, e.message)
+    if status == 429:
         return HTTPException(status_code=429, detail="LLM rate limit hit, try again shortly")
-    if e.code in (401, 403):
-        return HTTPException(status_code=500, detail="Server's Gemini API key is invalid")
-    if e.code == 400:
+    if status in (401, 403):
+        return HTTPException(status_code=500, detail="Server's OpenAI API key is invalid")
+    if status == 400:
         return HTTPException(status_code=400, detail=str(e.message))
-    if e.code == 404:
+    if status == 404:
         return HTTPException(status_code=502, detail=f"Model '{MODEL}' not found or unavailable for this key")
-    return HTTPException(status_code=502, detail=f"LLM provider error ({e.code}): {e.message}")
+    return HTTPException(status_code=502, detail=f"LLM provider error ({status}): {e.message}")
 
 
 @app.get("/")
@@ -113,21 +102,21 @@ async def health():
 async def chat(req: ChatRequest):
     """Send a conversation and get the full reply back as JSON."""
     try:
-        response = await client.aio.models.generate_content(**build_request(req))
-    except errors.APIError as e:
+        response = await client.chat.completions.create(**build_request(req))
+    except APIError as e:
         raise to_http_error(e)
 
-    if not response.candidates:
+    if not response.choices:
         raise HTTPException(status_code=422, detail="The model declined this request")
 
-    usage = response.usage_metadata
-    finish = response.candidates[0].finish_reason
+    choice = response.choices[0]
+    usage = response.usage
     return ChatResponse(
-        reply=response.text or "",
+        reply=choice.message.content or "",
         model=MODEL,
-        finish_reason=finish.name if finish else None,
-        input_tokens=(usage and usage.prompt_token_count) or 0,
-        output_tokens=(usage and usage.candidates_token_count) or 0,
+        finish_reason=choice.finish_reason,
+        input_tokens=(usage and usage.prompt_tokens) or 0,
+        output_tokens=(usage and usage.completion_tokens) or 0,
     )
 
 
@@ -137,12 +126,13 @@ async def chat_stream(req: ChatRequest):
 
     async def events():
         try:
-            stream = await client.aio.models.generate_content_stream(**build_request(req))
+            stream = await client.chat.completions.create(**build_request(req), stream=True)
             async for chunk in stream:
-                if chunk.text:
-                    yield f"data: {json.dumps({'text': chunk.text})}\n\n"
+                delta = chunk.choices[0].delta.content if chunk.choices else None
+                if delta:
+                    yield f"data: {json.dumps({'text': delta})}\n\n"
             yield f"data: {json.dumps({'done': True})}\n\n"
-        except errors.APIError as e:
+        except APIError as e:
             yield f"data: {json.dumps({'error': to_http_error(e).detail})}\n\n"
 
     return StreamingResponse(events(), media_type="text/event-stream")
