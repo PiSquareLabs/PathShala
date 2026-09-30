@@ -73,7 +73,7 @@ test('03 compare the receiving schools side by side; nothing is chosen yet', asy
   await expect(cell('Mapped hazards', 0)).toContainText('None mapped');
   await expect(cell('RTE walking limit', 1)).toContainText('Over 1 km');
   await expect(cell('Citizen feedback', 1)).toContainText('87 messages');
-  await expect(cell('Citizen feedback', 0)).toContainText('None recorded');
+  await expect(cell('Citizen feedback', 0)).toContainText(/\d+ messages/);   // Nagini has its own, smaller set
   expect(await page.locator('.cmptbl td.best').count()).toBeGreaterThan(3);
   await page.waitForTimeout(600);
   await shot(page, '03_compare');
@@ -97,7 +97,7 @@ test('04 evidence for each school, one tab per receiving school', async () => {
   await expect(page.locator('.msg')).toHaveCount(0);
   await page.locator('.opttabs button', { hasText: 'GPS Nagini' }).click();
   await expect(app()).toContainText('Getting to GPS Nagini');
-  await expect(app()).toContainText('no citizen feedback recorded about moving to this school');
+  await expect(app()).not.toContainText('Baridropa');   // Nagini shows its own messages, not Gushaini's
 });
 
 test('05 investigate every school', async () => {

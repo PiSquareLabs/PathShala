@@ -203,6 +203,33 @@ def build(cur):
             rows.append(("PK2" if hab != "H5" else "GSH", "GSH", hab, theme, hi, en, rnd.choice(chans), d, rnd.choice(roles), status, by, "mock"))
     cur.executemany("INSERT INTO citizen_feedback (school_id, about_id, hab_id, theme, text_hi, text_en, channel, received, sender_role, status, verified_by, source) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", rows)
 
+    # ---------- feedback about every other school (synthesised by PathShala; generic wording, one set per school) ----------
+    # (theme, hindi, english). Each sentence is also in the hardcoded classification table in src/agent/feedbackAgents.js.
+    AS_RECEIVER = [
+        ("Facilities", "स्कूल में पर्याप्त कमरे हैं और इमारत अच्छी है।", "The school has enough classrooms and a good building."),
+        ("Facilities", "अध्यापक नियमित आते हैं और बच्चे अच्छा सीखते हैं।", "The teachers come regularly and children learn well."),
+        ("Transport", "स्कूल दूर है, छोटे बच्चों के लिए पैदल रास्ता लंबा है।", "The school is far and the walk is long for small children."),
+        ("Transport", "स्कूल के समय इस स्कूल तक कोई बस नहीं जाती।", "There is no bus to this school at school time."),
+        ("Seasonal access", "बरसात में स्कूल का रास्ता ढलान वाला और फिसलन भरा हो जाता है।", "The path to the school is steep and slippery in the rains."),
+        ("Facilities", "स्कूल में रैंप और लड़कियों के लिए साफ शौचालय हैं।", "The school has a ramp and clean toilets for girls."),
+        ("Safety", "बच्चे समूह में सुरक्षित स्कूल पहुँच जाते हैं।", "Children reach the school safely in a group."),
+    ]
+    AS_SENDER = [
+        ("Safety", "इमारत की मरम्मत ज़रूरी है, बरसात में छत टपकती है।", "The school building needs repair; the roof leaks in the rains."),
+        ("Facilities", "स्कूल में बहुत कम बच्चे बचे हैं।", "Very few children are left in the school."),
+        ("Other", "यहाँ के अध्यापक हर बच्चे को नाम से जानते हैं।", "The teachers here know every child by name."),
+    ]
+    cur.execute("SELECT school_id FROM schools ORDER BY school_id")
+    extra = []
+    for (sid,) in cur.fetchall():
+        if sid == "GSH":
+            continue                                       # Gushaini already has the 87 messages above
+        r2 = random.Random("fb" + sid)
+        pool = [(t, hi, en) for t, hi, en in AS_RECEIVER] + [(t, hi, en) for t, hi, en in AS_SENDER]
+        for t, hi, en in r2.sample(pool, r2.randint(5, 8)):
+            extra.append((sid, sid, None, t, hi, en, r2.choice(chans), f"2026-{r2.choice(['07', '08', '09'])}-{r2.randint(1, 28):02d}", r2.choice(roles), "reported", "", "mock"))
+    cur.executemany("INSERT INTO citizen_feedback (school_id, about_id, hab_id, theme, text_hi, text_en, channel, received, sender_role, status, verified_by, source) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", extra)
+
     # ---------- policy corpus (real sources) ----------
     RTE = "https://indiankanoon.org/doc/42884596/"
     SS = "https://samagrashiksha.in/download/AWP&B/Annexure-I.pdf"

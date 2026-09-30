@@ -160,15 +160,14 @@ test('evidence: tabs, theme messages, profile fold, no timetable invented', asyn
   await page.screenshot({ path: SHOT + 'evidence.png', fullPage: true });
 });
 
-test('a receiving school with no feedback or bridge shows Data unavailable, not another school\'s data', async ({ page }) => {
+test('a receiving school shows its own feedback and no bridge from another school\'s route', async ({ page }) => {
   await newCase(page, 'GPS Pekhri-2', ['GPS Gushaini', 'GPS Nagini']);
   await page.locator('.steps a', { hasText: 'Evidence' }).click(); await tab(page, 'GPS Nagini').click();
-  await expect(app(page)).toContainText('no citizen feedback recorded about moving to this school');
+  await expect(page.locator('.theme').first()).toBeVisible(); await expect(page.locator('.themes')).not.toContainText('87');
   await expect(app(page)).not.toContainText('Baridropa');
   await investigate(page, 'GPS Nagini');
   const text = await page.locator('#findings').innerText();
   expect(text).not.toMatch(/Baridropa|Tirthan|seasonal bridge/i);
-  await expect(page.locator('.finding', { hasText: 'Seasonal access' })).toContainText('Not enough data');
 });
 
 test('each school keeps its own field answers, interventions and totals', async ({ page }) => {
@@ -411,11 +410,11 @@ test('mock tags read "PathShala (synthesised)"', async ({ page }) => {
 
 test('feedback step: classify with sentiment and stance, category agents, carried forward', async ({ page }) => {
   await page.evaluate(() => window.__pathshala.createCase('PK2', ['GSH', 'NGN']));
-  await go(page, 'case/C1/feedback'); await expect(page.locator('.empty')).toContainText('Data unavailable');   // Nagini first: no feedback about it
+  await go(page, 'case/C1/feedback'); await expect(page.locator('#fb-classify')).toContainText('Classify');   // Nagini first: its own messages plus those about Pekhri-2
   await page.locator('.opttabs button', { hasText: 'Gushaini' }).click();
   await expect(page.locator('.cat')).toHaveCount(5); await expect(page.locator('.cat').first()).toBeDisabled(); await expect(page.locator('#fb-agents')).toBeDisabled();
   await page.locator('#fb-classify').click(); await expect(page.locator('.stanceall')).toContainText('support');
-  const cats = await page.locator('.cat b').allTextContents(); expect(cats.reduce((a, n) => a + +n, 0)).toBe(87);
+  const cats = await page.locator('.cat b').allTextContents(); expect(cats.reduce((a, n) => a + +n, 0)).toBe(await page.evaluate(() => window.__pathshala.q("SELECT count(*) AS n FROM citizen_feedback WHERE about_id IN ('PK2','GSH')")[0].n));
   await page.locator('.cat', { hasText: 'Transportation' }).click(); await expect(page.locator('#fb-Transportation')).toHaveJSProperty('open', true);
   await expect(page.locator('#fb-Transportation .msg').first()).toContainText('about');
   await page.locator('#fb-agents').click();

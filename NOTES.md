@@ -46,3 +46,5 @@ errors such as "no such column". Bump `STORE` in `src/db/sqlite.js` as well when
 - One category agent per class summarises the concerns; counts and stance come from the database. Summaries carry into Evidence, Investigate and the report draft (references like `K:Transportation`, accepted by the critic).
 - Classification is hardcoded (a table for every demo message, keyword rules for new ones); Gemini is used only for the category agents' summaries. Gemini proxy: POST /chat with header `X-API-Key`. The key is entered on More > AI connection and kept in localStorage only; it is not in the source or the build. Without a key, rule summaries are used (labelled "rules"). A failed call falls back to rules.
 - `tests/live-gemini.spec.js` runs against the real proxy only when `LLM_KEY` is set.
+
+- Every school except Gushaini now has 5–8 synthesised messages about it (PathShala, generic wording, some about the school as the closing side, some as the receiving side); Gushaini keeps its 87. All are in the hardcoded classification table.

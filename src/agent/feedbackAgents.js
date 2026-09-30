@@ -58,6 +58,16 @@ const HARD = {
   'We cannot pay taxi fare every day.': [T, 'receiver', 'negative'],
   'What will happen to the mid-day meal?': [O, 'merger', 'neutral'],
   'Who will go with the small children? We work in the fields.': [T, 'receiver', 'negative'],
+  'The school has enough classrooms and a good building.': [O, 'receiver', 'positive'],
+  'The teachers come regularly and children learn well.': [O, 'receiver', 'positive'],
+  'The school is far and the walk is long for small children.': [T, 'receiver', 'negative'],
+  'There is no bus to this school at school time.': [T, 'receiver', 'negative'],
+  'The path to the school is steep and slippery in the rains.': [W, 'receiver', 'negative'],
+  'The school has a ramp and clean toilets for girls.': [O, 'receiver', 'positive'],
+  'Children reach the school safely in a group.': [S, 'receiver', 'positive'],
+  'The school building needs repair; the roof leaks in the rains.': [S, 'sender', 'negative'],
+  'Very few children are left in the school.': [O, 'sender', 'negative'],
+  'The teachers here know every child by name.': [SO, 'sender', 'positive'],
 };
 /* Any message not in the table (for example one added in the inbox) is classified by keyword rules. */
 export function classifyByRules(text) {

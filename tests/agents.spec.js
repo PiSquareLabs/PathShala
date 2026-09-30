@@ -156,6 +156,6 @@ test.describe('data audit: only data that has a real source', () => {
       const { tools } = window.__pathshala, both = ['PK2', 'GSH'];
       return { gsh: (await tools.feedback_search({ school_ids: both, about_id: 'GSH' })).length, ngn: (await tools.feedback_search({ school_ids: ['PK2', 'NGN'], about_id: 'NGN' })).length };
     });
-    expect(r.gsh).toBe(87); expect(r.ngn).toBe(0);
+    expect(r.gsh).toBe(87); expect(r.ngn).toBeGreaterThan(0); expect(r.ngn).toBeLessThan(15);   // Nagini has its own messages, none of Gushaini's
   });
 });
