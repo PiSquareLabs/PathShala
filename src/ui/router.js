@@ -1,6 +1,6 @@
 import { q1 } from '../db/sqlite.js';
 import { resetNewItems } from '../engine/rules.js';
-import { $, $$, esc, go, mergeOf, mergeRow, route, state } from './helpers.js';
+import { $, $$, caseState, esc, go, mergeOf, mergeRow, route, state } from './helpers.js';
 import { maps, resetMaps } from './map/baseMap.js';
 import { renderCase } from './pages/case.js';
 import { renderCaseHome } from './pages/caseHome.js';
@@ -23,13 +23,14 @@ import { dbStatus } from './toast.js';
 export function render(scrollTop) {
   const r = route(), app = $('#app');
   maps.forEach(m => m.remove()); resetMaps();
-  const top = ['problems', 'surveys', 'inbox', 'rules', 'sql', 'merges', 'cases'].includes(r[0]) ? r[0] : r[0] === 'case' ? 'cases' : r[0] === 'm' ? 'merges' : 'home';
+  const top = { problems: 'todo', surveys: 'todo', inbox: 'more', rules: 'more', sql: 'more', merges: 'merges', m: 'merges', new: 'merges', s: 'merges' }[r[0]] || 'home';
   $$('#nav a').forEach(a => a.setAttribute('aria-current', a.dataset.v === top ? 'page' : 'false'));
+  $('#more summary').setAttribute('aria-current', top === 'more' ? 'page' : 'false'); $('#more').open = false;
   const pg = () => { app.innerHTML = '<div class="page" id="pg"></div>'; return $('#pg'); };
   try {
     if (!r.length) renderCaseHome(app);
     else if (r[0] === 'merges') renderHome(app);
-    else if (r[0] === 'case' && r[1]) renderCase(pg(), r[1], r[2]);
+    else if (r[0] === 'case' && r[1]) renderCase(pg(), r[1], { access: 'evidence', community: 'evidence' }[r[2]] || r[2]);
     else if (r[0] === 'cases') renderCases(pg());
     else if (r[0] === 'm' && r[1]) {
       const m = mergeRow(r[1]);
@@ -52,9 +53,11 @@ export function render(scrollTop) {
   } catch (e) { console.error(e); app.innerHTML = `<div class="page"><div class="card err">${esc(e.message)}</div></div>`; }
   dbStatus();
   const hp = q1("SELECT count(*) AS n FROM problems WHERE severity = 'high'").n;
-  $('#b-p').textContent = hp || ''; $('#b-p').style.display = hp ? '' : 'none';
-  const sv = q1('SELECT sum(unknowns + open_questions) AS n FROM merge_summary').n || 0;
-  $('#b-q').textContent = sv || ''; $('#b-q').style.display = sv ? '' : 'none';
+  $('#b-t').textContent = hp || ''; $('#b-t').style.display = hp ? '' : 'none';
   if (scrollTop) window.scrollTo(0, 0);
 }
-window.addEventListener('hashchange', () => { $('#toast').classList.remove('show'); resetNewItems(); render(true); });
+window.addEventListener('hashchange', () => {
+  $('#toast').classList.remove('show'); resetNewItems();
+  if (!route().length) { caseState.sel = null; caseState.picks = new Set(); }   // the Investigate tab starts from the school list
+  render(true);
+});

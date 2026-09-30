@@ -5,7 +5,7 @@
       "title": "Transport",
       "kind": "primary",
       "severity": "high",
-      "summary": "No transport at school times from the affected habitations; the walk is long and steep for young children.",
+      "summary": "Public transport at school times is not known. The walk (4.6 km) is over the 1 km RTE limit and steep for young children.",
       "status": "Potential issue",
       "evidence": [
         {
@@ -36,17 +36,25 @@
           "eid": "E4",
           "kind": "data",
           "status": "calculated",
-          "label": "4 habitations affected",
-          "detail": "Pekhri (11), Jawal (7), Baridropa (5), Kandi Dhar (4)",
+          "label": "4 habitations served",
+          "detail": "Pekhri (1725 m), Jawal (1560 m, no road), Baridropa (1500 m), Kandi Dhar (1840 m, no road)",
           "ref": "habitations"
         },
         {
           "eid": "E5",
           "kind": "transport",
           "status": "needs",
-          "label": "Actual transport availability",
-          "detail": "HRTC Banjar–Gushaini departs 07:10, 13:40, 16:50 — none in the school-time window; timetable not verified",
+          "label": "Public transport at school times",
+          "detail": "Data unavailable: no timetable source is connected. Confirm on the field visit.",
           "ref": "transport"
+        },
+        {
+          "eid": "E11",
+          "kind": "data",
+          "status": "calculated",
+          "label": "27 students on roll: 27 in Classes 1–5, 0 pre-primary",
+          "detail": "School record (UDISE+)",
+          "ref": "school:PK2"
         }
       ]
     },
@@ -107,14 +115,6 @@
           "label": "0.7 km of path steeper than 15%",
           "detail": "Steepest stretch 16%",
           "ref": "route"
-        },
-        {
-          "eid": "E11",
-          "kind": "data",
-          "status": "calculated",
-          "label": "15 of 27 affected students are girls; 1 with a disability",
-          "detail": "Habitation records",
-          "ref": "habitations"
         }
       ]
     },
@@ -123,15 +123,15 @@
       "title": "Receiving-school capacity",
       "kind": "context",
       "severity": "low",
-      "summary": "GPS Gushaini has 40 free seats for 27 students.",
+      "summary": "GPS Gushaini has 97 free seats for 27 students.",
       "status": "No issue found",
       "evidence": [
         {
           "eid": "E12",
           "kind": "data",
           "status": "calculated",
-          "label": "40 seats available at GPS Gushaini",
-          "detail": "Capacity 183, enrolled 143",
+          "label": "97 seats available at GPS Gushaini",
+          "detail": "Capacity 240, enrolled 143",
           "ref": "school:GSH"
         }
       ]

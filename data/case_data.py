@@ -19,17 +19,15 @@ TRIB_BRIDGE = "https://www.tribuneindia.com/news/himachal/villagers-join-hands-t
 
 def build(cur):
     cur.executescript("""
-    CREATE TABLE school_facts (school_id TEXT PRIMARY KEY, capacity INTEGER, building TEXT, habitations INTEGER,
+    CREATE TABLE school_facts (school_id TEXT PRIMARY KEY, building TEXT,
       head_teacher INTEGER, toilets_girls INTEGER, ramp INTEGER, source TEXT, source_note TEXT, source_url TEXT);
     CREATE TABLE habitations (hab_id TEXT PRIMARY KEY, name TEXT, school_id TEXT, lat REAL, lng REAL, elev_m INTEGER,
-      children INTEGER, girls INTEGER, cwsn INTEGER, road_connected INTEGER, source TEXT);
+      road_connected INTEGER, source TEXT);
     CREATE TABLE links (from_id TEXT, to_id TEXT, road_km REAL, road_min INTEGER, walk_km REAL, climb_m INTEGER, descent_m INTEGER,
       route_walk TEXT, route_road TEXT, source TEXT, note TEXT, PRIMARY KEY (from_id, to_id));
     CREATE TABLE geo_features (feature_id TEXT PRIMARY KEY, kind TEXT, name TEXT, geometry TEXT, season TEXT, detail TEXT,
       status TEXT, source TEXT, source_url TEXT);
-    CREATE TABLE transport (t_id TEXT PRIMARY KEY, kind TEXT, name TEXT, operator TEXT, stops TEXT, departures TEXT,
-      serves TEXT, available TEXT, source TEXT, note TEXT);
-    CREATE TABLE citizen_feedback (fb_id INTEGER PRIMARY KEY, school_id TEXT, hab_id TEXT, theme TEXT, text_hi TEXT, text_en TEXT,
+    CREATE TABLE citizen_feedback (fb_id INTEGER PRIMARY KEY, school_id TEXT, about_id TEXT, hab_id TEXT, theme TEXT, text_hi TEXT, text_en TEXT,
       channel TEXT, received TEXT, sender_role TEXT, status TEXT, verified_by TEXT, source TEXT);
     CREATE TABLE field_obs (obs_id TEXT PRIMARY KEY, feature_id TEXT, school_id TEXT, kind TEXT, text TEXT, observed_by TEXT,
       observed_on TEXT, status TEXT, source TEXT, source_url TEXT);
@@ -54,26 +52,26 @@ def build(cur):
                     (sid, None, name, "Middle (6 to 8)" if lc == "middle" else "Primary (1 to 5)", lc, "Kullu", "Banjar",
                      name.split(" ", 1)[1], lat, lng, "Approximate location", tot, pri, pre, t, rooms, 0, src, note))
     facts = [
-        ("PK2", 60, "Poor — needs demolition and replacement", 4, 0, 0, 0, "real", "Building condition: The Tribune, 2 Sep 2026", TRIB_SCHOOLS),
-        ("GSH", 183, "Good", 5, 1, 1, 1, "mock", "", ""),
-        ("NGN", 98, "Good", 3, 1, 1, 0, "mock", "", ""),
-        ("BNJ", 59, "Fair", 2, 1, 1, 1, "mock", "", ""),
-        ("NHN", 40, "Unsafe — classes under tin sheds", 3, 1, 0, 0, "real", "The Tribune, 2 Sep 2026", TRIB_SCHOOLS),
-        ("JBH", 80, "Good", 3, 1, 1, 0, "mock", "", ""),
-        ("BTH", 40, "Fair", 1, 0, 0, 0, "mock", "", ""),
+        ("PK2", "Poor — needs demolition and replacement", 0, 0, 0, "real", "Building condition: The Tribune, 2 Sep 2026", TRIB_SCHOOLS),
+        ("GSH", "Good", 1, 1, 1, "mock", "", ""),
+        ("NGN", "Good", 1, 1, 0, "mock", "", ""),
+        ("BNJ", "Fair", 1, 1, 1, "mock", "", ""),
+        ("NHN", "Unsafe — classes under tin sheds", 1, 0, 0, "real", "The Tribune, 2 Sep 2026", TRIB_SCHOOLS),
+        ("JBH", "Good", 1, 1, 0, "mock", "", ""),
+        ("BTH", "Fair", 0, 0, 0, "mock", "", ""),
     ]
-    cur.executemany("INSERT INTO school_facts VALUES (?,?,?,?,?,?,?,?,?,?)", facts)
+    cur.executemany("INSERT INTO school_facts VALUES (?,?,?,?,?,?,?,?)", facts)
 
-    # ---------- habitations served by Pekhri-2 (27 children) and neighbours ----------
+    # ---------- habitations near Pekhri-2 and neighbours (names, location, height, road link) ----------
     H = [
-        ("H1", "Pekhri", "PK2", 31.6428, 77.4318, 1725, 11, 6, 1, 1),
-        ("H2", "Jawal", "PK2", 31.6352, 77.4395, 1560, 7, 4, 0, 0),
-        ("H3", "Baridropa", "PK2", 31.6318, 77.4432, 1500, 5, 2, 0, 1),
-        ("H4", "Kandi Dhar", "PK2", 31.6470, 77.4388, 1840, 4, 3, 0, 0),
-        ("H5", "Gushaini", "GSH", 31.6168, 77.4552, 1590, 88, 41, 1, 1),
-        ("H6", "Nagini", "NGN", 31.6290, 77.4050, 1480, 60, 29, 0, 1),
+        ("H1", "Pekhri", "PK2", 31.6428, 77.4318, 1725, 1),
+        ("H2", "Jawal", "PK2", 31.6352, 77.4395, 1560, 0),
+        ("H3", "Baridropa", "PK2", 31.6318, 77.4432, 1500, 1),
+        ("H4", "Kandi Dhar", "PK2", 31.6470, 77.4388, 1840, 0),
+        ("H5", "Gushaini", "GSH", 31.6168, 77.4552, 1590, 1),
+        ("H6", "Nagini", "NGN", 31.6290, 77.4050, 1480, 1),
     ]
-    cur.executemany("INSERT INTO habitations VALUES (?,?,?,?,?,?,?,?,?,?,?)", [h + ("mock",) for h in H])
+    cur.executemany("INSERT INTO habitations VALUES (?,?,?,?,?,?,?,?)", [h + ("mock",) for h in H])
 
     # ---------- geography (approximate, mock geometry; bridge and floods real) ----------
     river = [[31.600, 77.525], [31.607, 77.500], [31.614, 77.472], [31.618, 77.455], [31.624, 77.445], [31.629, 77.438],
@@ -132,15 +130,6 @@ def build(cur):
     target = {"GSH": (3.8, 4.6), "NGN": (6.1, 5.7), "BNJ": (9.4, 9.9)}
     links = [(a, b, target[b][0], round(target[b][0] / 12 * 60), target[b][1], up, dn, w, r, s, n) for (a, b, _, _, _, up, dn, w, r, s, n) in links]
     cur.executemany("INSERT INTO links VALUES (?,?,?,?,?,?,?,?,?,?,?)", links)
-
-    # ---------- transport ----------
-    tr = [
-        ("T1", "bus", "HRTC Banjar–Gushaini", "HRTC", json.dumps(["Banjar", "Nagini", "Jawal turn", "Gushaini"]),
-         json.dumps(["07:10", "13:40", "16:50"]), json.dumps(["H2", "H5", "H6"]), "partial", "mock", "Timings mock; check the HRTC Kullu depot timetable"),
-        ("T2", "school", "School transport", "", "[]", "[]", "[]", "unknown", "mock", "No school transport recorded for this route"),
-        ("T3", "private", "Shared taxi / private vehicle", "", "[]", "[]", "[]", "unknown", "mock", "No data"),
-    ]
-    cur.executemany("INSERT INTO transport VALUES (?,?,?,?,?,?,?,?,?,?)", tr)
 
     # ---------- field observation ----------
     obs = [
@@ -204,8 +193,8 @@ def build(cur):
             if theme == "Facilities" and i % 3 == 1:
                 status, by = "verified", "Field observation F2"
             d = f"2026-{rnd.choice(['07', '08', '09'])}-{rnd.randint(1, 28):02d}"
-            rows.append(("PK2" if hab != "H5" else "GSH", hab, theme, hi, en, rnd.choice(chans), d, rnd.choice(roles), status, by, "mock"))
-    cur.executemany("INSERT INTO citizen_feedback (school_id, hab_id, theme, text_hi, text_en, channel, received, sender_role, status, verified_by, source) VALUES (?,?,?,?,?,?,?,?,?,?,?)", rows)
+            rows.append(("PK2" if hab != "H5" else "GSH", "GSH", hab, theme, hi, en, rnd.choice(chans), d, rnd.choice(roles), status, by, "mock"))
+    cur.executemany("INSERT INTO citizen_feedback (school_id, about_id, hab_id, theme, text_hi, text_en, channel, received, sender_role, status, verified_by, source) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", rows)
 
     # ---------- policy corpus (real sources) ----------
     RTE = "https://indiankanoon.org/doc/42884596/"
@@ -236,4 +225,3 @@ def build(cur):
     ]
     cur.executemany("INSERT INTO policy_chunks VALUES (?,?,?,?,?,?)", chunks)
     cur.execute("INSERT INTO rules VALUES (?,?,?,?,?,?,?,?)", ("R13", "Child walking pace", "Walking speed of a Class 1 child relative to an adult (Tobler's hiking function).", "child_pace", 0.75, "× adult", "PathShala planning assumption", ""))
-    cur.execute("INSERT INTO rules VALUES (?,?,?,?,?,?,?,?)", ("R14", "Seats per school vehicle", "Seats in the vehicle used to estimate how many vehicles are needed.", "vehicle_seats", 30, "seats", "PathShala planning assumption", ""))

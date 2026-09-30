@@ -10,7 +10,7 @@ export function renderSchool(pg, id) {
       <div class="sub"><span>${esc(s.village)}</span>${s.udise_code ? `<span class="mono">UDISE ${esc(s.udise_code)}</span>` : ''}<span class="tag ${s.source}">${s.source}</span><span class="small">${esc(s.source_note || '')}</span></div></section>
     <section class="big4">
       <div class="tile"><span class="tl">Students</span><b>${s.enrol_total}</b><span class="ts">${s.enrol_primary} in Classes 1–5</span></div>
-      <div class="tile"><span class="tl">Pre-primary</span><b>${s.enrol_preprimary}</b><span class="ts">${s.anganwadi_on_site ? 'anganwadi on site' : 'no anganwadi on site'}</span></div>
+      <div class="tile"><span class="tl">Pre-primary</span><b>${s.enrol_preprimary}</b><span class="ts">pre-primary section</span></div>
       <div class="tile"><span class="tl">Teachers</span><b>${s.teachers}</b><span class="ts">${(s.enrol_total / Math.max(1, s.teachers)).toFixed(0)} pupils per teacher</span></div>
       <div class="tile"><span class="tl">Classrooms</span><b>${s.classrooms}</b><span class="ts">${(s.enrol_total / Math.max(1, s.classrooms)).toFixed(0)} per room</span></div>
     </section>

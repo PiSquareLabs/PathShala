@@ -1,6 +1,6 @@
 /* Reference case (C1: GPS Pekhri-2 -> GPS Gushaini): the outputs every agent produces in simulated mode.
    src/agent/fixtures/C1/*.json are saved from this; LLM-mode tests run the same case and compare. */
-import { createCase } from '../case/analysis.js';
+import { createCase } from '../case/options.js';
 import { applyEvidenceUpdate, saveFieldAnswers, saveInterventions, writeFindings } from '../case/findings.js';
 import { AGENTS } from './agents/index.js';
 import { agentPlan } from './plan.js';
@@ -12,7 +12,7 @@ export const C1_ANSWERS = {
 
 /* Run the whole reference investigation without UI delays. Returns {agent: output} and validation errors. */
 export async function captureC1Outputs(fromId = 'PK2', toId = 'GSH') {
-  const cid = createCase(fromId, toId), out = {}, errors = {};
+  const cid = createCase(fromId, [toId]), out = {}, errors = {};
   const plan = agentPlan(cid), ctx = plan[0].ctx;
   for (const s of plan) await s.run();
   const call = async (id, c) => { const o = await AGENTS[id].simulate(c); const e = validate(AGENTS[id].outputSchema, o); if (e) errors[id] = e; out[id] = o; return o; };

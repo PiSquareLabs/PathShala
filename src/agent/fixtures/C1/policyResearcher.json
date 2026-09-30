@@ -28,11 +28,6 @@
             "GIS calculation"
           ],
           [
-            "Vehicle requirement",
-            1,
-            "24 ÷ 30 seats, rounded up"
-          ],
-          [
             "Applicable rate",
             "₹6,000 per child per year (average)",
             "Samagra Shiksha norm, C6"
@@ -57,9 +52,9 @@
       "cost": {
         "inputs": [
           [
-            "Eligible students (Classes 1–2, estimate)",
-            10,
-            "40% of roll — needs verification"
+            "Students in Classes 1–5",
+            27,
+            "School roll (UDISE+)"
           ],
           [
             "Applicable rate",
@@ -67,8 +62,8 @@
             "C6"
           ]
         ],
-        "formula": "10 × ₹6,000",
-        "cost_inr": 60000,
+        "formula": "27 × ₹6,000",
+        "cost_inr": 162000,
         "cost_type": "per year"
       }
     },
@@ -116,9 +111,9 @@
       "cost": {
         "inputs": [
           [
-            "Classrooms",
-            2,
-            "Planning assumption"
+            "Classrooms to rebuild",
+            3,
+            "Existing classrooms (UDISE+)"
           ],
           [
             "Rate",
@@ -126,8 +121,8 @@
             "HP PAB 2025-26 (rule R8)"
           ]
         ],
-        "formula": "2 × ₹9 lakh",
-        "cost_inr": 1800000,
+        "formula": "3 × ₹9 lakh",
+        "cost_inr": 2700000,
         "cost_type": "one-time"
       }
     }

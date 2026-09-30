@@ -17,6 +17,7 @@ export const inr = n => {
   if (n >= 100000) { const l = n / 100000; return '₹' + (Number.isInteger(l) ? l : l.toFixed(2).replace(/0$/, '')) + ' lakh'; }
   return '₹' + n.toLocaleString('en-IN');
 };
+export const costText = (n, type) => type === 'unpriced' ? 'Not costed' : inr(n);
 export const monthsText = list => list.map(m => MONTHS[m]).join(', ');
 export function haversine(a, b) {
   const R = 6371, toR = x => x * Math.PI / 180;
@@ -29,7 +30,7 @@ export function groups() {
 }
 export const hasTable = t => !!q1("SELECT 1 AS x FROM sqlite_master WHERE type='table' AND name = ?", [t]);
 export const facts = id => q1('SELECT * FROM school_facts WHERE school_id = ?', [id]) || {};
-export const capOf = s => facts(s.school_id).capacity ?? s.classrooms * 40;
+export const capOf = s => s.classrooms * P().max_per_classroom;
 export const linkOf = (a, b) => q1('SELECT * FROM links WHERE from_id = ? AND to_id = ?', [a, b]) || q1('SELECT * FROM links WHERE from_id = ? AND to_id = ?', [b, a]);
 export const nowTs = () => new Date().toISOString().replace('T', ' ').slice(0, 19);
 export const logCase = (cid, actor, action, detail = '') => run('INSERT INTO case_log VALUES (?,?,?,?,?)', [cid, nowTs(), actor, action, detail]);
@@ -37,10 +38,10 @@ export const segKm = (a, b) => haversine({ lat: a[0], lng: a[1] }, { lat: b[0], 
 
 /* Tool: walking time from the elevation profile (Tobler's hiking function, scaled to a young child). */
 export const sleep = ms => new Promise(r => setTimeout(r, ms));
-export const STEPS = [['compare', 'Compare'], ['access', 'Access'], ['community', 'Community'], ['investigate', 'Investigate'], ['policy', 'Policy & cost'], ['report', 'Report']];
+export const STEPS = [['compare', 'Compare'], ['evidence', 'Evidence'], ['investigate', 'Investigate'], ['policy', 'Policy & cost'], ['report', 'Report']];
 export const EV_LBL = { reported: 'Reported', verified: 'Verified', calculated: 'Calculated', needs: 'Needs verification' };
 export const evChip = s => `<span class="evs ${s}">${EV_LBL[s] || s}</span>`;
-export const caseState = { sel: null, district: 'Kullu', theme: null, layers: { river: true, road: true, route: true, habs: true, hazards: true } };
+export const caseState = { sel: null, picks: new Set(), district: 'Kullu', theme: null, layers: { river: true, road: true, route: true, habs: true, hazards: true } };
 export const state = { inboxGroup: 'all', qFilter: 'open', sqlText: '', sqlResult: null, lastRun: nowTime(), draft: null, probFilter: 'all', plan: null };
 export const route = () => location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
 export const go = path => { location.hash = '#/' + path; };

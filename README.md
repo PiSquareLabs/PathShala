@@ -1,12 +1,18 @@
 # PathShala
 
 A school-consolidation investigation tool for district education officers in Himachal Pradesh.
-An officer picks a small or unsafe school, screens nearby schools that could receive its students, and runs an investigation:
-routes, terrain, transport, community feedback, field observations, policy and cost, then a referenced report that only the
-officer can approve and submit. A second half of the app tracks existing merges (success score, problems, field surveys).
 
-This is a Vite + vanilla JavaScript rebuild of the single-file prototype in `reference/PathShala_app.html`, with the same UI and
-behaviour, on the same SQLite data (sql.js in the browser), and a clean seam for connecting Gemini later.
+1. **Pick one closing school** on the map.
+2. **Tick several receiving schools** (two, three or more) and compare them **side by side**: distance and walking time, hazards on the route, free seats, teachers, building, facilities, citizen feedback. Green marks the best value in each row.
+3. **Choose one** and investigate it: evidence (route and citizen feedback), agent findings, field questions, policy and cost, and a referenced report that only the officer can approve and submit.
+
+A second half of the app tracks existing merges (success score, problems, field surveys).
+
+Every value on screen has a real source (UDISE+, Routes and Elevation APIs, GIS layers, RTE Rules, Samagra Shiksha norms, precedents) or is labelled synthetic; where there is no data it says **Data unavailable** and nothing is invented. See "Data audit" below.
+
+![Compare receiving schools side by side](docs/screens/03_compare.png)
+
+Built with Vite and vanilla JavaScript on SQLite (sql.js) in the browser, with a clean seam for connecting Gemini later.
 
 ## Run it
 
@@ -36,15 +42,11 @@ Deploy `dist/` anywhere: `firebase deploy` (see `firebase.json`), or `docker bui
 
 ```bash
 npx playwright install chromium       # once (or set PW_CHROMIUM=/path/to/chromium)
-npx playwright test                   # 48 tests: acceptance flow, every button, agents, guardrails
-npm run compare                       # side-by-side images in tests/compare/ (reference | actual)
-node tests/parity.mjs                 # runs the same investigation in the prototype and the build, diffs every SQLite table
+npx playwright test                   # 47 tests: acceptance flow, every button, agents, guardrails, data audit
 node tests/gen-fixtures.mjs           # regenerates src/agent/fixtures/C1/*.json
 ```
 
-`tests/e2e.spec.js` walks the reference investigation (acceptance criteria 3 and 4) and saves a screenshot for each of the 24
-reference states to `tests/compare/actual/`. `tests/ui-buttons.spec.js` clicks every control on every page.
-`tests/agents.spec.js` covers schema validation, fixtures, retrieval and the guardrails in `docs/AGENTS.md`.
+`tests/e2e.spec.js` walks the reference investigation (pick a school, tick three receivers, compare, choose, investigate, field answers, cost, report, submit) and saves screenshots to `docs/screens/`. `tests/ui-buttons.spec.js` clicks every control on every page. `tests/agents.spec.js` covers schema validation, fixtures, retrieval, the guardrails in `docs/AGENTS.md` and the data audit.
 
 ### Regenerating the data
 
@@ -90,8 +92,8 @@ src/
 
 ### Routes
 
-`#/` case map · `#/cases` · `#/case/:id/{compare,access,community,investigate,policy,report}` · `#/merges` · `#/m/:merge` ·
-`#/m/:merge/g/:group` · `#/m/:merge/p/:group/:code` · `#/m/:merge/{survey,feedback}` · `#/surveys` · `#/problems` · `#/new` ·
+`#/` investigate (pick a school) · `#/cases` · `#/case/:id/{compare,evidence,investigate,policy,report}` · `#/merges` · `#/m/:merge` ·
+`#/m/:merge/g/:group` · `#/m/:merge/p/:group/:code` · `#/m/:merge/{survey,feedback}` · `#/problems` and `#/surveys` (the To do tabs) · `#/new` ·
 `#/s/:school` · `#/inbox` · `#/rules` · `#/sql`
 
 ## The agents
@@ -149,40 +151,48 @@ Gemini function-declaration format (`name`, `description`, `parameters` as JSON 
 | `nearby_schools` | `{school_id, max_km?}` | `[{school_id, road_km, walk_min, capacity, available, hazards, score, parts, estimated}]` |
 | `route_calc` | `{from_id, to_id, mode: walk\|road}` | `{km, minutes, climb_m, descent_m, max_slope_pct, steep_km, profile}`; walking uses Tobler's function × `child_pace` (R13) |
 | `gis_overlay` | `{from_id, to_id, route, buffer_m?, layers?}` | mapped bridges, steep paths and landslide zones within 150 m |
-| `transport_lookup` | `{habitation_ids?, windows?}` | `[{name, kind, departures, at_school_time, available}]` for 08:15–09:15 and 14:45–15:45 |
-| `feedback_search` | `{school_ids, hab_ids?, theme?, limit?}` | messages in Hindi and English with theme and status |
+| `transport_lookup` | `{habitation_ids?, windows?}` | `{available: false, reason: "Data unavailable…"}`: no timetable source is connected, so this is asked as a field question |
+| `feedback_search` | `{school_ids, about_id?, hab_ids?, theme?, limit?}` | messages in Hindi and English with theme and status |
 | `classify_feedback` | `{fb_ids}` | `{themes: {name: {count, verified, habitations, fb_ids}}}` (stored theme now; Gemini batches later) |
 | `recurring_concerns` | `{themes}` | themes with ≥10 responses or from ≥3 habitations (never "Other") |
 | `field_observations` | `{school_id}` | government field observations |
 | `evidence_gaps` | `{case_id}` | `[{gap, why, suggested_type}]` |
 | `apply_field_answers` | `{case_id, answers}` | `{evidence_changes, finding_changes, new_evidence}` (pure; the repository writes) |
 | `policy_retrieve` | `{query, k?, doc_ids?}` | `[{chunk_id, doc_title, section, text, url, verbatim, score, hits}]` |
-| `cost_calc` | `{intervention: TR\|ES\|SEA\|RET, inputs}` | `{inputs, formula, cost_inr, cost_type}`, the only source of costs |
+| `cost_calc` | `{intervention: TR\|ES\|SEA\|RET, inputs}` | `{inputs, formula, cost_inr, cost_type}`, the only source of costs (₹6,000 per child from the Samagra norm; ₹9 lakh per classroom from the HP PAB) |
 | `get_case_evidence` | `{case_id}` | findings, evidence, field answers, selected interventions, cited chunks |
 | `draft_report` | `{case_id}` | `{sentences: [{text, refs}]}` |
 
 Every step of an investigation is written to `agent_steps` and shown (input and output) when a step is expanded in the UI.
 
-## Data provenance
+## Data audit
 
-`src/db/seed.sql` (generated by `data/build_seed.py` and `data/case_data.py`) holds all input tables. Rows and values carry a
-`source` of `real` or `mock`, shown as tags in the UI. Where there is no data the UI says "Data unavailable"; nothing is invented.
+The rule for this app: **show only data that can actually be obtained, and never fill a gap.** Values in the demo may be wrong or
+synthetic (they are labelled), but every field must have a real source. The inventory is in `docs/data_sources.md`.
 
-| Data | Source | Status |
+| Shown | Source | Status |
 |---|---|---|
-| School names, levels, UDISE codes, enrolment for the merge schools | UDISE+, HP merger orders and news reports | real for named merges; other counts mock |
-| Merge pairs and outcomes (Uch, Nurpur, Chhat, …) | HP Directorate merger list, Tribune, LiveLaw, Scroll, The Federal, The Wire | real |
-| School coordinates | Datameet UDISE export where available | real for two demo schools, otherwise placed on the map by hand |
-| Routes, elevation profiles, hazards, bridge | hand-built for the Tirthan valley demo from published reports | **mock geometry** (Google Routes, Elevation and Earth Engine are the planned sources) |
-| Habitations, citizen feedback, transport timetables, field answers | synthetic | **mock** |
-| RTE Rules 2010, Samagra Shiksha norm (₹6,000 per child per year), NEP 2020, HP merger decision, Sandyar judgment | official texts | real; quoted as stored, paraphrases labelled |
-| Rules table (thresholds and costs) | RTE, HP proposal 2025, HP PAB 2025-26, PathShala planning assumptions | mixed, source shown per rule |
+| School name, level, UDISE code, enrolment (total, Classes 1–5, pre-primary), teachers, classrooms | UDISE+ Know Your School | real for the named merge schools, otherwise mock values |
+| Building condition, head teacher, girls' toilet, ramp | UDISE+ | real for Pekhri-2 and Nahin (The Tribune), otherwise mock values |
+| Seat capacity | **derived**: classrooms × the planning maximum per room (rule R7) | derived, not stored |
+| Coordinates | Datameet / India Data Portal UDISE export | approximate |
+| Road and walking distance and time, climb | Google Routes and Elevation APIs (Tobler's function × child pace for time) | mock geometry for the Tirthan valley; other pairs are straight-line estimates, labelled |
+| Bridges, steep paths, landslide zones, rivers, roads | OpenStreetMap, JRC water, DEM, GSI | mock geometry |
+| Habitations (name, location, height, road link) | Open Buildings, DEM, OSM | mock |
+| Citizen feedback (Hindi and English) | synthesised from real complaint patterns (source list row 20) | mock; each message belongs to the receiving school it was **about** |
+| Field observations (bridge washed away, building unsafe) | The Tribune reports | real |
+| Merge pairs, outcomes, precedents | HP merger list, Tribune, LiveLaw, Scroll, The Federal, The Wire | real |
+| RTE Rules, Samagra Shiksha norm, HP PAB classroom cost, HP merger criteria | official texts | real, quoted as stored |
+| Attendance, district budget balance | synthesised (rows 22 and 24) | mock |
 
-Raw pages and PDFs that were fetched for this are in `data-sources/` (index in `data-sources/README.md`);
-`docs/data_sources.md` maps every item to real or mock. `docs/user_story.md` is the officer's investigation story.
+**Removed because there is no source for them:** children, girls and children-with-disability counts per habitation; a stored seat
+capacity; the habitation count on school records; the bus timetable and the school-transport and shared-taxi rows (no timetable
+source: transport is now "Data unavailable" and asked as a field question); "road closures" (HP SEOC); the "40% of the roll are in
+Classes 1–2" escort estimate (now the real Classes 1–5 enrolment); the "2 classrooms" rebuild assumption (now the school's real
+classroom count); vehicle seats per bus; the estimated crossing-guard (₹96,000) and girls'-safety (₹1.5 lakh) costs (those plan
+items now say "Not costed"); the anganwadi-on-site flag. Tests in `tests/agents.spec.js` fail if any of these come back.
 
 ## Repository layout
 
-`app.html` and `src/` the app source · `index.html` the built single-file app for GitHub Pages · `data/` seed generators · `tests/` Playwright tests · `reference/` the prototype and its
-24 screenshots · `docs/` AGENTS.md, user story, data sources · `backend/`, `render.yaml` the existing FastAPI Gemini proxy ·
+`app.html` and `src/` the app source · `index.html` the built single-file app for GitHub Pages · `data/` seed generators · `tests/` Playwright tests · `reference/` the original single-file prototype (superseded) · `docs/` AGENTS.md, user story, data sources · `backend/`, `render.yaml` the existing FastAPI Gemini proxy ·
 `data-sources/` fetched source material.

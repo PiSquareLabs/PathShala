@@ -36,6 +36,9 @@ test.describe('agents (simulated provider)', () => {
     expect(out.evidenceUpdater.finding_changes).toEqual([{ fid: 'F2', status: 'Verified' }, { fid: 'F1', status: 'Confirmed concern' }]);
     const tr = out.policyResearcher.interventions.find(v => v.code === 'TR');
     expect(tr.cost).toMatchObject({ formula: '24 × ₹6,000', cost_inr: 144000, cost_type: 'per year' });
+    expect(tr.cost.inputs.map(r => r[0])).toEqual(['Eligible students', 'Required route', 'Applicable rate']);   // no invented vehicle count
+    expect(out.policyResearcher.interventions.find(v => v.code === 'RET').cost).toMatchObject({ formula: '3 × ₹9 lakh', cost_inr: 2700000 });
+    expect(out.policyResearcher.interventions.find(v => v.code === 'SEA').title).toBe('Monsoon learning point at Pekhri (Jul–Sep)');
     expect(out.reportCritic.pass).toBe(true);
   });
 
@@ -48,7 +51,7 @@ test.describe('agents (simulated provider)', () => {
       const { out } = await window.__pathshala.captureC1Outputs();
       const { tools } = window.__pathshala;
       const iv = out.policyResearcher.interventions.find(v => v.code === 'RET');
-      return JSON.stringify(iv.cost) === JSON.stringify(await tools.cost_calc({ intervention: 'RET', inputs: { classrooms: 2 } }));
+      return JSON.stringify(iv.cost) === JSON.stringify(await tools.cost_calc({ intervention: 'RET', inputs: { classrooms: 3 } }));
     });
     expect(same).toBe(true);
   });
@@ -117,4 +120,42 @@ test.describe('guardrails (AGENTS.md 8)', () => {
 test('Approve and Submit are officer-only: no agent tool writes case status', async ({ page }) => {
   const src = fs.readdirSync('src/agent', { recursive: true }).filter(f => f.endsWith('.js')).map(f => fs.readFileSync('src/agent/' + f, 'utf8')).join('\n');
   expect(src).not.toMatch(/Ready for administrative review|approved\s*=\s*1|UPDATE cases/);
+});
+
+test.describe('data audit: only data that has a real source', () => {
+  test('no field without a source in the database', async ({ page }) => {
+    const cols = await page.evaluate(() => {
+      const { q } = window.__pathshala, out = {};
+      for (const t of ['habitations', 'school_facts', 'citizen_feedback']) out[t] = q(`PRAGMA table_info(${t})`).map(c => c.name);
+      out.tables = q("SELECT name FROM sqlite_master WHERE type='table'").map(t => t.name);
+      out.rules = q('SELECT param_name FROM rules').map(r => r.param_name);
+      return out;
+    });
+    expect(cols.habitations).toEqual(['hab_id', 'name', 'school_id', 'lat', 'lng', 'elev_m', 'road_connected', 'source']);   // no counts of children, girls or CwSN per habitation
+    expect(cols.school_facts).toEqual(['school_id', 'building', 'head_teacher', 'toilets_girls', 'ramp', 'source', 'source_note', 'source_url']);   // no seat capacity
+    expect(cols.tables).not.toContain('transport');                                                                          // no timetable source
+    expect(cols.rules).not.toEqual(expect.arrayContaining(['warden_per_year']));
+    for (const bad of ['warden_per_year', 'girls_safety_cost', 'vehicle_seats']) expect(cols.rules).not.toContain(bad);
+    expect(cols.citizen_feedback).toContain('about_id');
+  });
+
+  test('seat capacity is classrooms times the planning maximum per room', async ({ page }) => {
+    const r = await page.evaluate(async () => { const { tools } = window.__pathshala; const p = await tools.school_profile({ school_id: 'GSH' }); return { rooms: p.school.classrooms, facts: Object.keys(p.facts) }; });
+    expect(r.facts).not.toContain('capacity');
+    const near = await page.evaluate(async () => (await window.__pathshala.tools.nearby_schools({ school_id: 'PK2' })).find(x => x.school_id === 'GSH'));
+    expect(near.capacity).toBe(6 * 40); expect(near.available).toBe(6 * 40 - 143);
+  });
+
+  test('transport is reported as Data unavailable, never a timetable', async ({ page }) => {
+    const r = await page.evaluate(async () => window.__pathshala.tools.transport_lookup({}));
+    expect(r.available).toBe(false); expect(r.reason).toMatch(/Data unavailable/);
+  });
+
+  test('feedback belongs to the receiving school it was about', async ({ page }) => {
+    const r = await page.evaluate(async () => {
+      const { tools } = window.__pathshala, both = ['PK2', 'GSH'];
+      return { gsh: (await tools.feedback_search({ school_ids: both, about_id: 'GSH' })).length, ngn: (await tools.feedback_search({ school_ids: ['PK2', 'NGN'], about_id: 'NGN' })).length };
+    });
+    expect(r.gsh).toBe(87); expect(r.ngn).toBe(0);
+  });
 });

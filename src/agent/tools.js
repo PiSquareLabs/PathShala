@@ -1,7 +1,7 @@
 /* Every agent tool is an async (input) => output over plain JSON, running on sql.js in the browser.
    The same functions serve the simulated agents now and Gemini function calling later (`toolSchemas`,
    Gemini function-declaration format). Tools never write to the database: the case repository does. */
-import { SCHOOL_WINDOWS, nearby, routeHazards, transportAt, walkProfile } from '../case/analysis.js';
+import { SCHOOL_WINDOWS, nearby, routeHazards, walkProfile } from '../case/analysis.js';
 import { draftSentences } from '../case/draft.js';
 import { q, q1 } from '../db/sqlite.js';
 import { retrieve } from '../retrieval/bm25.js';
@@ -38,7 +38,7 @@ defineTool('sql_query', 'Run a read-only SQL query (SELECT or WITH) on the PathS
   async ({ sql }) => ({ rows: q(checkReadOnlySql(sql)) }));
 
 /* ---------- schools, routes, GIS, transport ---------- */
-defineTool('school_profile', 'School row, facts (capacity, building condition) and the habitations it serves.',
+defineTool('school_profile', 'School row (UDISE+), facts (building condition, head teacher, toilets, ramp) and the habitations near it.',
   { school_id: str('School id') }, ['school_id'],
   async ({ school_id }) => ({ school: school(school_id) || null, facts: facts(school_id), habitations: q('SELECT * FROM habitations WHERE school_id = ?', [school_id]) }));
 
@@ -65,16 +65,17 @@ defineTool('gis_overlay', 'Mapped features (bridges, steep paths, landslide zone
     return routeHazards(lk, route, buffer_m, layers && layers.length ? layers : undefined).map(f => ({ ...f, source_url: f.source_url ?? f.url ?? null }));
   });
 
-defineTool('transport_lookup', 'Public and school transport with departures inside the school-time windows. "Data unavailable" is returned as available = false with no departures.',
+defineTool('transport_lookup', 'Public and school transport at school arrival and departure times. No timetable source is connected yet, so this reports "Data unavailable"; the answer is collected as a field question.',
   { habitation_ids: strs('Habitations to cover (optional)'), windows: strs('Time windows, e.g. 08:15-09:15') }, [],
-  async ({ windows = SCHOOL_WINDOWS } = {}) => transportAt(windows).map(t => ({ t_id: t.t_id, name: t.name, kind: t.kind, departures: t.dep, at_school_time: t.atSchoolTime, available: t.available })));
+  async ({ windows = SCHOOL_WINDOWS } = {}) => ({ available: false, reason: 'Data unavailable: no timetable source is connected', windows }));
 
 /* ---------- community feedback ---------- */
 defineTool('feedback_search', 'Citizen feedback messages about schools or habitations, in Hindi and English, with theme and status.',
-  { school_ids: strs('School ids'), hab_ids: strs('Habitation ids (optional)'), theme: str('Theme filter (optional)'), limit: { type: 'integer' } }, ['school_ids'],
-  async ({ school_ids, hab_ids, theme, limit }) => {
+  { school_ids: strs('School ids'), about_id: str('Only messages about moving to this receiving school'), hab_ids: strs('Habitation ids (optional)'), theme: str('Theme filter (optional)'), limit: { type: 'integer' } }, ['school_ids'],
+  async ({ school_ids, about_id, hab_ids, theme, limit }) => {
     const where = [`f.school_id IN (${school_ids.map(() => '?').join(',')})`], args = [...school_ids];
     if (hab_ids?.length) { where.push(`f.hab_id IN (${hab_ids.map(() => '?').join(',')})`); args.push(...hab_ids); }
+    if (about_id) { where.push('f.about_id = ?'); args.push(about_id); }
     if (theme) { where.push('f.theme = ?'); args.push(theme); }
     const rows = q(`SELECT f.*, h.name AS hab FROM citizen_feedback f LEFT JOIN habitations h USING (hab_id) WHERE ${where.join(' AND ')} ORDER BY f.fb_id${limit ? ' LIMIT ' + Math.floor(limit) : ''}`, args);
     return rows.map(f => ({ fb_id: f.fb_id, hab_id: f.hab_id, hab: f.hab, theme: f.theme, text_hi: f.text_hi, text_en: f.text_en, status: f.status, verified_by: f.verified_by, channel: f.channel, received: f.received }));
@@ -106,16 +107,20 @@ defineTool('field_observations', 'Government field observations recorded for a s
   { school_id: str('School id') }, ['school_id'],
   async ({ school_id }) => q('SELECT * FROM field_obs WHERE school_id = ?', [school_id]));
 
-const GAPS = [
-  { gap: 'Bridge passability in heavy rain', why: 'A seasonal river crossing decides whether the walk is possible in the monsoon.', suggested_type: 'choice' },
-  { gap: 'Students who use this route', why: 'The number of affected students sets the cost of any transport support.', suggested_type: 'number' },
-  { gap: 'Public transport at school times', why: 'The timetable was not verified for school arrival and departure.', suggested_type: 'choice' },
-  { gap: 'Actual travel time in school hours', why: 'The calculated time has not been checked against the ground.', suggested_type: 'minutes' },
-  { gap: 'Photo or GPS evidence', why: 'Officer-collected evidence makes the findings verifiable.', suggested_type: 'evidence' },
-];
-defineTool('evidence_gaps', 'Missing evidence that would change the officer\'s assessment (rule-based list).',
+defineTool('evidence_gaps', "Missing evidence that would change the officer's assessment (rule-based list, 5 gaps, one per field question).",
   { case_id: str('Case id') }, ['case_id'],
-  async () => GAPS.map(g => ({ ...g })));
+  async ({ case_id }) => {
+    const c = q1('SELECT * FROM cases WHERE case_id = ?', [case_id]), lk = c && linkOf(c.from_id, c.to_id);
+    const bridge = lk ? routeHazards(lk).some(h => h.kind === 'bridge') : false;
+    return [
+      bridge ? { gap: 'Bridge passability in heavy rain', why: 'A seasonal river crossing decides whether the walk is possible in the monsoon.', suggested_type: 'choice' }
+        : { gap: 'Route passability in rain and snow', why: 'No mapped crossing, but the route has not been checked in the monsoon or winter.', suggested_type: 'choice' },
+      { gap: 'Students who use this route', why: 'The number of affected students sets the cost of any transport support.', suggested_type: 'number' },
+      { gap: 'Public transport at school times', why: 'The timetable was not verified for school arrival and departure.', suggested_type: 'choice' },
+      { gap: 'Actual travel time in school hours', why: lk ? 'The calculated time has not been checked against the ground.' : 'The route was not surveyed; there is no calculated time.', suggested_type: 'minutes' },
+      { gap: 'Photo or GPS evidence', why: 'Officer-collected evidence makes the findings verifiable.', suggested_type: 'evidence' },
+    ];
+  });
 
 /* ---------- field answers -> evidence updates ---------- */
 defineTool('apply_field_answers', 'Compute the evidence and finding status changes implied by field answers Q1..Q5. Pure: the repository persists the result.',
@@ -150,21 +155,22 @@ defineTool('policy_retrieve', 'Retrieve policy passages (RTE Rules, Samagra Shik
     .map(h => ({ chunk_id: h.chunk_id, doc_id: h.doc_id, doc_title: h.doc_title, section: h.section, text: h.text, url: h.url, verbatim: h.verbatim, score: h.score, hits: h.hits })));
 
 defineTool('cost_calc', 'Deterministic cost of an intervention (TR transport, ES escort, SEA seasonal learning point, RET rebuild) from the rules table. The ONLY source of costs.',
-  { intervention: { type: 'string', enum: ['TR', 'ES', 'SEA', 'RET'] }, inputs: { type: 'object', description: 'TR: {kids, kids_source, road_km}; ES: {kids}; RET: {classrooms}' } }, ['intervention', 'inputs'],
+  { intervention: { type: 'string', enum: ['TR', 'ES', 'SEA', 'RET'] }, inputs: { type: 'object', description: 'TR: {kids, kids_source, road_km}; ES: {kids}; SEA: {feature_id, months}; RET: {classrooms}' } }, ['intervention', 'inputs'],
   async ({ intervention, inputs: i = {} }) => {
-    const R = P(), rate = R.transport_per_child, seats = R.vehicle_seats || 30, rateTxt = `${inr(rate)} per child per year (average)`;
+    const R = P(), rate = R.transport_per_child, rateTxt = `${inr(rate)} per child per year (average)`;
     if (intervention === 'TR') {
-      const kids = i.kids, veh = Math.ceil(kids / seats);
-      return { inputs: [['Eligible students', kids, i.kids_source || 'School roll'], ['Required route', `${i.road_km} km by road`, 'GIS calculation'], ['Vehicle requirement', veh, `${kids} ÷ ${seats} seats, rounded up`], ['Applicable rate', rateTxt, 'Samagra Shiksha norm, C6']], formula: `${kids} × ${inr(rate)}`, cost_inr: kids * rate, cost_type: 'per year' };
+      const kids = i.kids;
+      return { inputs: [['Eligible students', kids, i.kids_source || 'School roll (UDISE+)'], ['Required route', `${i.road_km} km by road`, 'GIS calculation'], ['Applicable rate', rateTxt, 'Samagra Shiksha norm, C6']], formula: `${kids} × ${inr(rate)}`, cost_inr: kids * rate, cost_type: 'per year' };
     }
     if (intervention === 'ES') {
-      const n = Math.ceil(i.kids * 0.4);
-      return { inputs: [['Eligible students (Classes 1–2, estimate)', n, '40% of roll — needs verification'], ['Applicable rate', rateTxt, 'C6']], formula: `${n} × ${inr(rate)}`, cost_inr: n * rate, cost_type: 'per year' };
+      const n = i.kids;
+      return { inputs: [['Students in Classes 1–5', n, 'School roll (UDISE+)'], ['Applicable rate', rateTxt, 'C6']], formula: `${n} × ${inr(rate)}`, cost_inr: n * rate, cost_type: 'per year' };
     }
-    if (intervention === 'SEA') return { inputs: [['Months', 'Jul–Sep', 'Bridge season (feature BR1)'], ['Staff', '1 teacher on rotation', 'Existing staff']], formula: 'Existing staff; no new cost', cost_inr: 0, cost_type: 'none' };
+    if (intervention === 'SEA') return { inputs: [['Months', i.months || 'Jul–Sep', `Bridge season (feature ${i.feature_id || 'BR1'})`], ['Staff', '1 teacher on rotation', 'Existing staff']], formula: 'Existing staff; no new cost', cost_inr: 0, cost_type: 'none' };
     if (intervention === 'RET') {
       const rooms = i.classrooms ?? 2;
-      return { inputs: [['Classrooms', rooms, 'Planning assumption'], ['Rate', inr(R.classroom_cost) + ' per classroom', 'HP PAB 2025-26 (rule R8)']], formula: `${rooms} × ${inr(R.classroom_cost)}`, cost_inr: rooms * R.classroom_cost, cost_type: 'one-time' };
+      if (!rooms) return { inputs: [['Classrooms to rebuild', 0, 'No building problem recorded']], formula: 'No new rooms', cost_inr: 0, cost_type: 'none' };
+      return { inputs: [['Classrooms to rebuild', rooms, 'Existing classrooms (UDISE+)'], ['Rate', inr(R.classroom_cost) + ' per classroom', 'HP PAB 2025-26 (rule R8)']], formula: `${rooms} × ${inr(R.classroom_cost)}`, cost_inr: rooms * R.classroom_cost, cost_type: 'one-time' };
     }
     throw new Error('Unknown intervention ' + intervention);
   });

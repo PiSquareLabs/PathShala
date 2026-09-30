@@ -1,6 +1,7 @@
 import { runFieldUpdate, runInvestigation, runPolicy } from '../../agent/runner.js';
 import { q, q1, save } from '../../db/sqlite.js';
 import { $, $$, esc, evChip } from '../helpers.js';
+import { fold } from '../kit.js';
 import { render } from '../router.js';
 import { toast } from '../toast.js';
 
@@ -9,10 +10,9 @@ export function stepInvestigate(el, c, A, B) {
   const steps = q('SELECT * FROM agent_steps WHERE case_id = ? ORDER BY seq', [c.case_id]);
   const fq = q('SELECT * FROM field_questions WHERE case_id = ? ORDER BY seq', [c.case_id]);
   const answered = fq.some(x => x.answer || x.note);
-  el.innerHTML = `<div class="card"><h2>Agent investigation <small>checks school data, GIS, routes, transport, field observations and citizen feedback</small>
-      <button class="btn ${F.length ? '' : 'primary'}" id="ag-run" style="margin-left:auto">${F.length ? 'Run again' : 'Investigate case'}</button></h2>
-    <ol class="agent" id="ag-list">${steps.map(s => agentRow(s, true)).join('') || '<li class="muted small" style="list-style:none">The agent has not run yet.</li>'}</ol>
-    <p class="small muted">Simulated agent: each step is a real tool call against SQLite and the map data, run in this page. In the full build Gemini on Vertex AI plans the steps and calls the same tools.</p></div>
+  el.innerHTML = `<div class="card"><div class="ivtop"><h2 style="margin:0">Investigate ${esc(B.name)}</h2>
+      <button class="btn ${F.length ? '' : 'primary'}" id="ag-run">${F.length ? 'Run again' : 'Investigate case'}</button></div>
+    <ol class="agent" id="ag-list">${steps.map(s => agentRow(s, true)).join('') || '<li class="muted small" style="list-style:none">Not run yet. The agent checks students, routes, GIS layers, transport, feedback and field observations.</li>'}</ol></div>
     <div id="ag-out">${F.length ? findingsHtml(c, F, fq, answered) : ''}</div>`;
   $('#ag-run').onclick = () => runAgent(c);
   $$('.agent li', el).forEach(li => li.onclick = () => li.classList.toggle('open'));
@@ -41,17 +41,15 @@ export async function runAgent(c) {
 }
 export function findingsHtml(c, F, fq, answered) {
   const ev = q('SELECT * FROM evidence WHERE case_id = ? ORDER BY CAST(substr(eid, 2) AS INTEGER)', [c.case_id]);
-  const main = F.filter(f => f.fid === 'F1' || f.fid === 'F2'), rest = F.filter(f => !['F1', 'F2'].includes(f.fid));
   const stCls = s => /Confirmed|Verified/.test(s) ? 's-red' : /No issue|Not confirmed|Partly/.test(s) ? 's-green' : 's-amber';
-  const fcard = f => `<div class="fnd"><div class="row"><h3>${esc(f.title)}</h3><span class="pill ${stCls(f.status)}">${esc(f.status)}</span></div><p class="small muted">${esc(f.summary)}</p>
-    <ul class="evl">${ev.filter(e => e.fid === f.fid).map(e => `<li>${evChip(e.status)} <span>${esc(e.label)}</span>${e.detail ? `<small>${esc(e.detail)}</small>` : ''}</li>`).join('')}</ul></div>`;
-  return `<section class="card issue"><div class="eyebrow" style="color:var(--risk)">Potential issue detected</div><h2 style="font-size:22px">Transport & seasonal access</h2>
-      <div class="two">${main.map(fcard).join('')}</div>
-      <div class="evsum">${['reported', 'verified', 'calculated', 'needs'].map(s => `<span>${evChip(s)} ${ev.filter(e => e.status === s && ['F1', 'F2'].includes(e.fid)).map(e => esc(e.label.split(' ').slice(0, 5).join(' '))).join('; ') || '—'}</span>`).join('')}</div></section>
-    <section class="card"><h2>Other findings</h2><div class="two">${rest.map(fcard).join('')}</div></section>
-    <section class="card" id="fq"><h2>${answered ? 'Field verification' : 'Additional field verification required'} <small>the agent wrote these questions for this case, from the evidence gaps</small></h2>
+  const order = ['primary', 'secondary', 'context'];
+  const sorted = F.slice().sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind) || a.fid.localeCompare(b.fid));
+  return `<section class="card" id="findings"><h2>Findings</h2>
+      ${sorted.map(f => { const es = ev.filter(e => e.fid === f.fid); return `<div class="finding" data-f="${f.fid}"><div class="row"><h3>${esc(f.title)}</h3><span class="pill ${stCls(f.status)}">${esc(f.status)}</span></div>
+        <p class="small muted">${esc(f.summary)}</p>${fold('Evidence', `<ul class="evl">${es.map(e => `<li>${evChip(e.status)} <span>${esc(e.label)}</span>${e.detail ? `<small>${esc(e.detail)}</small>` : ''}</li>`).join('')}</ul>`, { count: es.length })}</div>`; }).join('')}</section>
+    <section class="card" id="fq"><h2>${answered ? 'Field verification' : 'Field questions'} <small>from the evidence gaps</small></h2>
       <div class="fqs">${fq.map(x => fieldQ(x)).join('')}</div>
-      <div class="row" style="margin-top:12px"><span class="small muted">Submitting writes to <span class="mono">field_questions</span> and <span class="mono">evidence</span>, and updates the findings.</span><button class="btn primary" id="fq-go">${answered ? 'Update field evidence' : 'Submit field verification'}</button></div></section>`;
+      <div class="row" style="margin-top:12px"><span></span><button class="btn primary" id="fq-go">${answered ? 'Update field evidence' : 'Submit field verification'}</button></div></section>`;
 }
 export function fieldQ(x) {
   const opts = JSON.parse(x.options || '[]');

@@ -11,18 +11,21 @@
 <body>
 <header class="bar">
   <div class="bar-in">
-    <a class="brand" href="#/"><b>PathShala</b><span>School merge desk · Himachal Pradesh</span></a>
+    <a class="brand" href="#/"><b>PathShala</b></a>
     <nav id="nav" aria-label="Sections">
-      <a href="#/" data-v="home">Case map</a>
-      <a href="#/cases" data-v="cases">Investigations</a>
+      <a href="#/" data-v="home">Investigate</a>
       <a href="#/merges" data-v="merges">Merges</a>
-      <a href="#/problems" data-v="problems">Problems <span class="badge red" id="b-p"></span></a>
-      <a href="#/surveys" data-v="surveys">Surveys <span class="badge" id="b-q"></span></a>
-      <a href="#/inbox" data-v="inbox">Feedback</a>
-      <a href="#/rules" data-v="rules">Rules</a>
-      <a href="#/sql" data-v="sql">SQLite</a>
+      <a href="#/problems" data-v="todo">To do <span class="badge red" id="b-t"></span></a>
     </nav>
-    <div class="dbstat"><span id="dbstat"><span class="led"></span>Loading SQLite…</span><button class="btn sm" id="reset" title="Throw away changes and reload the demo data">Reset demo</button></div>
+    <details class="menu" id="more">
+      <summary data-v="more">More</summary>
+      <div class="menu-pop">
+        <a href="#/inbox" data-v="inbox">Feedback inbox</a>
+        <a href="#/rules" data-v="rules">Rules</a>
+        <a href="#/sql" data-v="sql">SQLite console</a>
+        <div class="menu-foot"><span id="dbstat"><span class="led"></span>Loading SQLite…</span><button class="btn sm" id="reset" title="Throw away changes and reload the demo data">Reset demo</button></div>
+      </div>
+    </details>
   </div>
 </header>
 

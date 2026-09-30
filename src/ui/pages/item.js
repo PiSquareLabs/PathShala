@@ -2,7 +2,7 @@ import { q, q1, run } from '../../db/sqlite.js';
 import { IMPL } from '../../engine/merges.js';
 import { commit } from '../../engine/rules.js';
 import { msgHtml, qCards, wireQuestions } from '../components.js';
-import { $, esc, go, implOf, inr, mCrumbs, school, today } from '../helpers.js';
+import { $, costText, esc, go, implOf, mCrumbs, school, today } from '../helpers.js';
 
 export const ITEM_Q = { transport: ['vehicle', 'walk', 'hazard'], seasonal: ['months', 'road'], winterpoint: ['road'], young: ['young'], teacher: ['capacity'], rooms: ['capacity'], warden: ['crossing', 'hazard'], girls: ['girls'], visits: ['dropout', 'satisfaction'], review: ['satisfaction'], committee: ['committee'], branch: ['vehicle'], april: ['months'], proceed: ['satisfaction', 'dropout'] };
 export const ITEM_FB = { transport: ['Transport', 'Route safety'], seasonal: ['Route safety'], winterpoint: ['Route safety'], young: ['Young children'], teacher: ['Capacity'], rooms: ['Capacity'], warden: ['Route safety', 'Transport'], girls: ["Girls' safety"], committee: ['Consultation', 'School identity'], proceed: ['Quality'], visits: ['Quality', 'Capacity'] };
@@ -23,7 +23,7 @@ export function renderItem(pg, m, gid, code) {
     ${mCrumbs(m, [`${label} ${idx + 1}`])}
     <section class="ihead">
       <div><div class="eyebrow">${label} ${idx + 1} of ${all.length} · ${esc(s.name)} → ${esc(r.name)}</div><h1 style="font-size:clamp(24px,3vw,34px);margin-top:4px">${esc(it.title)}</h1></div>
-      <div class="cost"><b>${inr(it.cost_inr)}</b><span>${it.cost_inr ? it.cost_type : ''}</span></div>
+      <div class="cost"><b>${costText(it.cost_inr, it.cost_type)}</b><span>${it.cost_inr ? it.cost_type : ''}</span></div>
       <p>${esc(it.detail)}</p>
     </section>
     ${code !== 'proceed' ? `<section class="card"><h2>Status <small>set by the district office; counts toward the success score</small></h2>

@@ -1,9 +1,10 @@
 {
   "sentences": [
     {
-      "text": "The proposed consolidation of GPS Pekhri-2 into GPS Gushaini would affect 24 students across 4 habitations.",
+      "text": "The proposed consolidation of GPS Pekhri-2 into GPS Gushaini would affect 24 students from 4 habitations.",
       "refs": [
         "E4",
+        "E11",
         "E15"
       ]
     },

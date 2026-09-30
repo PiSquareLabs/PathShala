@@ -12,5 +12,4 @@ export function dbStatus(engine) {
   const tables = q("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").map(t => t.name);
   const rows = tables.reduce((a, t) => a + q1(`SELECT count(*) AS n FROM "${t}"`).n, 0);
   $('#dbstat').innerHTML = `<span class="led"></span>SQLite · ${rows} rows · ${persisted ? 'saved' : 'in memory'}`;
-  const open = q1("SELECT count(*) AS n FROM questions q LEFT JOIN answers a USING (group_id, kind) WHERE a.choice IS NULL").n;
 }

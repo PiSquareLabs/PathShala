@@ -9,7 +9,6 @@
     "preview": "vite preview",
     "seed": "python3 data/build_seed.py && cp data/seed.sql src/db/seed.sql",
     "test": "playwright test",
-    "compare": "node tests/compare.mjs",
     "pages": "vite build && cp dist/index.html index.html"
   },
   "dependencies": {

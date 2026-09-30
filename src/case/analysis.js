@@ -1,5 +1,5 @@
-import { q, q1, run, save } from '../db/sqlite.js';
-import { P, capOf, haversine, linkOf, logCase, school, segKm, today } from '../ui/helpers.js';
+import { q } from '../db/sqlite.js';
+import { P, capOf, haversine, linkOf, school, segKm } from '../ui/helpers.js';
 
 export function walkProfile(lk) {
   const R = P(), pts = JSON.parse(lk.route_walk || '[]');
@@ -24,13 +24,7 @@ export function routeHazards(lk, which = 'walk', bufferM = 150, kinds = ['bridge
     return fp.some(a => pts.some(b => segKm(a, b) < bufferM / 1000));
   });
 }
-/* Tool: transport availability at school times. */
 export const SCHOOL_WINDOWS = ['08:15-09:15', '14:45-15:45'];
-export function transportAt(windows = SCHOOL_WINDOWS) {
-  const wins = windows.map(w => w.split(/[-–]/).map(t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; }));
-  const inWin = t => { const [h, m] = t.split(':').map(Number), x = h * 60 + m; return wins.some(([a, b]) => x >= a && x <= b); };
-  return q('SELECT * FROM transport').map(t => { const dep = JSON.parse(t.departures || '[]'); return Object.assign({}, t, { dep, atSchoolTime: dep.filter(inWin) }); });
-}
 /* Screening score for a school pair — transparent, not a recommendation. */
 export function screen(a, s) {
   const d = haversine(a, s), L = linkOf(a.school_id, s.school_id);
@@ -53,16 +47,3 @@ export function nearby(aId, maxKm = 12) {
   const ok = { primary: ['primary'], middle: ['middle', 'senior'], senior: ['senior'] }[a.level_code] || [];
   return q('SELECT * FROM schools WHERE school_id != ?', [aId]).filter(s => ok.includes(s.level_code) && haversine(a, s) <= maxKm).map(s => screen(a, s)).sort((x, y) => y.score - x.score);
 }
-
-/* Policy retrieval: keyword BM25 over the policy corpus (vector search with Vertex AI later). */
-export function createCase(aId, bId) {
-  const ex = q1("SELECT case_id FROM cases WHERE from_id = ? AND to_id = ? AND status != 'Withdrawn'", [aId, bId]);
-  if (ex) return ex.case_id;
-  const n = 1 + Math.max(0, ...q('SELECT case_id FROM cases').map(x => +x.case_id.slice(1) || 0)), cid = 'C' + n;
-  run('INSERT INTO cases VALUES (?,?,?,?,?,?,?)', [cid, aId, bId, 'Open', today(), null, 'DEO Kullu']);
-  logCase(cid, 'Officer', 'Opened investigation', `${school(aId).name} → ${school(bId).name}`);
-  save();
-  return cid;
-}
-
-/* ---------- the simulated agent ---------- */

@@ -1,22 +1,76 @@
-import { q } from '../../db/sqlite.js';
-import { capOf, esc, facts } from '../helpers.js';
+import { nearby, routeHazards } from '../../case/analysis.js';
+import { addOption, chooseOption, hasResults, optionIds, removeOption, routeInfo } from '../../case/options.js';
+import { q, q1 } from '../../db/sqlite.js';
+import { $, $$, P, capOf, esc, facts, school } from '../helpers.js';
+import { fold, scoreBar } from '../kit.js';
+import { caseMapPanel } from '../map/caseMap.js';
+import { render } from '../router.js';
+import { toast } from '../toast.js';
 
-export function stepCompare(el, c, A, B) {
-  const fa = facts(A.school_id), fb_ = facts(B.school_id), avail = Math.max(0, capOf(B) - B.enrol_total);
-  const hab = q('SELECT * FROM habitations WHERE school_id = ?', [A.school_id]);
-  const col = (s, f, role, extra) => `<div class="card cmpcol"><div class="eyebrow">${role}</div><h2 style="font-size:22px">${esc(s.name)}</h2>
-    <div class="bignums"><div><b>${s.enrol_total}</b><span>students</span></div><div><b>${s.teachers}</b><span>teachers</span></div>${extra}</div>
-    <table class="tbl"><tbody>
-      <tr><td class="muted">Classrooms</td><td>${s.classrooms}</td></tr>
-      <tr><td class="muted">Capacity</td><td>${capOf(s)}${f.capacity ? '' : ' (estimate)'}</td></tr>
-      <tr><td class="muted">Building</td><td>${esc(f.building || 'Data unavailable')}</td></tr>
-      <tr><td class="muted">Head teacher</td><td>${f.head_teacher == null ? 'Data unavailable' : f.head_teacher ? 'Yes' : 'No'}</td></tr>
-      <tr><td class="muted">Girls' toilet · ramp</td><td>${f.toilets_girls == null ? 'Data unavailable' : (f.toilets_girls ? 'Yes' : 'No') + ' · ' + (f.ramp ? 'Yes' : 'No')}</td></tr>
-      <tr><td class="muted">Data</td><td><span class="tag ${s.source}">${s.source}</span> <span class="small muted">${esc(s.source_note || '')}</span>${f.source_url ? ` · <a href="${esc(f.source_url)}" target="_blank" rel="noopener">source</a>` : ''}</td></tr>
-    </tbody></table></div>`;
-  el.innerHTML = `<div class="two">${col(A, fa, 'School A · would close', `<div><b>${hab.length || fa.habitations || '—'}</b><span>habitations served</span></div>`)}
-    ${col(B, fb_, 'School B · would receive', `<div><b class="${avail >= A.enrol_total ? 't-green' : 't-red'}">${avail}</b><span>available seats</span></div>`)}</div>
-    <div class="card"><h2>Habitations served by ${esc(A.name)}</h2><table class="tbl"><thead><tr><th>Habitation</th><th>Children</th><th>Girls</th><th>With a disability</th><th>Road</th><th>Height</th></tr></thead>
-      <tbody>${hab.map(h => `<tr><td><b>${esc(h.name)}</b></td><td>${h.children}</td><td>${h.girls}</td><td>${h.cwsn}</td><td>${h.road_connected ? 'Connected' : '<span class="t-red">No road</span>'}</td><td>${h.elev_m} m</td></tr>`).join('') || '<tr><td colspan="6" class="muted">Data unavailable</td></tr>'}</tbody></table>
-      <p class="small muted" style="margin-top:6px"><span class="tag mock">mock</span> Habitation counts are illustrative; in the full build they come from the UDISE+ habitation mapping.</p></div>`;
+const yn = v => (v == null ? 'Not recorded' : v ? '<span class="yes">Yes</span>' : '<span class="no">No</span>');
+
+/* One column per candidate receiving school. Every row is data that has a real source (UDISE+, Routes and
+   Elevation APIs, GIS layers) or is derived from it; where there is none it says so. */
+function columnData(A, id) {
+  const B = school(id), rt = routeInfo(A.school_id, id), f = facts(id), cap = capOf(B), avail = Math.max(0, cap - B.enrol_total);
+  const hz = rt.L ? routeHazards(rt.L) : [];
+  const fb = q1('SELECT count(*) AS n FROM citizen_feedback WHERE about_id = ?', [id]).n;
+  return { B, rt, f, cap, avail, hz, fb };
+}
+
+export function stepCompare(el, c, A) {
+  const R = P(), ids = optionIds(c.case_id), cols = ids.map(id => columnData(A, id)), fa = facts(A.school_id);
+  const limit = A.level_code === 'primary' ? R.walk_limit_primary_km : R.walk_limit_upper_km;
+  const many = cols.length > 1;
+  const scored = nearby(A.school_id, 99), score = cols.map(x => scored.find(n => n.s.school_id === x.B.school_id)?.score ?? 0);
+  // rows: [label, cell(col, i) -> html, comparable value (or null), 'low' | 'high' is better]
+  const rows = [
+    ['Fit', null],
+    ['Screening score', (x, i) => scoreBar(score[i]), (x, i) => score[i], 'high'],
+    ['Free seats', x => `<b>${x.avail}</b> <span class="${x.avail >= A.enrol_total ? 'yes' : 'no'}">${x.avail >= A.enrol_total ? '✓' : '✗'}</span><span class="sub">for ${A.enrol_total} students · ${x.B.classrooms} rooms, ${x.cap} seats</span>`, x => x.avail, 'high'],
+    ['Getting there', null],
+    ['By road', x => `<b>${x.rt.road_km} km</b>${x.rt.est ? '*' : ''}<span class="sub">${x.rt.road_min ? `about ${x.rt.road_min} min` : 'time not available'}</span>`, x => x.rt.road_km, 'low'],
+    ['On foot', x => `<b>${x.rt.walk_km} km</b>${x.rt.est ? '*' : ''}<span class="sub">${x.rt.wp ? `about ${x.rt.wp.min} min for a young child` : `about ${x.rt.walk_min} min (estimate)`}</span>`, x => x.rt.walk_km, 'low'],
+    ['RTE walking limit', x => x.rt.walk_km > limit ? `<span class="no">Over ${limit} km</span>` : `<span class="yes">Within ${limit} km</span>`, null],
+    ['Climb', x => x.rt.wp ? `${x.rt.wp.climb} m up · ${x.rt.wp.descent} m down` : 'Data unavailable', null],
+    ['Mapped hazards', x => x.hz.length ? x.hz.map(h => esc(h.name)).join(', ') : x.rt.L ? 'None mapped' : 'Data unavailable', x => (x.rt.L ? x.hz.length : null), 'low'],
+    ['The school', null],
+    ['Students · teachers', x => `${x.B.enrol_total} · ${x.B.teachers}<span class="sub">${(x.B.enrol_total / Math.max(1, x.B.teachers)).toFixed(0)} pupils per teacher</span>`, null],
+    ['Building', x => esc(x.f.building || 'Not recorded'), null],
+    ['Facilities', x => `Head teacher ${yn(x.f.head_teacher)}<br>Girls' toilet ${yn(x.f.toilets_girls)}<br>Ramp ${yn(x.f.ramp)}`, null],
+    ['Citizen feedback', x => (x.fb ? `${x.fb} messages` : 'None recorded'), null],
+  ];
+  const best = (fn, dir) => {
+    if (!many || !fn) return new Set();
+    const v = cols.map(fn), ok = v.filter(n => n != null);
+    if (ok.length < 2 || new Set(ok).size === 1) return new Set();
+    const t = dir === 'low' ? Math.min(...ok) : Math.max(...ok);
+    return new Set(v.map((n, i) => (n === t ? i : -1)).filter(i => i >= 0));
+  };
+  const others = nearby(A.school_id, 15).filter(n => !ids.includes(n.s.school_id));
+  const habs = q('SELECT * FROM habitations WHERE school_id = ?', [A.school_id]);
+  el.innerHTML = `<div class="cmp-top">
+      <div class="card"><div class="eyebrow">Closing school</div><h2 style="font-size:24px;margin:2px 0 10px">${esc(A.name)}</h2>
+        <dl class="kv2"><dt>Students</dt><dd>${A.enrol_total}${A.enrol_preprimary ? ` (${A.enrol_preprimary} pre-primary)` : ''}</dd><dt>Teachers</dt><dd>${A.teachers} · ${A.classrooms} classrooms</dd>
+          <dt>Building</dt><dd>${esc(fa.building || 'Not recorded')}</dd><dt>Data</dt><dd><span class="tag ${A.source}">${A.source}</span> <span class="small muted">${esc(A.source_note || '')}</span>${fa.source_url ? ` · <a href="${esc(fa.source_url)}" target="_blank" rel="noopener">source</a>` : ''}</dd></dl>
+        ${habs.length ? fold(`Habitations nearby`, `<table class="tbl"><thead><tr><th>Habitation</th><th>Height</th><th>Road</th></tr></thead><tbody>${habs.map(h => `<tr><td><b>${esc(h.name)}</b></td><td>${h.elev_m} m</td><td>${h.road_connected ? 'Connected' : '<span class="t-red">No road</span>'}</td></tr>`).join('')}</tbody></table>`, { count: habs.length }) : ''}</div>
+      ${caseMapPanel()}</div>
+    <div class="row"><h2 style="font-size:20px">${many ? `Compare ${cols.length} receiving schools` : 'Receiving school'}</h2>
+      <div class="adder">${others.length ? `<select id="cmp-add" aria-label="Add a school to compare"><option value="">Add another school…</option>${others.slice(0, 10).map(n => `<option value="${n.s.school_id}">${esc(n.s.name)} · ${n.road} km</option>`).join('')}</select><button class="btn sm" id="cmp-add-go">Add</button>` : ''}</div></div>
+    <div class="cmpwrap"><table class="cmptbl"><thead><tr><th></th>${cols.map(x => `<th class="${x.B.school_id === c.to_id ? 'chosen' : ''}"><div class="oh"><b>${esc(x.B.name)}</b><span class="small muted">${esc(x.B.block)} block · <span class="tag ${x.B.source}">${x.B.source}</span></span>
+        <div class="row">${x.B.school_id === c.to_id ? '<span class="pill s-pending">Chosen</span>' : `<button class="btn sm primary" data-choose="${x.B.school_id}">Choose</button>`}${many ? `<button class="btn sm ghost" data-remove="${x.B.school_id}" aria-label="Remove ${esc(x.B.name)}">Remove</button>` : ''}</div></div></th>`).join('')}</tr></thead>
+      <tbody>${rows.map(([label, cell, val, dir]) => {
+        if (!cell) return `<tr class="grp"><th colspan="${cols.length + 1}">${label}</th></tr>`;
+        const b = best(val, dir);
+        return `<tr><th scope="row">${label}</th>${cols.map((x, i) => `<td class="${b.has(i) ? 'best' : ''} ${x.B.school_id === c.to_id ? 'chosen' : ''}">${cell(x, i)}</td>`).join('')}</tr>`;
+      }).join('')}</tbody></table></div>
+    <p class="small muted">* straight-line estimate, route not surveyed. Green marks the best value in a row. The score is a screening aid, not a recommendation: the officer chooses.</p>`;
+  const cid = c.case_id;
+  $$('[data-choose]', el).forEach(b => b.onclick = () => {
+    if (hasResults(cid) && !b.dataset.armed) { b.dataset.armed = 1; b.textContent = 'Click again: clears results'; return; }
+    const cleared = chooseOption(cid, b.dataset.choose); render();
+    if (cleared) toast('Investigation cleared', ['The earlier results described a different school.']);
+  });
+  $$('[data-remove]', el).forEach(b => b.onclick = () => { removeOption(cid, b.dataset.remove); render(); });
+  const add = $('#cmp-add-go', el); if (add) add.onclick = () => { const v = $('#cmp-add').value; if (v) { addOption(cid, v); render(); } };
 }

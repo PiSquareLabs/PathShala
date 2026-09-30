@@ -134,7 +134,7 @@ export function analyse(gid, R, ctx = { lead: true, extraMoving: 0, extraTeacher
   if (keepYoung) {
     I({ kind: 'step', code: 'young', title: `Keep ${s.enrol_preprimary} pre-primary children at the ${place(s)} anganwadi`,
       detail: 'The smallest children stay near home and join the receiving school in Class 1, with transport.',
-      funding: s.anganwadi_on_site ? 'ICDS anganwadi, already on the school site' : 'ICDS anganwadi', evidence: [...fbE('Young children'), ...ansE('young')] });
+      funding: 'ICDS anganwadi', evidence: [...fbE('Young children'), ...ansE('young')] });
   }
   if (moveT) {
     I({ code: 'teacher', title: `Move ${moveT} teacher${moveT > 1 ? 's' : ''} from ${ctx.senders.length > 1 ? 'the closing schools' : s.name} to ${r.name}`,
@@ -152,14 +152,14 @@ export function analyse(gid, R, ctx = { lead: true, extraMoving: 0, extraTeacher
     const has = ch('crossing') === 'yes';
     I({ code: 'warden', title: has ? 'Keep the guard at the highway crossing' : 'Crossing guard at the highway',
       detail: has ? 'A guard is already there. Add a zebra crossing and school signs.' : 'A home guard at the crossing from 8:30 to 9:30 and 2:30 to 3:30, plus a zebra crossing and signs.',
-      cost: has ? 0 : R.warden_per_year, cost_type: has ? 'none' : 'yearly', funding: 'District police (home guards); PWD for signs',
+      cost: 0, cost_type: has ? 'none' : 'unpriced', funding: has ? 'No new cost' : 'No official cost norm; to be estimated locally',
       evidence: [...roadHaz.map(h => 'Hazard: ' + h.label), ...fbE('Route safety'), ...ansE('crossing'), ...prec('road').slice(0, 1)] });
   }
   const girlsNeed = issues["Girls' safety"] || (/girls/i.test(r.name) && /boys/i.test(s.name));
   if (girlsNeed && ch('girls') !== 'fine') {
     const d = { toilets: 'Separate girls’ toilets first', staff: 'A woman teacher as safety lead first', transport: 'Safe transport for girls first' }[ch('girls')] || 'Separate toilets, CCTV at the gate, a woman teacher as safety lead';
-    I({ code: 'girls', title: "Girls' safety measures", detail: d + ', and a mothers’ group that meets each term.', cost: R.girls_safety_cost, cost_type: 'one-time',
-      funding: 'Samagra Shiksha gender component', evidence: [...fbE("Girls' safety"), ...ansE('girls'), ...prec('girls').slice(0, 1)] });
+    I({ code: 'girls', title: "Girls' safety measures", detail: d + ', and a mothers’ group that meets each term.', cost: 0, cost_type: 'unpriced',
+      funding: 'No official cost norm; to be estimated locally', evidence: [...fbE("Girls' safety"), ...ansE('girls'), ...prec('girls').slice(0, 1)] });
   }
   if ((drop >= R.attendance_drop_pts) || ch('dropout') === 'few' || ch('dropout') === 'many') {
     I({ code: 'visits', title: 'Home visits for children who stopped coming', detail: (attNote ? 'Attendance: ' + attNote + '. ' : '') + 'Teachers and the committee visit each family within a month and track who returns.',

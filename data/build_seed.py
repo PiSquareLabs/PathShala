@@ -171,8 +171,6 @@ rules = [
     ("R7", "Students per classroom", "Planning maximum after a merge.", "max_per_classroom", 40, "students", "PathShala planning threshold", ""),
     ("R8", "Classroom cost", "Cost of one additional classroom.", "classroom_cost", 900000, "Rs", "HP PAB 2025-26: 20 rooms for Rs 180 lakh", PAB),
     ("R9", "Pupils per teacher", "Maximum pupils per teacher.", "max_ptr", 30, "students", "RTE Act Schedule", RTE),
-    ("R10", "Crossing warden", "Yearly cost of a home guard at a highway crossing during school hours.", "warden_per_year", 96000, "Rs", "PathShala estimate (home guard honorarium)", ""),
-    ("R11", "Girls' safety package", "One-time cost: separate toilets, CCTV at the gate, women staff lead.", "girls_safety_cost", 150000, "Rs", "PathShala estimate", ""),
     ("R12", "Attendance drop alert", "Drop in attendance, in percentage points, that triggers home visits.", "attendance_drop_pts", 5, "points", "PathShala planning threshold", ""),
 ]
 cur.executemany("INSERT INTO rules VALUES (?,?,?,?,?,?,?,?)", rules)

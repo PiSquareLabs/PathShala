@@ -10,7 +10,7 @@ export const communityAnalyst = {
   async simulate(ctx) {
     const { themes, obs } = ctx;
     const th = k => themes[k] || { n: 0, verified: 0, habs: new Set() };
-    const obsB = obs.find(o => o.kind === 'bridge'), obsBld = obs.find(o => o.kind === 'building');
+    const obsB = obs.find(o => o.kind === 'bridge' && ctx.hz.some(h => h.feature_id === o.feature_id)), obsBld = obs.find(o => o.kind === 'building');
     const evidence = [
       { eid: 'E1', kind: 'feedback', status: 'reported', label: `${th('Transport').n} citizen responses mention transport`, detail: 'Community feedback, classified by theme', ref: 'theme:Transport' },
       { eid: 'E6', kind: 'feedback', status: th('Seasonal access').verified ? 'verified' : 'reported', label: `${th('Seasonal access').n} citizen responses mention seasonal access`, detail: `${th('Seasonal access').verified} of them checked against a field observation`, ref: 'theme:Seasonal access' },

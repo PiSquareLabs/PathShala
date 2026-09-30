@@ -10,7 +10,7 @@ export const gapFinder = {
   async simulate(ctx) {
     const bridge = ctx.hz.find(h => h.kind === 'bridge'), g = ctx.gaps;
     return { questions: [
-      { qid: 'Q1', text: `Is the ${bridge ? bridge.name : 'river crossing'} passable during heavy rain?`, type: 'choice', options: ['Yes', 'No', 'Seasonal'], gap: g[0] },
+      { qid: 'Q1', text: bridge ? `Is the ${bridge.name} passable during heavy rain?` : 'Is the walking route passable during heavy rain or snow?', type: 'choice', options: ['Yes', 'No', 'Seasonal'], gap: g[0] },
       { qid: 'Q2', text: 'How many affected students currently use this route?', type: 'number', options: [], gap: g[1] },
       { qid: 'Q3', text: 'Is public transport available at school arrival and departure times?', type: 'choice', options: ['Yes', 'No', 'Unknown'], gap: g[2] },
       { qid: 'Q4', text: 'What is the approximate travel time during school hours?', type: 'minutes', options: [], gap: g[3] },
