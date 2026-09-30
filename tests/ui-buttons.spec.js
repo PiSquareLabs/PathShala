@@ -436,3 +436,31 @@ test('feedback reaches the report draft with a reference the critic accepts; sta
   expect(r.n).toBe(5); expect(r.st).toEqual(['support', 'oppose', 'oppose', 'support', 'neutral']); expect(r.rule.category).toBe('Social');
   expect(r.issues).toEqual([]);
 });
+
+test('quick demo: guides through every input with "Do it for me", back, exit', async ({ page }) => {
+  test.setTimeout(240000);
+  await page.locator('#demo-start').click(); await expect(page.locator('#demo')).toContainText('step 1 of 12');
+  await expect(page.locator('.demo-hl')).toHaveCount(1);
+  await page.locator('#dm-do').click(); await expect(page.locator('#cpanel')).toContainText('Closing school');
+  await page.locator('#dm-next').click(); await expect(page.locator('#demo')).toContainText('step 2 of 12');
+  await page.locator('#dm-do').click(); await expect(page.locator('#cp-go')).toContainText('Compare 2 schools');
+  await page.locator('#dm-next').click(); await page.locator('#dm-do').click(); await expect(page).toHaveURL(/case\/C\d+\/compare/);
+  await expect(page.locator('#demo')).toContainText('step 3 of 12'); await page.locator('#dm-next').click();
+  await expect(page.locator('#demo')).toContainText('Compare side by side'); await expect(page.locator('.cmptbl')).toBeVisible();
+  await page.locator('#dm-back').click(); await expect(page.locator('#demo')).toContainText('step 3 of 12'); await page.locator('#dm-next').click();
+  await page.locator('#dm-next').click(); await expect(page).toHaveURL(/feedback/);
+  await page.locator('#dm-do').click(); await expect(page.locator('#fb-agents')).toBeEnabled({ timeout: 20000 });
+  await page.locator('#dm-next').click(); await page.locator('#dm-do').click(); await expect(page.locator('.ctile').first()).toBeVisible({ timeout: 30000 });
+  await page.locator('#dm-next').click(); await expect(page).toHaveURL(/evidence/); await expect(page.locator('#concerns')).toBeVisible();
+  await page.locator('#dm-next').click(); await expect(page).toHaveURL(/investigate/);
+  await page.locator('#dm-do').click(); await expect(page.locator('.fq')).toHaveCount(5, { timeout: 90000 });
+  await page.locator('#dm-next').click(); await page.locator('#dm-do').click(); await expect(page.locator('#fq')).toContainText('Answered', { timeout: 30000 });
+  await page.locator('#dm-next').click(); await expect(page).toHaveURL(/policy/);
+  await page.locator('#dm-do').click(); await expect(page.locator('.ivsel input:checked').first()).toBeVisible({ timeout: 30000 });
+  await page.locator('#dm-next').click(); await expect(page).toHaveURL(/report/);
+  await page.locator('#dm-do').click(); await expect(page.locator('#opt-table th.chosen')).toHaveCount(1, { timeout: 20000 });
+  await page.locator('#dm-next').click(); await expect(page.locator('#demo')).toContainText('step 12 of 12'); await expect(page.locator('#rp-text')).toBeVisible();
+  await page.screenshot({ path: 'docs/screens/15-demo.png' });
+  await page.locator('#dm-next').click(); await expect(page.locator('#demo')).toBeHidden();
+  await go(page, ''); await page.locator('#demo-start').click(); await page.locator('#dm-exit').click(); await expect(page.locator('#demo')).toBeHidden();
+});

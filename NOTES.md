@@ -48,3 +48,5 @@ errors such as "no such column". Bump `STORE` in `src/db/sqlite.js` as well when
 - `tests/live-gemini.spec.js` runs against the real proxy only when `LLM_KEY` is set.
 
 - Every school except Gushaini now has 5–8 synthesised messages about it (PathShala, generic wording, some about the school as the closing side, some as the receiving side); Gushaini keeps its 87. All are in the hardcoded classification table.
+
+- Home page has a "Quick demo: guide me" button (`src/ui/demo.js`): a 12-step coach panel that highlights each input and offers "Do it for me" per step (GPS Pekhri-2 with Gushaini and Nagini).

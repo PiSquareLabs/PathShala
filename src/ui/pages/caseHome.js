@@ -4,6 +4,7 @@ import { q, q1 } from '../../db/sqlite.js';
 import { $, $$, caseState, esc, facts, go, hasTable, school } from '../helpers.js';
 import { scoreBar } from '../kit.js';
 import { buildCaseMap, drawPicks } from '../map/caseMap.js';
+import { startDemo } from '../demo.js';
 import { render } from '../router.js';
 
 const SEND_BADGE = s => (s.enrol_total <= 10 ? 'var(--risk)' : 'var(--accent)');
@@ -34,6 +35,7 @@ export function renderCaseHome(app) {
     $$('#cpanel .pickrow input').forEach(i => { i.checked = caseState.picks.has(i.closest('.pickrow').dataset.b); }); sync();
   };
   const go_ = $('#cp-go'); if (go_) go_.onclick = () => { const cid = createCase(caseState.sel, [...caseState.picks]); go(`case/${cid}/compare`); };
+  const dm = $('#demo-start'); if (dm) dm.onclick = startDemo;
   buildCaseMap();
   if (sel) sync();
 }
@@ -41,6 +43,7 @@ export function renderCaseHome(app) {
 function startPanel(cases) {
   const list = q("SELECT s.* FROM schools s LEFT JOIN school_facts f USING (school_id) WHERE (s.enrol_total <= 30 OR f.building LIKE 'Poor%' OR f.building LIKE 'Unsafe%') AND (? = 'All' OR s.district = ?) ORDER BY (f.building LIKE 'Poor%' OR f.building LIKE 'Unsafe%') DESC, s.enrol_total", [caseState.district, caseState.district]).slice(0, 7);
   return `<div><div class="eyebrow">${caseState.district === 'All' ? 'Himachal Pradesh' : caseState.district + ' district'}</div><h1 class="ptitle">Which school might close?</h1>
+      <button class="btn primary" id="demo-start" style="margin-top:8px">▶ Quick demo: guide me</button>
       <p class="lead" style="margin-top:6px">Click a school on the map, or start with one that needs review.</p></div>
     <div class="rlist">${list.map(s => `<button class="srow" data-s="${s.school_id}" style="text-align:left;cursor:pointer;font:inherit"><span class="fd" style="background:${SEND_BADGE(s)}"></span><span class="nm">${esc(s.name)}</span><span class="small muted">${s.enrol_total} students</span><span class="mt">${esc(s.block)} block · ${esc(facts(s.school_id).building || 'building condition not recorded')}</span></button>`).join('')}</div>
     ${cases.length ? `<div><div class="eyebrow">Continue</div><div class="rlist" style="margin-top:8px">${cases.map(c => `<a class="srow" href="#/case/${c.inv_id}"><span class="fd" style="background:${c.status === 'Ready for administrative review' ? 'var(--ok)' : 'var(--wait)'}"></span><span class="nm">${esc(school(c.from_id).name)}</span><span class="small muted">${c.inv_id}</span><span class="mt">${esc(c.status)}</span></a>`).join('')}</div></div>` : ''}`;
