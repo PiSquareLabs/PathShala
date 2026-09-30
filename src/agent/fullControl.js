@@ -73,7 +73,7 @@ export async function runWork(inv, step, onLog = () => {}) {
       await each(inv, log, async (t, B) => {
         if (!hasResults(t.case_id)) { log(`${B.name}: investigating: students, routes, map layers, transport, feedback, gaps`); await runInvestigation(t.case_id, ev => { if (ev.type === 'step') onLog(`  ${ev.label}`); }); }
         const tp = savedRun(t.case_id, 'transportPlanner')?.out, fc = savedRun(t.case_id, 'feedbackChecker')?.out;
-        const n = addFieldQuestions(t.case_id, [...(tp?.open_questions || []).slice(0, 2), ...(fc?.open_questions || []).slice(0, 3)]); log(`${B.name}: field form ready (${q('SELECT count(*) n FROM field_questions WHERE case_id = ?', [t.case_id])[0].n} questions, ${n} from the research)`);
+        const n = addFieldQuestions(t.case_id, [...(tp?.open_questions || []).slice(0, 4), ...(fc?.open_questions || []).slice(0, 3)]); log(`${B.name}: field form ready (${q('SELECT count(*) n FROM field_questions WHERE case_id = ?', [t.case_id])[0].n} questions, ${n} from the research)`);
       });
       log('Field form generated for the officer. Waiting for the field officer.'); setStage(inv, 'field'); logCase(inv, 'System', 'Full control is waiting for the field officer', 'Field form generated');
     } else if (f.stage === 'answered') {
@@ -161,10 +161,12 @@ function buildFinal(inv, C, S, sg) {
   const winner = S.suggested === 'keep' ? null : C.options.find(o => o.school_id === S.suggested);
   const whyNot = C.options.filter(o => !winner || o.school_id !== winner.school_id).map(o => {
     const pts = [], ref = winner || best;
+    if (S.scores?.[o.school_id] && ref && ref.school_id !== o.school_id && S.scores[ref.school_id]) pts.push(`Overall score ${S.scores[o.school_id].total} against ${S.scores[ref.school_id].total} for ${ref.name}`);
     if (!o.enough_seats) pts.push(`Not enough seats: ${o.seats_available} free for ${C.students} students`);
     if (o.walk_km > C.walk_limit_km) pts.push(`Walking distance ${o.walk_km} km is beyond the ${C.walk_limit_km} km limit`);
     if (ref && o.school_id !== ref.school_id) {
       if (o.confirmed_concerns > ref.confirmed_concerns) pts.push(`More confirmed concerns: ${o.confirmed_concerns} against ${ref.confirmed_concerns} for ${ref.name}`);
+      if ((o.terrain || []).length > (ref.terrain || []).length) pts.push(`More terrain risk on the way: ${o.terrain.join(', ')} (${ref.name}: ${ref.terrain.length ? ref.terrain.join(', ') : 'none recorded'})`);
       if (o.walk_min > ref.walk_min) pts.push(`Longer walk: about ${o.walk_min} min against ${ref.walk_min} min for ${ref.name}`);
       if (o.first_year_total > ref.first_year_total) pts.push(`Higher first-year cost: ₹${fmt(o.first_year_total)} against ₹${fmt(ref.first_year_total)} for ${ref.name}`);
     }
@@ -175,7 +177,7 @@ function buildFinal(inv, C, S, sg) {
   tracks(inv).forEach(t => { const B = school(t.to_id).name, un = q("SELECT count(*) n FROM field_questions WHERE case_id = ? AND answer = '' AND note = ''", [t.case_id])[0].n; if (un) open.push(`${B}: ${un} field question(s) left unanswered`);
     const tp = savedRun(t.case_id, 'transportPlanner')?.out; if (tp?.open_questions?.length) open.push(`${B}: bus timetable and pickup stops still need confirmation on the ground`);
     const fc = savedRun(t.case_id, 'feedbackChecker')?.out?.counts; if (fc?.unchecked) open.push(`${B}: ${fc.unchecked} citizen claims could not be checked`); });
-  return { ranking: S.ranking, recommended: S.suggested, recommended_name: S.suggested_name, best_if_merge: best.school_id, best_if_merge_name: best.name, closing_school: A.name, students: C.students, walk_limit_km: C.walk_limit_km, reasons, would_change: sg.would_change || [], comparison: C, why_not: whyNot, budget: { columns: cols, keep }, open_issues: open, mode: sg.mode, budget_notes: notes };
+  return { scores: S.scores || {}, weights: S.weights || {}, edge: S.edge || null, ranking: S.ranking, recommended: S.suggested, recommended_name: S.suggested_name, best_if_merge: best.school_id, best_if_merge_name: best.name, closing_school: A.name, students: C.students, walk_limit_km: C.walk_limit_km, reasons, would_change: sg.would_change || [], comparison: C, why_not: whyNot, budget: { columns: cols, keep }, open_issues: open, mode: sg.mode, budget_notes: notes };
 }
 
 function buildReport(inv, out, cid, draftSentences, critique) {

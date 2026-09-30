@@ -73,6 +73,11 @@ const cosine = (a, b) => { let x = 0, na = 0, nb = 0; for (let i = 0; i < a.leng
 
 /* search({collections, query, places, cid, k}) -> {passages, mode, none, note} */
 export async function search({ collections = COLLECTIONS, query, places, cid, k = 5, about }) {
+  // a model may send one name, a comma list or nothing: accept all of them and ignore unknown collections
+  const list = v => (Array.isArray(v) ? v : typeof v === 'string' ? v.split(/[,\s]+/) : []).map(String).filter(Boolean);
+  collections = list(collections).filter(c => COLLECTIONS.includes(c)); if (!collections.length) collections = COLLECTIONS;
+  if (places != null && !(places instanceof Set)) { places = typeof places === 'string' ? [places] : list(places); if (!places.length) places = undefined; }
+  query = String(query ?? '');
   const allowed = places ? (places instanceof Set ? places : new Set(places)) : null;
   let docs = collections.flatMap(c => pieces(c, cid));
   if (allowed) docs = docs.filter(d => allowed.has(d.place) || (d.places || []).some(p => allowed.has(p)));

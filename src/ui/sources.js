@@ -6,6 +6,7 @@ export const SRC = {
   routes: ['Routes, distance and climb', 'Google Routes and Elevation APIs (Pekhri-2 area). Elsewhere: PathShala estimate from straight-line distance'],
   gis: ['Rivers, roads, bridges, hazards', 'OpenStreetMap, JRC Global Surface Water, GSI landslide susceptibility'],
   hab: ['Habitations', 'Google Open Buildings v3 for locations; PathShala for the count of children per habitation (synthesised)'],
+  terrain: ['Terrain around each school (slope, river crossing, monsoon and snow hazards, road type, wildlife)', 'PathShala (synthesised for demo; not a survey)'],
   bounds: ['District boundaries', 'Public district GeoJSON'],
   rules: ['Rules and unit costs', 'RTE Rules 2010, HP Directorate of School Education, Samagra Shiksha financial norms, The Tribune (HP proposal)'],
   feedback: ['Citizen feedback', 'PathShala (synthesised for demo from real complaint patterns)'],
@@ -27,6 +28,6 @@ const BY_ROUTE = {
   ai: ['agents'],
   sql: ['udise', 'merge_list', 'routes', 'feedback', 'outcomes', 'rules'],
 };
-const CASE = { compare: ['udise', 'coords', 'routes', 'gis', 'hab', 'rules', 'feedback'], feedback: ['feedback', 'agents', 'reports'], evidence: ['udise', 'routes', 'gis', 'hab', 'feedback', 'agents', 'reports', 'rules'], investigate: ['agents', 'officer', 'feedback', 'routes'], policy: ['rules', 'agents', 'officer'], report: ['agents', 'officer', 'rules', 'udise', 'reports'] };
+const CASE = { compare: ['udise', 'coords', 'routes', 'gis', 'hab', 'rules', 'feedback'], feedback: ['feedback', 'agents', 'reports'], evidence: ['udise', 'routes', 'gis', 'terrain', 'hab', 'feedback', 'agents', 'reports', 'rules'], investigate: ['terrain', 'agents', 'officer', 'feedback', 'routes'], policy: ['rules', 'agents', 'officer'], report: ['agents', 'officer', 'rules', 'udise', 'reports'] };
 export const sourcesFor = r => (r[0] === 'case' ? CASE[{ access: 'evidence', community: 'evidence' }[r[2]] || r[2]] || CASE.compare : BY_ROUTE[r[0] || ''] || BY_ROUTE['']).map(k => SRC[k]);
 export const sourcesHtml = r => `<details class="srcs" id="srcs"><summary>Sources of data on this page</summary><dl>${sourcesFor(r).map(([l, s]) => `<dt>${l}</dt><dd class="${/PathShala \(/.test(s) ? 'syn' : ''}">${s}</dd>`).join('')}</dl></details>`;

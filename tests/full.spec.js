@@ -74,3 +74,22 @@ test('Full control: research agents all complete for every school (no failed ste
 test('Full control: start page lists the schools and their candidates', async ({ page }) => {
   await page.evaluate(() => { location.hash = '#/full'; }); await expect(page.locator('#mode-full')).toHaveAttribute('aria-pressed', 'true'); await page.locator('#cpanel [data-s]').first().click(); await expect(page.locator('#cp-full')).toBeVisible(); await page.locator('#srcs summary').click(); await expect(page.locator('#srcs')).toContainText('UDISE');
 });
+
+test('Field questions differ by school: they come from each school\'s own terrain', async ({ page }) => {
+  test.setTimeout(300000);
+  const r = await page.evaluate(async () => {
+    const P = window.__pathshala, out = {};
+    for (const s of ['PK2', 'JYN', 'BHM', 'SDY', 'PHL']) {
+      const near = await P.tools.nearby_schools({ school_id: s }); if (!near.length) continue;
+      const inv = P.createCase(s, [near[0].school_id]), cid = P.q('SELECT case_id FROM cases WHERE inv_id = ?', [inv])[0].case_id;
+      const o = await P.runResearch('transportPlanner', cid); out[s] = { qs: o.open_questions.map(x => x.text), steps: P.q("SELECT tool FROM research_steps WHERE case_id = ? AND agent = 'transportPlanner'", [cid]).map(x => x.tool) };
+    }
+    const rag = await P.tools.rag_search({ collections: 'policy', query: 'transport', places: 'Himachal Pradesh', k: 2 });   // a model may send strings instead of lists
+    return { out, ragOk: Array.isArray(rag.passages) };
+  });
+  expect(r.ragOk).toBe(true);
+  const sets = Object.values(r.out).map(x => JSON.stringify(x.qs.filter(t => !/bus or shared|pickup stops|Survey the road/.test(t))));
+  expect(new Set(sets).size).toBe(sets.length);            // no two schools get the same terrain questions
+  for (const v of Object.values(r.out)) { expect(v.steps).toContain('terrain_profile'); expect(v.qs.length).toBeGreaterThan(2); }
+  expect(r.out.JYN.qs.join(' ')).toContain('Jiyani wooden bridge'); expect(r.out.BHM.qs.join(' ')).toContain('Bhumteer nallah'); expect(r.out.SDY.qs.join(' ')).toContain('Sandyar seasonal stream');
+});

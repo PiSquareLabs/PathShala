@@ -91,7 +91,7 @@ schools = [
      28, 28, 0, 2, 4, 0, "mock", "Pair on HP merger list; numbers mock"),
     ("KST", None, "GPS Kasta", "Primary (1 to 5)", "primary", "Kullu", "Naggar",
      "Kasta", 32.1120, 77.1620, "Approximate location",
-     5, 5, 0, 1, 2, 0, "mock", "Pair on HP merger list; numbers mock"),
+     22, 22, 0, 2, 3, 0, "mock", "Pair on HP merger list; numbers mock"),
     ("KKR", None, "GPS Kukari", "Primary (1 to 5)", "primary", "Kullu", "Naggar",
      "Kukari", 32.1040, 77.1750, "Approximate location",
      36, 36, 0, 2, 3, 0, "mock", "Pair on HP merger list; numbers mock"),

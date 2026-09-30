@@ -6,9 +6,9 @@ import { draftSentences } from '../case/draft.js';
 import { q, q1 } from '../db/sqlite.js';
 import { retrieve } from '../retrieval/bm25.js';
 import { feedbackAbout } from './feedbackAgents.js';
-import { optionSummary, routeInfo, invRow, tracks } from '../case/options.js';
+import { optionSummary, routeInfo, invRow, tracks, trackId } from '../case/options.js';
 import { placesFor, search } from './rag.js';
-import { P, capOf, facts, haversine, inr, linkOf, school } from '../ui/helpers.js';
+import { P, place, capOf, facts, haversine, inr, linkOf, school } from '../ui/helpers.js';
 
 export const tools = {};
 export const toolSchemas = [];
@@ -64,8 +64,31 @@ defineTool('gis_overlay', 'Mapped features (bridges, steep paths, landslide zone
   { from_id: str('Start school id'), to_id: str('End school id'), route: { type: 'string', enum: ['walk', 'road'] }, buffer_m: { type: 'number' }, layers: strs('Feature kinds, default bridge, steep, landslide') }, ['from_id', 'to_id', 'route'],
   async ({ from_id, to_id, route, buffer_m = 150, layers }) => {
     const lk = linkOf(from_id, to_id);
-    if (!lk) return [];
+    if (!lk) return terrainFeatures(from_id).concat(terrainFeatures(to_id)).filter(f => !layers?.length || layers.includes(f.kind));   // not surveyed: the terrain recorded around the two schools
     return routeHazards(lk, route, buffer_m, layers && layers.length ? layers : undefined).map(f => ({ ...f, source_url: f.source_url ?? f.url ?? null }));
+  });
+
+/* How hard the terrain around a school is, in risk points (higher is worse). A river crossing without a bridge, a flash-flood stream or a landslide
+   zone weigh most; a bridge, snow, a poor road, wildlife or a steep path weigh less. */
+const terrainRisk = t => !t ? 0 : (t.crossing_kind === 'ford' ? 30 : t.crossing_kind === 'bridge' ? 10 : 0) + (t.monsoon_hazard === 'landslide' ? 25 : t.monsoon_hazard === 'flash flood' ? 25 : 0) + (t.snow_months ? 10 : 0) + (/kutcha/.test(t.road_type || '') ? 10 : /footpath/.test(t.road_type || '') ? 20 : 0) + (t.wildlife ? 10 : 0) + (t.slope_pct >= 18 ? 15 : 0);
+/* Terrain around a school (PathShala synthesised data): slope, river crossing, monsoon hazard, snow, road type, wildlife.
+   Turned into map-like features so the claim checks and the questions treat every school's terrain the same way. */
+const terrainRow = id => q1('SELECT * FROM school_terrain WHERE school_id = ?', [id]);
+function terrainFeatures(id) {
+  const t = terrainRow(id), v = t && place(school(id)); if (!t) return [];
+  const f = (kind, name, season, detail) => ({ feature_id: `T-${id}-${kind}`, kind, name, season, detail, status: 'synthesised', source: 'mock', source_url: null });
+  return [
+    t.crossing_kind && f('bridge', t.crossing_name, t.monsoon_hazard ? 'Monsoon' : '', t.crossing_kind === 'ford' ? 'Crossed on foot; rises in rain' : 'Bridge or footbridge on the way'),
+    t.slope_pct >= 18 && f('steep', `Steep path near ${v}`, '', `Slope about ${t.slope_pct}%`),
+    t.monsoon_hazard === 'landslide' && f('landslide', `Landslide-prone stretch near ${v}`, 'Monsoon', t.monsoon_note),
+  ].filter(Boolean);
+}
+defineTool('terrain_profile', 'Terrain around the closing and the receiving school (slope, river crossing, monsoon hazard, snow months, road type, wildlife, elevation). Synthesised by PathShala; not a survey.',
+  { school_ids: strs('School ids: closing school first, then receiving school') }, ['school_ids'],
+  async ({ school_ids }) => {
+    const ids = (Array.isArray(school_ids) ? school_ids : String(school_ids || '').split(/[,\s]+/)).filter(Boolean);
+    const rows = ids.map(id => { const t = terrainRow(id); return t ? { ...t, name: school(id).name, village: place(school(id)) } : { school_id: id, name: school(id).name, none: true }; });
+    return { closing: rows[0] || null, receiving: rows[1] || null, features: ids.flatMap(terrainFeatures), elev_diff_m: rows.length > 1 && !rows[0].none && !rows[1].none ? rows[1].elev_m - rows[0].elev_m : null, source: 'PathShala (synthesised)' };
   });
 
 defineTool('transport_lookup', 'Public and school transport at school arrival and departure times. No timetable source is connected yet, so this reports "Data unavailable"; the answer is collected as a field question.',
@@ -297,17 +320,33 @@ defineTool('compare_options', 'Compare the candidate receiving schools on walkin
     const sums = optionSummary(inv_id);
     return { closing_school: A.name, students: A.enrol_total, walk_limit_km: limit, options: sums.map(x => {
       const r = routeInfo(A.school_id, x.school.school_id), seats = Math.max(0, capOf(x.school) - x.school.enrol_total);
-      return { school_id: x.school.school_id, name: x.school.name, walk_km: r.walk_km, walk_min: r.walk_min, estimated: r.est, seats_available: seats, students: A.enrol_total, enough_seats: seats >= A.enrol_total,
+      const tb = terrainRow(x.school.school_id), ta = terrainRow(A.school_id), terrain = [...terrainFeatures(A.school_id), ...terrainFeatures(x.school.school_id)].map(f => f.name), lift = tb && ta ? tb.elev_m - ta.elev_m : null;
+      const cn = q('SELECT sum(sup) s, sum(opp) o, sum(n) n FROM concerns WHERE case_id = ?', [trackId(inv_id, x.school.school_id)])[0] || {}, own = terrainRisk(tb);
+      return { support: cn.s || 0, oppose: cn.o || 0, messages: cn.n || 0, terrain_at_school: own, terrain_risk_points: own, terrain, elev_diff_m: lift, school_id: x.school.school_id, name: x.school.name, walk_km: r.walk_km, walk_min: r.walk_min, estimated: r.est, seats_available: seats, students: A.enrol_total, enough_seats: seats >= A.enrol_total,
         investigated: x.investigated, questions: x.questions, answered: x.answered, confirmed_concerns: x.confirmed, concerns_total: x.issues, interventions_selected: x.selected.length, yearly_cost: x.yearly, first_year_total: x.yearly + x.oneTime };
     }) };
   });
-defineTool('suggest_option', 'Rank the candidate schools by a fixed rule (enough seats, then fewest confirmed concerns, then shortest walk, then lowest cost) and suggest one, or keeping and repairing the closing school when no option is workable. A suggestion only; the officer decides.',
+/* Weights of the ranking score. Each criterion scores 0 to 100 and the officer can see every part. */
+const WEIGHTS = { walk: 25, concerns: 25, cost: 20, community: 15, terrain: 15 }, LABEL = { walk: 'walking time', concerns: 'confirmed concerns', cost: 'first-year cost', community: 'community support', terrain: 'terrain at the receiving school' };
+defineTool('suggest_option', 'Rank the candidate schools that have enough seats by a weighted score (walking time 25, confirmed concerns 25, first-year cost 20, community support 15, terrain at the receiving school 15) and suggest one, or keeping and repairing the closing school when no option is workable. A suggestion only; the officer decides.',
   { comparison: { type: 'object', description: 'Output of compare_options' } }, ['comparison'],
   async ({ comparison: C }) => {
-    const ok = C.options.filter(o => o.enough_seats).sort((a, b) => a.confirmed_concerns - b.confirmed_concerns || a.walk_min - b.walk_min || a.first_year_total - b.first_year_total || a.school_id.localeCompare(b.school_id));
+    const ok = C.options.filter(o => o.enough_seats), costs = ok.map(o => o.first_year_total), lo = Math.min(...costs), hi = Math.max(...costs);
+    const clamp = n => Math.max(0, Math.min(100, Math.round(n)));
+    const scores = {};
+    ok.forEach(o => {
+      const supportShare = o.messages ? (o.support - o.oppose) / o.messages : 0, potential = Math.max(0, (o.concerns_total || 0) - o.confirmed_concerns);
+      const pts = { walk: clamp(100 * (90 - o.walk_min) / 75), concerns: clamp(100 - 35 * o.confirmed_concerns - 8 * potential), cost: hi === lo ? 100 : clamp(100 * (hi - o.first_year_total) / (hi - lo)),
+        community: clamp(50 + 50 * supportShare), terrain: clamp(100 - o.terrain_at_school - (o.elev_diff_m != null && o.elev_diff_m >= 250 ? 15 : 0)) };
+      const total = Math.round(Object.entries(WEIGHTS).reduce((a, [k, w]) => a + pts[k] * w / 100, 0));
+      scores[o.school_id] = { total, parts: Object.fromEntries(Object.entries(pts).map(([k, v]) => [k, { pts: v, weight: WEIGHTS[k] }])) };
+    });
+    const ranked = ok.slice().sort((a, b) => scores[b.school_id].total - scores[a.school_id].total || a.school_id.localeCompare(b.school_id));
     const allBad = ok.length > 0 && ok.every(o => o.walk_km > C.walk_limit_km && o.confirmed_concerns >= 2);   // threshold 2 is reported in the output
-    const keep = !ok.length || allBad, best = ok[0] || null;
-    return { concern_threshold: 2, suggested: keep ? 'keep' : best.school_id, suggested_name: keep ? 'Keep and repair the closing school' : best.name, best, ranking: ok.map(o => o.school_id), keep_reason: !ok.length ? 'no_seats' : allBad ? 'all_over_limit_with_confirmed_concerns' : null,
+    const keep = !ok.length || allBad, best = ranked[0] || null, next = ranked[1] || null;
+    let edge = null;   // what put the best school ahead of the runner-up
+    if (best && next) { const d = Object.keys(WEIGHTS).map(k => [k, (scores[best.school_id].parts[k].pts - scores[next.school_id].parts[k].pts) * WEIGHTS[k] / 100]).sort((a, b) => b[1] - a[1])[0]; edge = { over: next.name, over_score: scores[next.school_id].total, factor: LABEL[d[0]], factor_points: Math.round(d[1]) }; }
+    return { concern_threshold: 2, weights: WEIGHTS, scores, edge, suggested: keep ? 'keep' : best.school_id, suggested_name: keep ? 'Keep and repair the closing school' : best.name, best, ranking: ranked.map(o => o.school_id), keep_reason: !ok.length ? 'no_seats' : allBad ? 'all_over_limit_with_confirmed_concerns' : null,
       unanswered: C.options.filter(o => o.questions && o.answered < o.questions).map(o => ({ name: o.name, unanswered: o.questions - o.answered })), not_investigated: C.options.filter(o => !o.investigated).map(o => o.name) };
   });
 

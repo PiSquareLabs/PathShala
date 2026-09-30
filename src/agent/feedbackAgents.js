@@ -68,6 +68,17 @@ const HARD = {
   'The school building needs repair; the roof leaks in the rains.': [S, 'sender', 'negative'],
   'Very few children are left in the school.': [O, 'sender', 'negative'],
   'The teachers here know every child by name.': [SO, 'sender', 'positive'],
+  // terrain-driven messages: which ones a school has depends on its own terrain
+  'In the rains the stream on the way rises and children cannot cross it.': [W, 'receiver', 'negative'],
+  'We are afraid to send small children alone over the bridge on the way.': [S, 'receiver', 'negative'],
+  'In the rains stones fall on the path and the way is blocked for days.': [W, 'receiver', 'negative'],
+  'The stream on the way fills suddenly and it is dangerous at school time.': [S, 'receiver', 'negative'],
+  'Snow and ice make the path unsafe for children in winter.': [W, 'receiver', 'negative'],
+  'The path is very steep and small children get tired.': [W, 'receiver', 'negative'],
+  'Wild animals are seen on the path and children are afraid.': [S, 'receiver', 'negative'],
+  'Vehicles do not come to our village; the road is kutcha.': [T, 'receiver', 'negative'],
+  'The road is metalled and children reach school easily by vehicle.': [T, 'receiver', 'positive'],
+  'The path is flat and safe even in the rains.': [W, 'receiver', 'positive'],
 };
 /* Any message not in the table (for example one added in the inbox) is classified by keyword rules. */
 export function classifyByRules(text) {

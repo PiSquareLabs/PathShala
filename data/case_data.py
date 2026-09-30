@@ -219,17 +219,6 @@ def build(cur):
         ("Facilities", "स्कूल में बहुत कम बच्चे बचे हैं।", "Very few children are left in the school."),
         ("Other", "यहाँ के अध्यापक हर बच्चे को नाम से जानते हैं।", "The teachers here know every child by name."),
     ]
-    cur.execute("SELECT school_id FROM schools ORDER BY school_id")
-    extra = []
-    for (sid,) in cur.fetchall():
-        if sid == "GSH":
-            continue                                       # Gushaini already has the 87 messages above
-        r2 = random.Random("fb" + sid)
-        pool = [(t, hi, en) for t, hi, en in AS_RECEIVER] + [(t, hi, en) for t, hi, en in AS_SENDER]
-        for t, hi, en in r2.sample(pool, r2.randint(5, 8)):
-            extra.append((sid, sid, None, t, hi, en, r2.choice(chans), f"2026-{r2.choice(['07', '08', '09'])}-{r2.randint(1, 28):02d}", r2.choice(roles), "reported", "", "mock"))
-    cur.executemany("INSERT INTO citizen_feedback (school_id, about_id, hab_id, theme, text_hi, text_en, channel, received, sender_role, status, verified_by, source) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", extra)
-
     # ---------- policy corpus (real sources) ----------
     RTE = "https://indiankanoon.org/doc/42884596/"
     SS = "https://samagrashiksha.in/download/AWP&B/Annexure-I.pdf"
@@ -259,3 +248,96 @@ def build(cur):
     ]
     cur.executemany("INSERT INTO policy_chunks VALUES (?,?,?,?,?,?)", chunks)
     cur.execute("INSERT INTO rules VALUES (?,?,?,?,?,?,?,?)", ("R13", "Child walking pace", "Walking speed of a Class 1 child relative to an adult (Tobler's hiking function).", "child_pace", 0.75, "× adult", "PathShala planning assumption", ""))
+
+
+    # ---------- terrain around each school (synthesised by PathShala, so field questions differ by school) ----------
+    cur.execute("""CREATE TABLE school_terrain (school_id TEXT PRIMARY KEY, terrain TEXT, elev_m INTEGER, slope_pct INTEGER,
+      crossing_kind TEXT, crossing_name TEXT, monsoon_hazard TEXT, monsoon_note TEXT, snow_months TEXT, road_type TEXT, wildlife TEXT,
+      source TEXT, note TEXT)""")
+    T = [
+        # id, terrain, elev, slope %, crossing kind, crossing name, monsoon hazard, note, snow months, road, wildlife
+        ("PK2", "Steep hill slope above the Tirthan valley", 1725, 22, "bridge", "Baridropa–Jawal footbridge", "landslide", "Road blocked several days near Jawal", "Dec–Feb", "kutcha link road", "monkeys"),
+        ("GSH", "Valley floor beside the Tirthan river", 1590, 6, "", "", "flash flood", "Tirthan rises quickly after cloudbursts", "", "metalled road", ""),
+        ("NGN", "Gentle terrace on the valley road", 1480, 8, "", "", "", "", "", "metalled road", ""),
+        ("BNJ", "Town on a river terrace", 1360, 4, "bridge", "Banjar town bridge over the Tirthan", "", "", "", "metalled road", ""),
+        ("NHN", "Ridge top, exposed to wind and snow", 1780, 18, "", "", "landslide", "Loose slope below the school path", "Dec–Mar", "kutcha link road", "leopard"),
+        ("JBH", "Forested mid-slope", 1900, 16, "ford", "Jibhi nallah", "flash flood", "Nallah floods within an hour of heavy rain", "Jan–Feb", "metalled road", "bears"),
+        ("BTH", "Remote side valley", 1730, 24, "ford", "Bathad khad", "landslide", "Path cut by slides most Julys", "Dec–Feb", "footpath only", "bears"),
+        ("RSK", "High spur above the Parvati valley", 2050, 26, "bridge", "Rashkar rope footbridge", "landslide", "Slides across the Chhalal path", "Nov–Mar", "kutcha link road", "bears"),
+        ("UCH", "Terraced fields on a steep slope", 1780, 20, "", "", "landslide", "Rockfall on the Barshaini road", "Dec–Feb", "metalled road", "monkeys"),
+        ("SDY", "Low rolling hills", 720, 7, "ford", "Sandyar seasonal stream", "flash flood", "Stream runs high in July and August", "", "kutcha link road", "wild boar"),
+        ("CHT", "Small town on flat ground", 650, 3, "", "", "", "", "", "metalled road", ""),
+        ("NPB", "Flat plain by the fort", 420, 2, "", "", "", "", "", "metalled road", ""),
+        ("NPG", "Flat plain in town", 415, 2, "", "", "", "", "", "metalled road", ""),
+        ("JYN", "Steep slope above the Beas", 1760, 25, "bridge", "Jiyani wooden bridge", "landslide", "Slope failures after long rain", "Dec–Feb", "footpath only", "bears"),
+        ("BUA", "Village on a broad shelf", 1700, 10, "", "", "", "", "Jan–Feb", "metalled road", ""),
+        ("PHL", "Narrow ridge with drops on both sides", 1800, 21, "", "", "landslide", "Edge of the path erodes in rain", "Dec–Feb", "footpath only", ""),
+        ("BHM", "Gentle slope near the road", 1660, 9, "ford", "Bhumteer nallah", "flash flood", "Ankle to knee deep in the monsoon", "", "metalled road", "monkeys"),
+        ("KST", "High steep hamlet", 2150, 27, "", "", "landslide", "Rockfall from the cliff above the path", "Nov–Mar", "footpath only", "bears"),
+        ("KKR", "Mid-slope village", 1980, 13, "bridge", "Kukari plank bridge", "", "", "Dec–Feb", "kutcha link road", ""),
+        ("NER", "Wooded hillside", 1690, 15, "", "", "", "", "Jan–Feb", "kutcha link road", "leopard"),
+        ("DOB", "Orchard slope above the Dobhi khad", 2000, 14, "ford", "Dobhi khad", "flash flood", "The khad fills within an hour of heavy rain", "Dec–Feb", "metalled road", "leopard"),
+        ("SOY", "Broad shelf above the valley road", 2060, 9, "", "", "landslide", "Rockfall on the last 300 m below the school", "Dec–Feb", "metalled road", ""),
+        ("JNA", "Large village on a gentle shelf", 2200, 8, "", "", "", "", "Dec–Mar", "metalled road", ""),
+    ]
+    cur.executemany("INSERT INTO school_terrain VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    [t + ("mock", "Synthesised by PathShala for the demo; not a survey") for t in T])
+
+    # ---------- habitations for every school without any (synthesised; road link follows the terrain record) ----------
+    rnd = random.Random(7)
+    have = {r[0] for r in cur.execute("SELECT DISTINCT school_id FROM habitations")}
+    nxt = 1 + max(int(r[0][1:]) for r in cur.execute("SELECT hab_id FROM habitations"))
+    SUF = ["", " Dhar", " Khad", " Nala", " Bazaar"]
+    for sid, name, lat, lng, enrol in cur.execute("SELECT school_id, name, lat, lng, enrol_total FROM schools").fetchall():
+        if sid in have:
+            continue
+        road, elev = next((t[9], t[2]) for t in T if t[0] == sid)
+        village = name.replace("GPS ", "").replace("GMS ", "").replace("GSSS ", "").replace("Girls PM Shri ", "").replace("(Boys) ", "")
+        n = 2 if enrol < 30 else 3
+        for i in range(n):
+            connected = 1 if road == "metalled road" and i != 1 else (1 if road == "kutcha link road" and i == 0 else 0)
+            cur.execute("INSERT INTO habitations VALUES (?,?,?,?,?,?,?,?)",
+                        ("H%d" % nxt, (village + SUF[i]).strip(), sid, round(lat + rnd.uniform(-0.004, 0.004), 4), round(lng + rnd.uniform(-0.004, 0.004), 4),
+                         elev + rnd.choice([-40, 0, 60, 120]) * (1 if i else 0), connected, "mock"))
+            nxt += 1
+
+    # ---------- feedback about every other school (synthesised by PathShala). Each school's messages follow its own terrain, so they differ. ----------
+    # (theme, hindi, english); every English sentence is also in the hardcoded classification table in src/agent/feedbackAgents.js.
+    TERRAIN_FB = {
+        "ford": ("Seasonal access", "बरसात में रास्ते का नाला चढ़ जाता है और बच्चे उसे पार नहीं कर पाते।", "In the rains the stream on the way rises and children cannot cross it."),
+        "bridge": ("Safety", "रास्ते के पुल पर छोटे बच्चों को अकेले भेजने में डर लगता है।", "We are afraid to send small children alone over the bridge on the way."),
+        "landslide": ("Seasonal access", "बरसात में रास्ते पर पत्थर गिरते हैं और कई दिन रास्ता बंद रहता है।", "In the rains stones fall on the path and the way is blocked for days."),
+        "flood": ("Safety", "रास्ते का नाला अचानक भर जाता है, स्कूल के समय खतरनाक होता है।", "The stream on the way fills suddenly and it is dangerous at school time."),
+        "snow": ("Seasonal access", "सर्दियों में बर्फ़ और पाला रास्ते को बच्चों के लिए असुरक्षित बना देते हैं।", "Snow and ice make the path unsafe for children in winter."),
+        "steep": ("Seasonal access", "रास्ता बहुत खड़ी चढ़ाई वाला है, छोटे बच्चे थक जाते हैं।", "The path is very steep and small children get tired."),
+        "wild": ("Safety", "रास्ते में जंगली जानवर दिखते हैं और बच्चे डरते हैं।", "Wild animals are seen on the path and children are afraid."),
+        "kutcha": ("Transport", "हमारे गाँव तक गाड़ी नहीं आती, सड़क कच्ची है।", "Vehicles do not come to our village; the road is kutcha."),
+        "pucca": ("Transport", "सड़क पक्की है और बच्चे गाड़ी से आसानी से स्कूल पहुँच जाते हैं।", "The road is metalled and children reach school easily by vehicle."),
+        "flat": ("Seasonal access", "रास्ता समतल है और बरसात में भी सुरक्षित रहता है।", "The path is flat and safe even in the rains."),
+    }
+    cur.execute("SELECT school_id FROM schools ORDER BY school_id")
+    extra = []
+    trow = {t[0]: t for t in T}
+    for (sid,) in cur.fetchall():
+        if sid == "GSH":
+            continue                                       # Gushaini already has the 87 messages above
+        r2 = random.Random("fb" + sid)
+        t = trow[sid]                                      # id, terrain, elev, slope, crossing kind, name, monsoon, note, snow, road, wildlife
+        keys = []
+        if t[4] == "ford": keys.append("ford")
+        if t[4] == "bridge": keys.append("bridge")
+        if t[6] == "landslide": keys.append("landslide")
+        if t[6] == "flash flood": keys.append("flood")
+        if t[8]: keys.append("snow")
+        if t[3] >= 18: keys.append("steep")
+        if t[10]: keys.append("wild")
+        if "kutcha" in t[9] or "footpath" in t[9]: keys.append("kutcha")
+        if not keys or (t[3] < 10 and t[9] == "metalled road" and len(keys) < 2): keys += ["pucca", "flat"] if t[3] < 10 else ["pucca"]
+        pool = [(tt, hi, en) for tt, hi, en in AS_RECEIVER[:2] + AS_RECEIVER[5:]] + AS_SENDER
+        msgs = []
+        for k in keys[:5]:
+            msgs += [TERRAIN_FB[k]] * r2.randint(1, 2)      # a problem raised again and again looks different from one raised once
+        msgs += r2.sample(pool, r2.randint(4, 5))
+        for tt, hi, en in msgs:
+            extra.append((sid, sid, None, tt, hi, en, r2.choice(chans), f"2026-{r2.choice(['07', '08', '09'])}-{r2.randint(1, 28):02d}", r2.choice(roles), "reported", "", "mock"))
+    cur.executemany("INSERT INTO citizen_feedback (school_id, about_id, hab_id, theme, text_hi, text_en, channel, received, sender_role, status, verified_by, source) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", extra)

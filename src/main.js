@@ -17,6 +17,7 @@ import { captureC1Outputs } from './agent/fixtures.js';
 import { CONFIG, GeminiProvider, SimulatedProvider } from './agent/provider.js';
 import { callAgent } from './agent/runner.js';
 import { tools, toolSchemas } from './agent/tools.js';
+import * as FC from './agent/fullControl.js';
 import { validate, schemas } from './agent/validate.js';
 import { SQL, b64, q } from './db/sqlite.js';
 import { chooseFinal, createCase } from './case/options.js';
@@ -40,4 +41,4 @@ bootSql().then(engine => {
 });
 
 // Debug and test hook (used by tests/agents.spec.js); not used by the app itself.
-window.__pathshala = { runResearch, runSuggestion, suggestionRow, acceptSuggestion, addFieldQuestions, ragSearch, RESEARCH_AGENTS, checkSentences, toolNumbers, sqlRun, runClassify, runCategoryAgents, draftSentences, classifyByRules, stanceOf, q, state, chooseFinal, createCase, runInvestigation, runPolicy, makeSavedDb: sql => { const d = new SQL.Database(); d.exec(sql); return b64(d.export()); }, AGENTS, tools, toolSchemas, callAgent, validate, schemas, captureC1Outputs, CONFIG, GeminiProvider, SimulatedProvider };
+window.__pathshala = { FC, runResearch, runSuggestion, suggestionRow, acceptSuggestion, addFieldQuestions, ragSearch, RESEARCH_AGENTS, checkSentences, toolNumbers, sqlRun, runClassify, runCategoryAgents, draftSentences, classifyByRules, stanceOf, q, state, chooseFinal, createCase, runInvestigation, runPolicy, makeSavedDb: sql => { const d = new SQL.Database(); d.exec(sql); return b64(d.export()); }, AGENTS, tools, toolSchemas, callAgent, validate, schemas, captureC1Outputs, CONFIG, GeminiProvider, SimulatedProvider };
