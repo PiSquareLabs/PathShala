@@ -16,8 +16,6 @@ const terrainLine = o => [o.closing, o.receiving].filter(Boolean).map(t => (t.no
 function terrainQuestions(A, B, tp) {
   const t = tp?.closing, r = tp?.receiving; if (!t || t.none) return [];
   const out = [], v = t.village || A.name;
-  if (t.crossing_kind === 'bridge') out.push({ text: `Is the ${t.crossing_name} on the way from ${v} safe for children in heavy rain, and who checks it?`, gap: 'River crossing' });
-  if (t.crossing_kind === 'ford') out.push({ text: `Can children cross the ${t.crossing_name} on foot after heavy rain? Is there a rope, stones or an adult to help?`, gap: 'River crossing' });
   if (t.monsoon_hazard === 'landslide') out.push({ text: `${t.monsoon_note}. For how many days was the way blocked last monsoon, and is there another route?`, gap: 'Monsoon landslide' });
   if (t.monsoon_hazard === 'flash flood') out.push({ text: `${t.monsoon_note}. Is there a warning system, and do children walk during school hours when it rises?`, gap: 'Flash flood' });
   if (t.snow_months) out.push({ text: `Are the path and road usable in ${t.snow_months}? Who clears the snow, and do children stay at home?`, gap: 'Snow and ice' });

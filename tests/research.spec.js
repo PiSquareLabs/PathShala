@@ -85,7 +85,7 @@ test.describe('agent loop', () => {
     expect(acts.chosen).toBeNull(); expect(acts.n1).toBeGreaterThan(acts.n0);
   });
   test('no tool can help: Data unavailable and a field question', async ({ page }) => {
-    const r = await page.evaluate(async () => { const P = window.__pathshala, inv = P.createCase('JYN', ['BUA']); const o = await P.runResearch('transportPlanner', inv + '-BUA'); return { o, ev: P.q("SELECT label, status FROM research_evidence WHERE case_id = ?", [inv + '-BUA']) }; });
+    const r = await page.evaluate(async () => { const P = window.__pathshala; P.sqlRun("DELETE FROM habitations WHERE school_id = 'JYN'"); const inv = P.createCase('JYN', ['BUA']); const o = await P.runResearch('transportPlanner', inv + '-BUA'); return { o, ev: P.q("SELECT label, status FROM research_evidence WHERE case_id = ?", [inv + '-BUA']) }; });
     expect(r.o.stop_reason).toMatch(/No tool can help/); expect(r.o.open_questions.length).toBeGreaterThan(0); expect(r.ev.some(e => /Data unavailable/.test(e.label) && e.status === 'needs verification')).toBe(true);
   });
   test('the checker marks claims supported, contradicted or unchecked with sources; web alone never supports a claim', async ({ page }) => {

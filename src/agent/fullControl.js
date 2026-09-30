@@ -73,7 +73,8 @@ export async function runWork(inv, step, onLog = () => {}) {
       await each(inv, log, async (t, B) => {
         if (!hasResults(t.case_id)) { log(`${B.name}: investigating: students, routes, map layers, transport, feedback, gaps`); await runInvestigation(t.case_id, ev => { if (ev.type === 'step') onLog(`  ${ev.label}`); }); }
         const tp = savedRun(t.case_id, 'transportPlanner')?.out, fc = savedRun(t.case_id, 'feedbackChecker')?.out;
-        const n = addFieldQuestions(t.case_id, [...(tp?.open_questions || []).slice(0, 4), ...(fc?.open_questions || []).slice(0, 3)]); log(`${B.name}: field form ready (${q('SELECT count(*) n FROM field_questions WHERE case_id = ?', [t.case_id])[0].n} questions, ${n} from the research)`);
+        run("DELETE FROM field_questions WHERE case_id = ? AND qid IN ('Q4','Q5') AND COALESCE(answer,'') = '' AND COALESCE(note,'') = ''", [t.case_id]);   // the form stays short: three standard questions and the one the research found most important for this school
+        const n = addFieldQuestions(t.case_id, [...(tp?.open_questions || []), ...(fc?.open_questions || [])].slice(0, 1)); log(`${B.name}: field form ready (${q('SELECT count(*) n FROM field_questions WHERE case_id = ?', [t.case_id])[0].n} questions, ${n} from the research)`);
       });
       log('Field form generated for the officer. Waiting for the field officer.'); setStage(inv, 'field'); logCase(inv, 'System', 'Full control is waiting for the field officer', 'Field form generated');
     } else if (f.stage === 'answered') {

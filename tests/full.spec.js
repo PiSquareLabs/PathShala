@@ -17,7 +17,7 @@ test('Full control drives the ordinary screens: one closing school in, AI resear
   await cont(page); await expect(page).toHaveURL(/feedback/); await expect(page.locator('#fbsum, #rs-feedbackChecker').first()).toBeVisible({ timeout: 120000 });
   await expect(page.locator('#rs-feedbackChecker .rstep').first()).toBeVisible(); await expect(page.locator('#fc-banner')).toContainText('checked the claims');
   // Evidence: the Transport Planner has run
-  await cont(page); await expect(page).toHaveURL(/evidence/); await expect(page.locator('#rs-transportPlanner .rstep')).toHaveCount(7, { timeout: 120000 });
+  await cont(page); await expect(page).toHaveURL(/evidence/); await expect(page.locator('#rs-transportPlanner .rstep')).toHaveCount(8, { timeout: 120000 }); await expect(page.locator('#rs-transportPlanner')).toContainText('terrain_profile');
   // Investigate: research of every school, the field form is generated, and the flow waits
   await cont(page); await expect(page).toHaveURL(/investigate/); await expect(page.locator('#fc-form')).toBeVisible({ timeout: 180000 });
   await expect(page.locator('#fc-banner')).toContainText('waiting for the field officer'); await expect(page.locator('#fc-now')).toHaveCount(0);   // no auto-advance while waiting
@@ -32,7 +32,8 @@ test('Full control drives the ordinary screens: one closing school in, AI resear
   await page.locator('#fc-submit').click(); await expect(page.locator('#toast')).toContainText('Answer at least one question');
   for (const sec of await page.locator('.fcsec').all()) {
     await sec.locator('.fq[data-q="Q1"] .opts button[data-v="No"]').click(); await sec.locator('.fq[data-q="Q2"] .fv').fill('20');
-    await sec.locator('.fq[data-q="Q3"] .opts button[data-v="No"]').click(); await sec.locator('.fq[data-q="Q4"] .fv').fill('45');
+    await sec.locator('.fq[data-q="Q3"] .opts button[data-v="No"]').click();
+    expect(await sec.locator('.fq').count()).toBeLessThanOrEqual(4);          // a short form: at most four questions per school
   }
   await page.locator('#fc-submit').click();
   // after the answers: evidence updated, then Policy and cost with the best policies selected
@@ -91,5 +92,5 @@ test('Field questions differ by school: they come from each school\'s own terrai
   const sets = Object.values(r.out).map(x => JSON.stringify(x.qs.filter(t => !/bus or shared|pickup stops|Survey the road/.test(t))));
   expect(new Set(sets).size).toBe(sets.length);            // no two schools get the same terrain questions
   for (const v of Object.values(r.out)) { expect(v.steps).toContain('terrain_profile'); expect(v.qs.length).toBeGreaterThan(2); }
-  expect(r.out.JYN.qs.join(' ')).toContain('Jiyani wooden bridge'); expect(r.out.BHM.qs.join(' ')).toContain('Bhumteer nallah'); expect(r.out.SDY.qs.join(' ')).toContain('Sandyar seasonal stream');
+  expect(r.out.JYN.qs.join(' ')).toContain('Slope failures after long rain'); expect(r.out.BHM.qs.join(' ')).toContain('Ankle to knee deep'); expect(r.out.SDY.qs.join(' ')).toContain('Stream runs high');
 });
