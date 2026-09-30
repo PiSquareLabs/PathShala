@@ -59,6 +59,7 @@ export const transportPlanner = {
     return 'Checked: values come from the tool';
   },
   answered: st => transportPlanner.required(st).length === 0,
+  failed: (st, msg, eid) => ({ route_plan: null, cost: null, policy: null, web: [], open_questions: [{ text: `Plan the transport on the ground; the desk research could not be completed (${msg}).`, gap: 'Transport plan' }], sentences: [{ text: `The transport plan could not be completed (${msg}); this is marked Data unavailable.`, refs: [eid] }] }),
   finish(st) {
     const { A, B } = st.ctx, f = st.facts;
     if (!f.cost) { const u = st.evidence.at(-1); return { route_plan: null, cost: null, policy: null, web: [], open_questions: st.questions, sentences: [{ text: `No habitations are recorded for ${A.name}, so no transport plan can be made; this is marked Data unavailable.`, refs: [u.eid] }] }; }
@@ -134,15 +135,19 @@ export const feedbackChecker = {
   },
   check(st, step) { return step.tool === 'check_claims' ? 'Checked: web reports alone never make a claim supported' : step.tool === 'web_search' ? 'Checked: labelled as a web source; evidence status is unchanged' : 'Checked: values come from the tool'; },
   answered: st => feedbackChecker.required(st).length === 0,
+  failed: (st, msg, eid) => ({ claims: [], counts: { supported: 0, contradicted: 0, unchecked: 0, total: 0 }, open_questions: [], web: [], sentences: [{ text: `The claim check could not be completed (${msg}); this is marked Data unavailable and needs a field check.`, refs: [eid] }] }),
   finish(st) {
-    const { A, B } = st.ctx, f = st.facts, c = f.check, e = t => evOf(st, t), claims = c.claims, first = s => claims.filter(x => x.status === s);
+    const { A, B } = st.ctx, f = st.facts;
+    // if a check step could not run, every claim stays unchecked rather than failing the whole run
+    const c = f.check || { claims: (f.claims?.claims || []).map(x => ({ ...x, status: 'unchecked', note: 'The check step did not complete', sources: [] })), supported: 0, contradicted: 0, unchecked: f.claims?.claim_count || 0, checked_count: f.claims?.claim_count || 0 };
+    const e = t => evOf(st, t), ck = e('check_claims') || e('extract_claims') || st.evidence[0]?.eid, claims = c.claims, first = s => claims.filter(x => x.status === s);
     const seen = new Set(), questions = [];
-    first('unchecked').forEach(x => { const k = x.kind; if (seen.has(k) || questions.length >= 5) return; seen.add(k); questions.push({ ...KIND_QUESTION[k](x, A, B), claim_id: x.claim_id }); });
+    first('unchecked').forEach(x => { const k = x.kind; if (seen.has(k) || questions.length >= 5) return; seen.add(k); questions.push({ ...(KIND_QUESTION[k] || KIND_QUESTION.other)(x, A, B), claim_id: x.claim_id }); });
     const kinds = [...seen].join(', ');
-    const sentences = [{ text: `Citizens made ${f.claims.claim_count} distinct claims in ${f.claims.message_count} messages about these schools. Supported by records, maps or observations: ${c.supported}. Contradicted: ${c.contradicted}. Could not be checked: ${c.unchecked}.`, refs: [e('extract_claims'), e('check_claims')] }];
-    first('contradicted').slice(0, 2).forEach(x => sentences.push({ text: `Contradicted: "${x.text}" (${x.note}).`, refs: [e('check_claims')] }));
-    first('supported').slice(0, 2).forEach(x => sentences.push({ text: `Supported: "${x.text}" (${x.note}).`, refs: [e('check_claims')] }));
-    if (c.unchecked) sentences.push({ text: `${c.unchecked} claims need a field check; they concern ${kinds}.`, refs: [e('check_claims')] });
+    const sentences = [{ text: `Citizens made ${f.claims?.claim_count ?? 0} distinct claims in ${f.claims?.message_count ?? 0} messages about these schools. Supported by records, maps or observations: ${c.supported}. Contradicted: ${c.contradicted}. Could not be checked: ${c.unchecked}.`, refs: [...new Set([e('extract_claims'), ck].filter(Boolean))] }];
+    first('contradicted').slice(0, 2).forEach(x => sentences.push({ text: `Contradicted: "${x.text}" (${x.note}).`, refs: [ck] }));
+    first('supported').slice(0, 2).forEach(x => sentences.push({ text: `Supported: "${x.text}" (${x.note}).`, refs: [ck] }));
+    if (c.unchecked) sentences.push({ text: `${c.unchecked} claims need a field check; they concern ${kinds}.`, refs: [ck] });
     const w = f.web?.passages || []; if (w.length) sentences.push({ text: `Public reports (${w.map(x => x.id).join(', ')}) cover some of these places; they are labelled "${WEB_LABEL}" and do not change any claim status.`, refs: w.map(x => x.id) });
     return { claims, counts: { supported: c.supported, contradicted: c.contradicted, unchecked: c.unchecked, total: c.checked_count }, open_questions: questions, web: w.map(x => ({ id: x.id, title: x.title, label: WEB_LABEL })), sentences };
   },
@@ -177,6 +182,7 @@ export const suggestionAgent = {
   summary(st, step) { const o = step.output; return ({ compare_options: () => `${o.options.length} options`, rag_search: () => (o.none ? noSource : `${o.passages.length} passages, best ${o.passages[0].id}`), suggest_option: () => o.suggested_name })[step.tool]?.() || ''; },
   check(st, step) { return step.tool === 'suggest_option' ? 'Checked: a suggestion only, nothing is selected' : step.tool === 'rag_search' ? 'Checked: only these passages may be cited' : 'Checked: numbers come from the tool'; },
   answered: st => suggestionAgent.required(st).length === 0,
+  failed: (st, msg, eid) => ({ suggested: 'keep', suggested_name: 'No suggestion could be made', reasons: [{ text: `The comparison could not be completed (${msg}).`, refs: [eid] }], would_change: [], outstanding: [{ text: 'Run the suggestion again after the investigation is complete.', refs: [eid] }], sentences: [{ text: `The comparison could not be completed (${msg}).`, refs: [eid] }] }),
   finish(st) {
     const f = st.facts, C = f.compare, S = f.suggest, e = t => evOf(st, t), cmp = e('compare_options'), sg = e('suggest_option'), pp = top(f.past), pol = top(f.policy), b = S.best;
     const reasons = [];

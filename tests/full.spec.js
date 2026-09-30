@@ -1,49 +1,75 @@
 import { expect, test } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => { await page.goto('/'); await page.waitForSelector('#hmap'); });
+const cont = page => page.locator('#fc-now').click();
 
-test('Full control: one closing school in, researched recommendation, budget and report out; stops for the field officer', async ({ page }) => {
-  test.setTimeout(300000);
+test('Full control drives the ordinary screens: one closing school in, AI research, field form (waits), policies, final report', async ({ page }) => {
+  test.setTimeout(400000);
   await page.locator('#nav a', { hasText: 'Full control' }).click(); await expect(page).toHaveURL(/#\/full$/);
-  await expect(page.locator('h1')).toContainText('Full control'); await page.locator('#fc-school').selectOption('PK2');
-  await expect(page.locator('#fc-cands')).toContainText('GPS Gushaini'); await page.locator('#fc-start').click(); await expect(page).toHaveURL(/#\/full\/C\d+/);
-  // AI research runs for every candidate, then stops at the field form
-  await expect(page.locator('#fc-form')).toBeVisible({ timeout: 120000 });
-  await expect(page.locator('.fcsteps [aria-current="step"]')).toContainText('Field form');
-  const st1 = await page.evaluate(() => { const q = window.__pathshala.q; return { stage: q('SELECT stage FROM full_runs')[0].stage, tracks: q('SELECT count(*) n FROM cases')[0].n, found: q('SELECT count(DISTINCT case_id) n FROM findings')[0].n, tp: q("SELECT count(*) n FROM research_runs WHERE agent = 'transportPlanner'")[0].n, fc: q("SELECT count(*) n FROM research_runs WHERE agent = 'feedbackChecker'")[0].n, sel: q('SELECT count(*) n FROM interventions WHERE selected = 1')[0].n, chosen: q('SELECT chosen_id FROM investigations')[0].chosen_id, submitted: q("SELECT count(*) n FROM investigations WHERE status LIKE 'Ready%'")[0].n }; });
-  expect(st1.stage).toBe('field'); expect(st1.found).toBe(st1.tracks); expect(st1.tp).toBe(st1.tracks); expect(st1.fc).toBe(st1.tracks); expect(st1.sel).toBe(0); expect(st1.chosen).toBeNull(); expect(st1.submitted).toBe(0);
-  const secs = await page.locator('.fcsec').count(); expect(secs).toBe(st1.tracks); expect(await page.locator('.fcsec .fq').count()).toBeGreaterThan(secs * 5);   // 5 standard + the research's extra questions
-  await expect(page.locator('#fc-print')).toBeVisible(); await expect(page.locator('.fcprint')).toContainText('Officer:');
+  await page.locator('#fc-school').selectOption('PK2'); await expect(page.locator('#fc-cands')).toContainText('GPS Gushaini'); await page.locator('#fc-start').click();
+  // Compare: the AI already chose the candidates
+  await expect(page).toHaveURL(/case\/C\d+\/compare/); await expect(page.locator('#fc-banner')).toContainText('chose the candidate schools'); await expect(page.locator('.cmptbl')).toBeVisible();
+  const cands = await page.locator('.cmptbl thead th b').count(); expect(cands).toBe(3);
+  await expect(page.locator('#fc-count')).toContainText('Continuing in');
+  await page.locator('#fc-pause').click(); await expect(page.locator('#fc-count')).toHaveText('Paused'); await page.locator('#fc-pause').click();
+  // Feedback: the AI classifies, summarises and checks claims, then the real Feedback screen appears
+  await cont(page); await expect(page).toHaveURL(/feedback/); await expect(page.locator('#fbsum, #rs-feedbackChecker').first()).toBeVisible({ timeout: 120000 });
+  await expect(page.locator('#rs-feedbackChecker .rstep').first()).toBeVisible(); await expect(page.locator('#fc-banner')).toContainText('checked the claims');
+  // Evidence: the Transport Planner has run
+  await cont(page); await expect(page).toHaveURL(/evidence/); await expect(page.locator('#rs-transportPlanner .rstep')).toHaveCount(7, { timeout: 120000 });
+  // Investigate: research of every school, the field form is generated, and the flow waits
+  await cont(page); await expect(page).toHaveURL(/investigate/); await expect(page.locator('#fc-form')).toBeVisible({ timeout: 180000 });
+  await expect(page.locator('#fc-banner')).toContainText('waiting for the field officer'); await expect(page.locator('#fc-now')).toHaveCount(0);   // no auto-advance while waiting
+  const st1 = await page.evaluate(() => { const q = window.__pathshala.q; return { stage: q('SELECT stage FROM full_runs')[0].stage, tracks: q('SELECT count(*) n FROM cases')[0].n, found: q('SELECT count(DISTINCT case_id) n FROM findings')[0].n, sel: q('SELECT count(*) n FROM interventions WHERE selected = 1')[0].n, chosen: q('SELECT chosen_id FROM investigations')[0].chosen_id }; });
+  expect(st1.stage).toBe('field'); expect(st1.found).toBe(st1.tracks); expect(st1.sel).toBe(0); expect(st1.chosen).toBeNull();
+  expect(await page.locator('.fcsec').count()).toBe(st1.tracks); await expect(page.locator('#fc-print')).toBeVisible(); await expect(page.locator('.fcprint')).toContainText('Officer:');
+  // policy and report cannot run ahead of the form
+  await page.locator('.steps a', { hasText: 'Policy' }).click(); await expect(page.locator('#fc-banner')).toContainText('Waiting for the field form');
+  expect(await page.evaluate(() => window.__pathshala.q('SELECT count(*) n FROM interventions WHERE selected = 1')[0].n)).toBe(0);
+  await page.locator('.steps a', { hasText: 'Investigate' }).click(); await expect(page.locator('#fc-form')).toBeVisible();
   await page.screenshot({ path: 'docs/screens/19-full-field-form.png', fullPage: true });
-  // the officer must answer something for every school
-  await page.locator('#fc-submit').click(); await expect(page.locator('#toast')).toContainText('Answer at least one question'); await expect(page.locator('#fc-form')).toBeVisible();
+  await page.locator('#fc-submit').click(); await expect(page.locator('#toast')).toContainText('Answer at least one question');
   for (const sec of await page.locator('.fcsec').all()) {
     await sec.locator('.fq[data-q="Q1"] .opts button[data-v="No"]').click(); await sec.locator('.fq[data-q="Q2"] .fv').fill('20');
     await sec.locator('.fq[data-q="Q3"] .opts button[data-v="No"]').click(); await sec.locator('.fq[data-q="Q4"] .fv').fill('45');
   }
   await page.locator('#fc-submit').click();
-  // policies, budget, ranking and the final screen follow automatically
-  await expect(page.locator('.fcrec')).toBeVisible({ timeout: 180000 });
+  // after the answers: evidence updated, then Policy and cost with the best policies selected
+  await expect(page.locator('#fc-banner')).toContainText('field answers are recorded', { timeout: 120000 });
+  await cont(page); await expect(page).toHaveURL(/policy/); await expect(page.locator('#fc-banner')).toContainText('best policies', { timeout: 120000 });
+  await expect(page.locator('.ivsel input:checked').first()).toBeVisible();
+  const st2 = await page.evaluate(() => { const q = window.__pathshala.q; return { sel: q('SELECT count(*) n FROM interventions WHERE selected = 1')[0].n, auto: q('SELECT count(*) n FROM auto_choices')[0].n, chosen: q('SELECT chosen_id FROM investigations')[0].chosen_id }; });
+  expect(st2.sel).toBe(st2.auto); expect(st2.chosen).toBeNull();
+  await cont(page); await expect(page).toHaveURL(/report/); await expect(page.locator('.fcrec')).toBeVisible({ timeout: 180000 });
   await expect(page.locator('.fcrec .eyebrow')).toContainText('a suggestion, the officer decides');
-  await expect(page.locator('#fc-compare thead th')).toHaveCount(4); await expect(page.locator('#fc-compare')).toContainText('Confirmed concerns'); await expect(page.locator('#fc-compare')).toContainText('First-year cost');
+  await expect(page.locator('#fc-compare thead th')).toHaveCount(4); await expect(page.locator('#fc-compare')).toContainText('Confirmed concerns');
   expect(await page.locator('.fcwhycard').count()).toBeGreaterThan(0); await expect(page.locator('#fc-budget')).toContainText('Three-year total');
-  await expect(page.locator('#fc-report h3')).toHaveCount(await page.locator('#fc-report h3').count()); expect(await page.locator('#fc-report h3').count()).toBeGreaterThanOrEqual(5);
-  await expect(page.locator('#fc-report')).toContainText('Budget'); await expect(page.locator('#fc-report')).toContainText('Still to be confirmed');
-  const st2 = await page.evaluate(() => { const q = window.__pathshala.q; return { stage: q('SELECT stage FROM full_runs')[0].stage, sel: q('SELECT count(*) n FROM interventions WHERE selected = 1')[0].n, auto: q('SELECT count(*) n FROM auto_choices')[0].n, chosen: q('SELECT chosen_id FROM investigations')[0].chosen_id, status: q('SELECT status FROM investigations')[0].status, answered: q("SELECT count(*) n FROM field_questions WHERE answer != ''")[0].n }; });
-  expect(st2.stage).toBe('final'); expect(st2.sel).toBe(st2.auto); expect(st2.answered).toBeGreaterThan(0);
-  expect(st2.chosen).toBeNull(); expect(st2.status).not.toMatch(/^Ready/);   // prepared, not decided or submitted
+  expect(await page.locator('#fc-report h3').count()).toBeGreaterThanOrEqual(5); await expect(page.locator('#fc-report')).toContainText('Still to be confirmed');
+  await expect(page.locator('#opt-table')).toBeVisible();      // the ordinary Report step is still there for the officer's decision
+  const st3 = await page.evaluate(() => { const q = window.__pathshala.q; return { stage: q('SELECT stage FROM full_runs')[0].stage, chosen: q('SELECT chosen_id FROM investigations')[0].chosen_id, status: q('SELECT status FROM investigations')[0].status }; });
+  expect(st3.stage).toBe('final'); expect(st3.chosen).toBeNull(); expect(st3.status).not.toMatch(/^Ready/);
   await page.screenshot({ path: 'docs/screens/20-full-final.png', fullPage: true });
-  // the officer adopts, downloads, and continues on the Report step
   const dl = page.waitForEvent('download'); await page.locator('#fc-dl').click(); expect((await dl).suggestedFilename()).toMatch(/report\.txt$/);
   await page.locator('#fc-adopt').click(); await expect(page.locator('#toast')).toContainText(/adopted/i);
-  const st3 = await page.evaluate(() => window.__pathshala.q('SELECT chosen_id FROM investigations')[0].chosen_id); const rec = await page.evaluate(() => JSON.parse(window.__pathshala.q('SELECT out FROM full_runs')[0].out).recommended);
-  if (rec !== 'keep') expect(st3).toBe(rec); else expect(st3).toBeNull();
-  await page.locator('a', { hasText: 'Open the Report step' }).click(); await expect(page).toHaveURL(/report$/);
-  // reload keeps everything
-  await page.goto('/'); await page.waitForSelector('#hmap'); await page.evaluate(() => { location.hash = '#/full/' + window.__pathshala.q('SELECT inv_id FROM full_runs')[0].inv_id; }); await expect(page.locator('.fcrec')).toBeVisible();
+  // Visiting earlier screens later does not auto-advance any more
+  await page.locator('.steps a', { hasText: 'Compare' }).click(); await expect(page.locator('#fc-now')).toHaveCount(0);
 });
 
-test('Full control: starting needs a closing school with candidates; the page is listed with its data sources', async ({ page }) => {
+test('Full control: research agents all complete for every school (no failed step)', async ({ page }) => {
+  test.setTimeout(400000);
+  const r = await page.evaluate(async () => {
+    const P = window.__pathshala, bad = [];
+    for (const s of P.q('SELECT school_id FROM schools').map(x => x.school_id)) {
+      const near = await P.tools.nearby_schools({ school_id: s }); if (!near.length) continue;
+      const inv = P.createCase(s, near.slice(0, 1).map(x => x.school_id)), cid = P.q('SELECT case_id FROM cases WHERE inv_id = ?', [inv])[0].case_id;
+      for (const a of ['transportPlanner', 'feedbackChecker']) { try { const o = await P.runResearch(a, cid); if (/failed/i.test(o.stop_reason || '')) bad.push([cid, a, o.stop_reason]); } catch (e) { bad.push([cid, a, e.message]); } }
+    }
+    return bad;
+  });
+  expect(r).toEqual([]);
+});
+
+test('Full control: start page lists the schools and their candidates', async ({ page }) => {
   await page.evaluate(() => { location.hash = '#/full'; }); await expect(page.locator('#fc-start')).toBeVisible(); await page.locator('#srcs summary').click(); await expect(page.locator('#srcs')).toContainText('UDISE');
   await page.locator('#fc-school').selectOption('NHN'); await expect(page.locator('#fc-cands')).toContainText(/No suitable receiving school|Candidate receiving schools/);
 });

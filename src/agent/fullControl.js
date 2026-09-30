@@ -4,7 +4,8 @@
    for each candidate, calculates the budget, ranks the candidates and prepares the final screen: recommendation, comparison,
    budget, full report text. Every step is logged. Nothing is submitted, and the officer adopts or changes the choice. */
 import { nearby } from '../case/analysis.js';
-import { chooseFinal, createCase, invRow, tracks } from '../case/options.js';
+import { chooseFinal, createCase, hasResults, invRow, tracks } from '../case/options.js';
+import { saveFieldAnswers } from '../case/findings.js';
 import { q, q1, run, save } from '../db/sqlite.js';
 import { logCase, school } from '../ui/helpers.js';
 import { ensureFeedback } from './feedbackAgents.js';
@@ -35,23 +36,64 @@ export function startFull(schoolId) {
   save(); return inv;
 }
 
-/* Stage 2: research every candidate, then stop and wait for the officer's field entries. */
-export async function runFullResearch(inv, onLog = () => {}) {
-  const log = t => { addLog(inv, t); onLog(t); }, old = CONFIG.stepDelayMs; CONFIG.stepDelayMs = 60;
-  try {
-    for (const t of tracks(inv)) {
-      const B = school(t.to_id);
-      log(`${B.name}: reading citizen feedback (classify and summarise)`); await ensureFeedback(t.case_id);
-      log(`${B.name}: investigating: students, routes, map layers, transport, feedback, gaps`); await runInvestigation(t.case_id, ev => { if (ev.type === 'step') onLog(`  ${B.name}: ${ev.label}`); });
-      log(`${B.name}: Transport Planner`); const tp = await runResearch('transportPlanner', t.case_id, ev => { if (ev.type === 'step') onLog(`  ${B.name}: ${ev.tool}`); });
-      log(`${B.name}: Feedback Checker`); const fc = await runResearch('feedbackChecker', t.case_id, ev => { if (ev.type === 'step') onLog(`  ${B.name}: ${ev.tool}`); });
-      const n = addFieldQuestions(t.case_id, [...tp.open_questions.slice(0, 2), ...fc.open_questions.slice(0, 3)]);
-      log(`${B.name}: done. ${n} extra field questions added from the research (Full control mode)`);
-    }
-    log('Research finished for every candidate. Waiting for the field officer.');
-    setStage(inv, 'field'); logCase(inv, 'System', 'Full control stopped at the field stage', 'Field form generated for the officer');
-  } finally { CONFIG.stepDelayMs = old; }
+/* ---- Step workers. Full control drives the ordinary case screens: each screen's automatic work is done here, then the
+   screen is shown and the flow moves on. Stages: research -> field (waits for the officer) -> answered -> policy -> report -> final. ---- */
+export const AUTO_NEXT = { compare: 'feedback', feedback: 'evidence', evidence: 'investigate', policy: 'report' };
+const done = (t, a) => !!savedRun(t.case_id, a);
+export function needsWork(inv, step) {
+  const f = fullRow(inv); if (!f) return false;
+  const ts = tracks(inv);
+  if (step === 'feedback') return ts.some(t => !done(t, 'feedbackChecker'));
+  if (step === 'evidence') return ts.some(t => !done(t, 'transportPlanner'));
+  if (step === 'investigate') return f.stage === 'answered' || (f.stage === 'research' && ts.every(t => done(t, 'feedbackChecker') && done(t, 'transportPlanner')));
+  if (step === 'policy') return f.stage === 'policy';
+  if (step === 'report') return f.stage === 'report';
+  return false;
 }
+/* What the banner and the auto-advance do next for a finished screen: a step name, 'wait' or null. */
+export function nextAfter(inv, step) {
+  const f = fullRow(inv); if (!f) return null;
+  const early = f.stage === 'research';                       // the automatic run through the first screens; afterwards the officer navigates freely
+  if (step === 'compare') return early ? 'feedback' : null;
+  if (step === 'feedback') return early && !needsWork(inv, 'feedback') ? 'evidence' : null;
+  if (step === 'evidence') return early && !needsWork(inv, 'evidence') ? 'investigate' : null;
+  if (step === 'investigate') return f.stage === 'field' ? 'wait' : f.stage === 'policy' ? 'policy' : null;
+  if (step === 'policy') return f.stage === 'report' ? 'report' : null;
+  return null;
+}
+async function each(inv, log, fn) { const old = CONFIG.stepDelayMs; CONFIG.stepDelayMs = 60; try { for (const t of tracks(inv)) await fn(t, school(t.to_id), t => log(`${school(t.to_id).name}: `)); } finally { CONFIG.stepDelayMs = old; } }
+export async function runWork(inv, step, onLog = () => {}) {
+  const log = t => { addLog(inv, t); onLog(t); };
+  if (step === 'feedback') return each(inv, log, async (t, B) => { log(`${B.name}: reading citizen feedback`); await ensureFeedback(t.case_id); log(`${B.name}: Feedback Checker (claims against records, maps and reports)`); await runResearch('feedbackChecker', t.case_id, ev => { if (ev.type === 'step') onLog(`  ${ev.tool}`); }); });
+  if (step === 'evidence') return each(inv, log, async (t, B) => { log(`${B.name}: Transport Planner`); await runResearch('transportPlanner', t.case_id, ev => { if (ev.type === 'step') onLog(`  ${ev.tool}`); }); });
+  if (step === 'investigate') {
+    const f = fullRow(inv);
+    if (f.stage === 'research') {
+      await each(inv, log, async (t, B) => {
+        if (!hasResults(t.case_id)) { log(`${B.name}: investigating: students, routes, map layers, transport, feedback, gaps`); await runInvestigation(t.case_id, ev => { if (ev.type === 'step') onLog(`  ${ev.label}`); }); }
+        const tp = savedRun(t.case_id, 'transportPlanner')?.out, fc = savedRun(t.case_id, 'feedbackChecker')?.out;
+        const n = addFieldQuestions(t.case_id, [...(tp?.open_questions || []).slice(0, 2), ...(fc?.open_questions || []).slice(0, 3)]); log(`${B.name}: field form ready (${q('SELECT count(*) n FROM field_questions WHERE case_id = ?', [t.case_id])[0].n} questions, ${n} from the research)`);
+      });
+      log('Field form generated for the officer. Waiting for the field officer.'); setStage(inv, 'field'); logCase(inv, 'System', 'Full control is waiting for the field officer', 'Field form generated');
+    } else if (f.stage === 'answered') {
+      await each(inv, log, async (t, B) => { log(`${B.name}: updating the evidence from the field answers`); const ans = Object.fromEntries(q('SELECT qid, answer, note FROM field_questions WHERE case_id = ?', [t.case_id]).map(x => [x.qid, { v: x.answer || '', note: x.note || '' }])); await runFieldUpdate(t.case_id, ans); });
+      setStage(inv, 'policy');
+    }
+    return;
+  }
+  if (step === 'policy') { await each(inv, log, async (t, B) => { log(`${B.name}: retrieving policy and pricing interventions`); await runPolicy(t.case_id); selectBestPolicies(t.case_id); log(`${B.name}: selected ${q('SELECT code FROM auto_choices WHERE case_id = ?', [t.case_id]).map(x => x.code).join(', ') || 'no intervention (none needed)'}`); }); setStage(inv, 'report'); return; }
+  if (step === 'report') {
+    const old = CONFIG.stepDelayMs; CONFIG.stepDelayMs = 60;
+    try {
+      log('Comparing the candidates and ranking them'); const sg = await runSuggestion(inv), cmp = await tools.compare_options({ inv_id: inv }), sug = await tools.suggest_option({ comparison: cmp }), out = buildFinal(inv, cmp, sug, sg);
+      log('Drafting the report'); const ct = tracks(inv).find(t => t.to_id === out.best_if_merge), { draft, critique } = await runDraft(ct.case_id);
+      out.report = buildReport(inv, out, ct.case_id, draft.sentences, critique); setStage(inv, 'final', out); logCase(inv, 'Full control', 'Final report ready', `${out.recommended_name}; nothing submitted, the officer decides`); log('Final report ready.');
+    } finally { CONFIG.stepDelayMs = old; }
+  }
+}
+
+/* The officer submits the field form: answers are stored and the flow continues automatically. */
+export function submitFieldForm(inv, answers) { Object.entries(answers).forEach(([cid, a]) => saveFieldAnswers(cid, a)); setStage(inv, 'answered'); logCase(inv, 'Officer', 'Submitted the field form', 'Full control continues'); }
 
 export const fieldForm = inv => tracks(inv).map(t => ({ track: t, school: school(t.to_id), questions: q('SELECT * FROM field_questions WHERE case_id = ? ORDER BY seq', [t.case_id]) }));
 
@@ -66,21 +108,6 @@ export function selectBestPolicies(cid) {
   }
   if (confirmed(F.F2) && iv.SEA) pick('SEA', `Addresses the verified concern "${F.F2.title}"; no new cost`);
   logCase(cid, 'Full control', 'Selected the best policies', q('SELECT code FROM auto_choices WHERE case_id = ?', [cid]).map(x => x.code).join(', ') || 'none needed');
-}
-
-/* Stage 3 to 5: enter the field answers, then policies, budget, ranking and the final screen. */
-export async function submitFieldAndDecide(inv, answers, onLog = () => {}) {
-  const log = t => { addLog(inv, t); onLog(t); }, old = CONFIG.stepDelayMs; CONFIG.stepDelayMs = 60;
-  try {
-    setStage(inv, 'policy');
-    for (const t of tracks(inv)) { log(`${school(t.to_id).name}: updating the evidence from the field answers`); await runFieldUpdate(t.case_id, answers[t.case_id] || {}); }
-    for (const t of tracks(inv)) { const B = school(t.to_id); log(`${B.name}: retrieving policy and pricing interventions`); await runPolicy(t.case_id); selectBestPolicies(t.case_id); log(`${B.name}: selected ${q('SELECT code FROM auto_choices WHERE case_id = ?', [t.case_id]).map(x => x.code).join(', ') || 'no intervention (none needed)'}`); }
-    log('Comparing the candidates and ranking them'); const sg = await runSuggestion(inv), cmp = await tools.compare_options({ inv_id: inv }), sug = await tools.suggest_option({ comparison: cmp });
-    const out = buildFinal(inv, cmp, sug, sg);
-    log('Drafting the report'); const bestId = out.best_if_merge, ct = tracks(inv).find(t => t.to_id === bestId), { draft, critique } = await runDraft(ct.case_id);
-    out.report = buildReport(inv, out, ct.case_id, draft.sentences, critique);
-    setStage(inv, 'final', out); logCase(inv, 'Full control', 'Final screen ready', `${out.recommended_name}; nothing submitted, the officer decides`); log('Final screen ready.');
-  } finally { CONFIG.stepDelayMs = old; }
 }
 
 const fmt = n => Number(n).toLocaleString('en-IN');

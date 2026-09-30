@@ -74,7 +74,7 @@ export async function runLoop({ agent, cid, ctx, onEvent = () => {}, delay = CON
   }
   logCase(cid, 'Agent', `${agent.title} started (${mode})`, plan.join(' → '));
   onEvent({ type: 'plan', plan, mode });
-  let stopReason = '';
+  let stopReason = '', failedMsg = '';
   for (let n = 1; n <= MAX_STEPS; n++) {
     let d = null, src = 'rules';
     if (gem) { try { d = await geminiNext(agent, state); if (d) src = 'gemini'; else note(`step ${n}: reply invalid or repeated a step`); } catch (e) { note(`step ${n}: ${e.message}`); } }
@@ -90,6 +90,11 @@ export async function runLoop({ agent, cid, ctx, onEvent = () => {}, delay = CON
     if (delay) await sleep(delay);
     let output, err = '';
     try { output = await tools[d.tool](d.args); } catch (e) { err = e.message; output = { error: err }; }
+    if (err) {                                   // a failed tool ends the run honestly: Data unavailable, a field question, no repeated retries
+      state.steps.push({ seq: n, kind, tool: d.tool, reason: d.reason, input: d.args, output, passages: null, src, summary: `Failed: ${err}`, check: 'Step failed; nothing saved from it' });
+      state.evidence.push({ eid: agent.eid(state), label: `Data unavailable: the ${d.tool} step failed (${err})`, source: 'Tool error, logged', status: 'needs verification', ref: '', step: n });
+      onEvent({ type: 'step', ...state.steps.at(-1) }); failedMsg = `${d.tool}: ${err}`; stopReason = 'A tool failed; marked Data unavailable'; logCase(cid, 'System', `${agent.title}: a tool failed`, failedMsg); break;
+    }
     const step = { seq: n, kind, tool: d.tool, reason: d.reason, input: d.args, output, passages: output?.passages || null, src, summary: '' };
     state.steps.push(step); state.done.add(d.tool + ':' + (d.tag || ''));
     (output?.passages || []).forEach(p => { state.retrieved.add(p.id); state.passages.set(p.id, p); });
@@ -102,8 +107,8 @@ export async function runLoop({ agent, cid, ctx, onEvent = () => {}, delay = CON
     if (agent.answered(state)) { stopReason = 'Answered'; break; }
     if (n === MAX_STEPS) stopReason = 'Stopped after 12 steps';
   }
-  let out = agent.finish(state);
-  if (gem && !out.wordingFailed) {
+  let out = failedMsg ? agent.failed(state, failedMsg, state.evidence.at(-1).eid) : agent.finish(state);
+  if (gem && !failedMsg && !out.wordingFailed) {
     try { const s = await geminiWording(agent, state, out.sentences), bad = checkSentences(s, state); if (bad.length) throw new Error(bad[0]); out = { ...out, sentences: s, wording: 'gemini' }; }
     catch (e) { note(`wording: ${e.message}`); }
   }
