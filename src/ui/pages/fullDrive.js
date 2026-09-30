@@ -1,4 +1,5 @@
-import { adoptRecommendation, fieldForm, fullRow, needsWork, nextAfter, policyChoice, reopenReport, reportText, runWork, selectBestPolicies, submitFieldForm } from '../../agent/fullControl.js';
+import { adoptRecommendation, fieldForm, fullRow, needsWork, nextAfter, nextWork, policyChoice, reopenReport, reportText, runWork, selectBestPolicies, submitFieldForm } from '../../agent/fullControl.js';
+import { feedItems, feedNow, feedPing, feedPush, feedSet, mountFeed, onFeed } from '../aiFeed.js';
 import { tracks } from '../../case/options.js';
 import { $, $$, esc, inr, school } from '../helpers.js';
 import { fold } from '../kit.js';
@@ -9,57 +10,87 @@ import { activeTrack } from './options.js';
 
 /* Full control drives the ordinary case screens. The banner says what the AI just did and what comes next;
    the working panel shows a screen's automatic work; the field form is where the flow waits for the officer. */
-let timer = null; const paused = new Set(), running = new Set();
+let timer = null; const paused = new Set();
 export const clearFullTimer = () => { if (timer) clearInterval(timer); timer = null; };
 const cite = r => `<span class="cite">${esc(r)}</span>`;
 const logBox = row => `<div class="fclog" id="fc-log" role="log">${row.log.slice(-40).map(l => `<div><small>${esc(l.t)}</small> ${esc(l.text)}</div>`).join('')}</div>`;
-const appendLog = text => { const d = $('#fc-doing'); if (d && text) d.textContent = text.trim(); const b = $('#fc-log'); if (b) { b.insertAdjacentHTML('beforeend', `<div>${esc(text)}</div>`); b.scrollTop = b.scrollHeight; } };
+
+/* Background runner: the AI keeps working whichever screen the officer is on. Each finished step re-draws a waiting screen. */
+const bgRunning = new Set(), bgFailed = new Map();
+const STAGE_SAY = { feedback: 'Reading what people say about each school', evidence: 'Planning how the children could travel', investigate: 'Studying each school and preparing the field form', policy: 'Choosing the policies and working out the costs', report: 'Comparing the schools and writing the report' };
+const redrawIfWaiting = () => { if ($('#fc-wait')) render(); };
+export function bgEnsure(inv) {
+  if (bgRunning.has(inv) || bgFailed.has(inv) || !fullRow(inv)) return;
+  const tried = new Set(); if (!nextWork(inv, tried)) return;
+  if (!feedItems(inv).length) fullRow(inv).log.slice(-6).forEach(l => feedPush(inv, { level: 'stage', text: l.text }));
+  bgRunning.add(inv);
+  (async () => {
+    try {
+      let step;
+      while ((step = nextWork(inv, tried))) {
+        tried.add(step + ':' + fullRow(inv).stage);
+        feedPush(inv, { level: 'stage', text: STAGE_SAY[step] });
+        await runWork(inv, step, (text, meta = {}) => { if (meta.update != null) { feedSet(inv, meta.update, { state: meta.state, summary: meta.summary }); return undefined; } return feedPush(inv, { text, ...meta }); });
+        if (needsWork(inv, step)) throw new Error('this step did not finish');
+        redrawIfWaiting();
+      }
+    } catch (e) { console.error(e); bgFailed.set(inv, String(e.message || e)); feedPush(inv, { level: 'stage', text: 'Something went wrong: ' + (e.message || e) }); toast('The AI stopped', [String(e.message || e)]); }
+    finally { bgRunning.delete(inv); feedPing(); redrawIfWaiting(); }
+  })();
+}
+export const bgBusy = inv => bgRunning.has(inv);
 
 const MSG = {
-  compare: 'The AI chose the candidate schools by screening score.',
-  feedback: 'The AI classified the citizen feedback, summarised it and checked the claims for each school.',
-  evidence: 'The AI planned the transport for each school (route, timetable, stops, policy, cost).',
-  'investigate:field': 'The AI investigated every school and generated the field form. It is waiting for the field officer.',
-  'investigate:policy': 'The field answers are recorded and the evidence is updated.',
-  policy: 'The AI picked the best policies for each school and priced them.',
-  report: 'The final recommendation, comparison and report are ready. The officer decides.',
+  compare: 'The AI picked the candidate schools. It is already researching them in the background.',
+  feedback: 'The AI read what people say about each school and checked it against the records.',
+  evidence: 'The AI planned how the children could travel to each school.',
+  'investigate:field': 'The AI studied every school and wrote the field form. It is waiting for the field officer.',
+  'investigate:policy': 'The field answers are recorded and the picture is updated.',
+  policy: 'The AI chose the policies for each school and worked out the costs.',
+  report: 'The recommendation, comparison and report are ready. The officer decides.',
 };
-/* The whole run at a glance: who does each stage (AI or you) and where it is now. */
-const PHASES = [['Closing school', 'You'], ['Candidate schools', 'AI'], ['Citizen feedback', 'AI'], ['Evidence and transport', 'AI'], ['Investigation', 'AI'], ['Field form', 'You'], ['Policies and budget', 'AI'], ['Report and comparison', 'AI']];
-function phaseNow(inv, f) {
-  if (f.stage === 'final') return 8; if (f.stage === 'report') return 7; if (f.stage === 'policy' || f.stage === 'answered') return 6; if (f.stage === 'field') return 5;
-  return needsWork(inv, 'feedback') ? 2 : needsWork(inv, 'evidence') ? 3 : 4;
-}
-export function fullTracker(inv) {
-  const f = fullRow(inv), cur = phaseNow(inv, f), yours = cur === 5;
-  return `<ol class="fctrack" id="fc-track" aria-label="Full control progress">${PHASES.map(([l, who], i) => `<li class="${i < cur ? 'done' : i === cur ? (who === 'You' ? 'you' : 'now') : ''}"><span class="fcwho">${i < cur ? '✓' : who}</span>${l}</li>`).join('')}</ol>
-    <p class="small muted fcsay">${cur >= 8 ? 'Everything the AI can do is finished. Read the recommendation, edit anything you disagree with, and decide.' : yours ? '<b>Your turn.</b> This is the only stop: fill in the field form below. Everything after it runs by itself.' : `The AI runs every screen and moves on by itself. <b>You do not need to click Next.</b> It stops once, at the field form.`}</p>`;
-}
+/* Top of every Full control screen: what is happening, and only the next step. */
 export function fullBanner(inv, step) {
   const f = fullRow(inv); if (!f) return '';
   const nx = nextAfter(inv, step), waiting = f.stage === 'field' && ['policy', 'report'].includes(step);
-  const key = step === 'investigate' ? (f.stage === 'field' ? 'investigate:field' : f.stage === 'policy' ? 'investigate:policy' : 'investigate') : step;
-  const text = waiting ? 'Waiting for the field form on the Investigate step. The policies and the report follow after it.' : needsWork(inv, step) ? 'The AI is working on this screen…' : (MSG[key] || 'Full control is on. Use the steps above to look around.');
+  const key = step === 'investigate' ? (f.stage === 'field' ? 'investigate:field' : ['policy', 'report', 'final'].includes(f.stage) ? 'investigate:policy' : 'investigate') : step;
+  const working = needsWork(inv, step), busy = bgRunning.has(inv);
+  const text = waiting ? 'Waiting for the field form on the Investigate step. The policies and the report follow after it.' : working ? 'The AI is gathering this screen…' : (MSG[key] || 'Full control is on.');
   const label = { feedback: 'Feedback', evidence: 'Evidence', investigate: 'Investigate', policy: 'Policy and cost', report: 'Report' }[nx];
-  return `<div class="fcbanner" id="fc-banner" role="status"><span class="pill s-green">Full control</span><span>${esc(text)}</span>${nx && nx !== 'wait' ? `<span class="fcnext"><span id="fc-count"></span><button class="btn sm primary" id="fc-now">Skip ahead: ${label}</button><button class="btn sm" id="fc-pause">Pause</button></span>` : ''}${waiting ? `<a class="btn sm" href="#/case/${inv}/investigate">Go to the field form</a>` : ''}</div>${fullTracker(inv)}`;
+  const say = f.stage === 'final' ? 'Everything the AI can do is finished. Read the recommendation, edit anything you disagree with, and decide.' : f.stage === 'field' ? '<b>Your turn.</b> This is the only stop: fill in the field form. Everything after it runs by itself.' : 'The AI does the research in the background and takes you to the next step. <b>You do not need to click Next.</b> It stops once, at the field form.';
+  return `<div class="fcbanner" id="fc-banner" role="status"><span class="pill s-green">Full control</span><span>${esc(text)}${busy && !working ? ` <span class="muted">Now: <span id="fc-bgnow">${esc(feedNow(inv))}</span></span>` : ''}</span>${nx && nx !== 'wait' ? `<span class="fcnext"><span id="fc-count"></span><button class="btn sm primary" id="fc-now">Next: ${label} →</button><button class="btn sm" id="fc-pause">Pause</button></span>` : ''}${waiting ? `<a class="btn sm" href="#/case/${inv}/investigate">Go to the field form</a>` : ''}</div><p class="small muted fcsay">${say}</p>`;
 }
 /* Wire the banner and start the countdown to the next screen. */
 export function fullWire(inv, step) {
-  clearFullTimer(); const nx = nextAfter(inv, step); if (!nx || nx === 'wait' || !$('#fc-now')) return;
+  clearFullTimer(); const live = $('#fc-bgnow'); if (live) { const off = onFeed(() => { if (!live.isConnected) off(); else live.textContent = feedNow(inv); }); }
+  const nx = nextAfter(inv, step); if (!nx || nx === 'wait' || !$('#fc-now')) return;
   const go_ = () => { clearFullTimer(); location.hash = `#/case/${inv}/${nx}`; };
   $('#fc-now').onclick = go_;
-  let left = step === 'investigate' && nx === 'policy' ? 5 : nx === 'report' ? 20 : 4; const show = () => { const c = $('#fc-count'); if (c) c.textContent = paused.has(inv) ? 'Paused' : `Moving on in ${left}s`; };
+  let left = nx === 'report' ? 20 : step === 'compare' ? 12 : step === 'investigate' ? 5 : 8; const show = () => { const c = $('#fc-count'); if (c) c.textContent = paused.has(inv) ? 'Paused' : `Moving on in ${left}s`; };
   const pb = $('#fc-pause'); pb.onclick = () => { paused.has(inv) ? paused.delete(inv) : paused.add(inv); pb.textContent = paused.has(inv) ? 'Resume' : 'Pause'; show(); }; pb.textContent = paused.has(inv) ? 'Resume' : 'Pause';
   if (nx === 'report') { const pauseEdit = () => { if (!paused.has(inv)) { paused.add(inv); pb.textContent = 'Resume'; show(); } }; $('#cmain')?.addEventListener('change', pauseEdit); }
   show(); timer = setInterval(() => { if (paused.has(inv)) return; left--; if (left <= 0) go_(); else show(); }, 1000);
 }
 
-/* A screen whose automatic work has not been done: run it, showing the log, then draw the real screen. */
+/* A screen whose work is not finished yet: show what the AI is doing right now (it keeps running in the background). */
 export function workingPanel(main, inv, step) {
-  const f = fullRow(inv), key = inv + step + f.stage; if (running.has(key)) { main.innerHTML = `<div class="card"><h2>The AI is working on this screen</h2>${logBox(f)}</div>`; return; }
-  running.add(key);
-  main.innerHTML = `<div class="card"><h2>The AI is researching for you</h2><p class="fcdoing" id="fc-doing" aria-live="polite">Getting started…</p><p class="small muted">You do not need to click anything. Each line below is one thing it has looked at. The screen appears when it is done.</p>${logBox(f)}<p class="small muted" id="fc-wait">Working…</p></div>`;
-  runWork(inv, step, appendLog).then(() => { running.delete(key); render(); }).catch(e => { console.error(e); running.delete(key); appendLog('Failed: ' + e.message); const w = $('#fc-wait'); if (w) w.innerHTML = `<span class="t-red">${esc(e.message)}</span> <button class="btn sm" id="fc-retry">Try again</button>`; const r = $('#fc-retry'); if (r) r.onclick = () => render(); toast('Full control stopped', [String(e.message || e)]); });
+  const err = bgFailed.get(inv);
+  main.innerHTML = `<div class="card" id="fc-wait"><h2>The AI is researching for you</h2><p class="fcdoing" id="fc-doing" aria-live="polite">${esc(err ? 'Something went wrong' : feedNow(inv) || 'Getting started…')}</p>
+    <div class="thinkbox" id="fc-think"></div>
+    ${err ? `<p class="t-red small">${esc(err)}</p><button class="btn sm" id="fc-retry">Try again</button>` : '<p class="small muted">You do not need to click anything. It continues in the background, and this screen fills in when it is done.</p>'}</div>`;
+  mountFeed($('#fc-think'), inv, { max: 30 });
+  const d = $('#fc-doing'); if (d && !err) { const off = onFeed(() => { if (!d.isConnected) off(); else d.textContent = feedNow(inv) || d.textContent; }); }
+  const r = $('#fc-retry'); if (r) r.onclick = () => { bgFailed.delete(inv); render(); };
+  if (!err) bgEnsure(inv);
+}
+/* A small live box at the bottom of the page while the AI works in the background and the officer looks at another screen. */
+export function fullDock(inv) { return fullRow(inv) ? `<aside class="dock" id="ai-dock" hidden><button class="dockhd" id="dock-hd" aria-expanded="false"><span class="dockdot"></span><b>The AI is working</b><span class="small muted" id="dock-now"></span></button><div class="dockbody" id="dock-body" hidden></div></aside>` : ''; }
+export function wireDock(inv) {
+  const box = $('#ai-dock'); if (!box) return;
+  const hd = $('#dock-hd'), body = $('#dock-body'); let open = false;
+  const show = () => { if (!box.isConnected) { off(); return; } box.hidden = !(bgRunning.has(inv) && !$('#fc-wait')); $('#dock-now').textContent = feedNow(inv); };
+  const off = onFeed(show); show();
+  hd.onclick = () => { open = !open; hd.setAttribute('aria-expanded', open); body.hidden = !open; if (open) mountFeed(body, inv, { max: 8 }); };
 }
 
 export function fieldInto(body, inv) {

@@ -52,27 +52,33 @@ export function needsWork(inv, step) {
   if (step === 'report') return f.stage === 'report';
   return false;
 }
+/* The next screen whose work is still to be done, or null while waiting for the field officer or when everything is finished.
+   The background runner calls this in a loop, so the AI keeps going whichever screen the officer is looking at. */
+export function nextWork(inv, tried = new Set()) { return ['feedback', 'evidence', 'investigate', 'policy', 'report'].find(s => needsWork(inv, s) && !tried.has(s + ':' + fullRow(inv).stage)) || null; }
 /* What the banner and the auto-advance do next for a finished screen: a step name, 'wait' or null. */
+const seen = new Set();   // screens the officer has already been taken to (in this browser session)
+export const markSeen = (inv, step) => seen.add(inv + step);
 export function nextAfter(inv, step) {
   const f = fullRow(inv); if (!f) return null;
-  const early = f.stage === 'research';                       // the automatic run through the first screens; afterwards the officer navigates freely
+  const early = f.stage === 'research' || (f.stage === 'field' && !seen.has(inv + 'investigate'));   // the first pass through the screens; afterwards the officer navigates freely
   if (step === 'compare') return early ? 'feedback' : null;
   if (step === 'feedback') return early && !needsWork(inv, 'feedback') ? 'evidence' : null;
   if (step === 'evidence') return early && !needsWork(inv, 'evidence') ? 'investigate' : null;
-  if (step === 'investigate') return f.stage === 'field' ? 'wait' : f.stage === 'policy' ? 'policy' : null;
-  if (step === 'policy') return f.stage === 'report' ? 'report' : null;
+  if (step === 'investigate') return f.stage === 'field' ? 'wait' : ['policy', 'report', 'final'].includes(f.stage) && !seen.has(inv + 'policy') ? 'policy' : null;
+  if (step === 'policy') return (f.stage === 'report' || f.stage === 'final') && !seen.has(inv + 'report') ? 'report' : null;
   return null;
 }
 async function each(inv, log, fn) { const old = CONFIG.stepDelayMs; CONFIG.stepDelayMs = 60; try { for (const t of tracks(inv)) await fn(t, school(t.to_id), t => log(`${school(t.to_id).name}: `)); } finally { CONFIG.stepDelayMs = old; } }
 export async function runWork(inv, step, onLog = () => {}) {
-  const log = t => { addLog(inv, t); onLog(t); };
-  if (step === 'feedback') return each(inv, log, async (t, B) => { log(`${B.name}: reading what parents and villagers say`); await ensureFeedback(t.case_id); log(`${B.name}: checking what people say against the records, the map and news reports`); await runResearch('feedbackChecker', t.case_id, ev => { if (ev.type === 'start') onLog(`  ${plainStep(ev.tool, ev.args)}`); }); });
-  if (step === 'evidence') return each(inv, log, async (t, B) => { log(`${B.name}: planning how the children could travel there`); await runResearch('transportPlanner', t.case_id, ev => { if (ev.type === 'start') onLog(`  ${plainStep(ev.tool, ev.args)}`); }); });
+  const log = t => { addLog(inv, t); onLog(t, { level: 'stage' }); };
+  const steps = () => { const ids = {}; return ev => { if (ev.type === 'start') ids[ev.seq] = onLog(plainStep(ev.tool, ev.args), { level: 'step', state: 'run', why: ev.reason }); else if (ev.type === 'step') onLog(null, { update: ids[ev.seq], state: 'done', summary: ev.summary }); }; };
+  if (step === 'feedback') return each(inv, log, async (t, B) => { log(`${B.name}: reading what parents and villagers say`); await ensureFeedback(t.case_id); log(`${B.name}: checking what people say against the records, the map and news reports`); await runResearch('feedbackChecker', t.case_id, steps()); });
+  if (step === 'evidence') return each(inv, log, async (t, B) => { log(`${B.name}: planning how the children could travel there`); await runResearch('transportPlanner', t.case_id, steps()); });
   if (step === 'investigate') {
     const f = fullRow(inv);
     if (f.stage === 'research') {
       await each(inv, log, async (t, B) => {
-        if (!hasResults(t.case_id)) { log(`${B.name}: studying the school: children affected, the route, the geography, transport and what is still unknown`); await runInvestigation(t.case_id, ev => { if (ev.type === 'step') onLog(`  ${ev.label}`); }); }
+        if (!hasResults(t.case_id)) { log(`${B.name}: studying the school: children affected, the route, the geography, transport and what is still unknown`); await runInvestigation(t.case_id, ev => { if (ev.type === 'step') onLog(ev.label, { level: 'step', state: 'done' }); }); }
         const tp = savedRun(t.case_id, 'transportPlanner')?.out, fc = savedRun(t.case_id, 'feedbackChecker')?.out;
         run("DELETE FROM field_questions WHERE case_id = ? AND qid IN ('Q4','Q5') AND COALESCE(answer,'') = '' AND COALESCE(note,'') = ''", [t.case_id]);   // the form stays short: three standard questions and the one the research found most important for this school
         const n = addFieldQuestions(t.case_id, [...(tp?.open_questions || []), ...(fc?.open_questions || [])].slice(0, 1)); log(`${B.name}: field form ready (${q('SELECT count(*) n FROM field_questions WHERE case_id = ?', [t.case_id])[0].n} questions, tailored to this school)`);

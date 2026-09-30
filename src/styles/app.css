@@ -668,3 +668,21 @@ blockquote cite { display: block; font-style: normal; font-size: 12px; color: va
 @media print { header.bar, .steps, #demo, .no-print, .srcs, .row .actions, .btn, nav, .maplegend { display: none !important; } .fcprint { display: block !important; } body { background: #fff; } .card { border: 0; box-shadow: none; } .fq input[type=text], .fq input[type=number] { border-bottom: 1px solid #000; } }
 
 .rplain { font-weight: 600; margin-right: 8px; } .rtool { opacity: .55; font-size: 11px; } .fcdoing { font-size: 18px; font-weight: 600; margin: 6px 0 10px; }
+
+/* The AI's work, shown as reasoning: plain sentence, why, result. No black boxes. */
+.rstep > details > summary, .rstep.busy { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; padding: 9px 12px; }
+.rstep .rn { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; display: inline-grid; place-items: center; font-size: 12px; }
+.rstep.busy .rn { animation: fcpulse 1.2s ease-in-out infinite; }
+.rbody { display: grid; gap: 2px; } .rbody .why { font-style: italic; color: var(--muted); font-size: 13px; } .rbody .tres { color: var(--ink); font-size: 13px; grid-column: auto; }
+.rstep .io, .fclog, .rio pre.io { background: var(--sunk, #f3f5f4); color: var(--ink); border: 1px solid var(--line); font-family: var(--f-mono); }
+.think { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 8px; max-height: 360px; overflow: auto; }
+.tstage { display: flex; gap: 10px; align-items: center; margin-top: 6px; } .tstep { display: flex; gap: 10px; align-items: flex-start; padding-left: 14px; }
+.tdot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); flex: none; margin-top: 6px; } .tstage .tdot { background: var(--accent); margin-top: 0; }
+.tstep.done .tdot { background: var(--ok, #2f855a); } .tstep.run .tdot { background: var(--accent); animation: fcpulse 1.1s ease-in-out infinite; }
+.twhy { font-style: italic; color: var(--muted); font-size: 13px; } .tres { font-size: 13px; }
+.thinkbox { border: 1px solid var(--line); border-radius: var(--r); padding: 6px 12px; background: var(--surface); }
+.dock { position: fixed; right: 16px; bottom: 16px; z-index: 30; width: min(360px, calc(100vw - 32px)); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: 0 6px 24px rgba(0,0,0,.18); }
+.dockhd { display: flex; gap: 8px; align-items: center; width: 100%; padding: 10px 12px; background: none; border: 0; font: inherit; color: var(--ink); text-align: left; cursor: pointer; }
+.dockdot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); animation: fcpulse 1.1s ease-in-out infinite; flex: none; } #dock-now { margin-left: auto; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dockbody { padding: 0 12px 10px; max-height: 260px; overflow: auto; }
+@media print { .dock { display: none !important; } }

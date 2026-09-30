@@ -9,13 +9,13 @@ test('Full control drives the ordinary screens: one closing school in, AI resear
   await page.locator('#mode-full').click(); await expect(page.locator('#demo-school')).toContainText('GPS Kasta'); await page.locator('#cpanel [data-s="PK2"]').click();
   await expect(page.locator('#cpanel')).toContainText('Start Full control'); await expect(page.locator('#cpanel')).toContainText('GPS Gushaini'); await page.locator('#cp-full').click();
   // Compare: the AI already chose the candidates
-  await expect(page).toHaveURL(/case\/C\d+\/compare/); await expect(page.locator('#fc-banner')).toContainText('chose the candidate schools'); await expect(page.locator('.cmptbl')).toBeVisible();
+  await expect(page).toHaveURL(/case\/C\d+\/compare/); await expect(page.locator('#fc-banner')).toContainText('picked the candidate schools'); await expect(page.locator('.cmptbl')).toBeVisible();
   const cands = await page.locator('.cmptbl thead th b').count(); expect(cands).toBe(3);
-  await expect(page.locator('#fc-count')).toContainText('Moving on in'); await expect(page.locator('#fc-track li.now .fcwho')).toHaveText('AI'); await expect(page.locator('.fcsay')).toContainText('You do not need to click Next');
+  await expect(page.locator('#fc-count')).toContainText('Moving on in'); await expect(page.locator('#fc-now')).toHaveText('Next: Feedback →'); await expect(page.locator('.fcsay')).toContainText('You do not need to click Next');
   await page.locator('#fc-pause').click(); await expect(page.locator('#fc-count')).toHaveText('Paused'); await page.locator('#fc-pause').click();
   // Feedback: the AI classifies, summarises and checks claims, then the real Feedback screen appears
   await cont(page); await expect(page).toHaveURL(/feedback/); await expect(page.locator('#fbsum, #rs-feedbackChecker').first()).toBeVisible({ timeout: 120000 });
-  await expect(page.locator('#rs-feedbackChecker .rstep').first()).toBeVisible(); await expect(page.locator('#fc-banner')).toContainText('checked the claims');
+  await expect(page.locator('#rs-feedbackChecker .rstep').first()).toBeVisible(); await expect(page.locator('#fc-banner')).toContainText('checked it against the records');
   // Evidence: the Transport Planner has run
   await cont(page); await expect(page).toHaveURL(/evidence/); await expect(page.locator('#rs-transportPlanner .rstep')).toHaveCount(8, { timeout: 120000 }); await expect(page.locator('#rs-transportPlanner .rplain').first()).toContainText(/villages|geography|road route/); await expect(page.locator('#rs-transportPlanner')).toContainText('Studying the geography around both schools');
   // Investigate: research of every school, the field form is generated, and the flow waits
@@ -38,7 +38,7 @@ test('Full control drives the ordinary screens: one closing school in, AI resear
   await page.locator('#fc-submit').click();
   // after the answers: evidence updated, then Policy and cost with the best policies selected
   await expect(page.locator('#fc-banner')).toContainText('field answers are recorded', { timeout: 120000 });
-  await cont(page); await expect(page).toHaveURL(/policy/); await expect(page.locator('#fc-banner')).toContainText('best policies', { timeout: 120000 });
+  await cont(page); await expect(page).toHaveURL(/policy/); await expect(page.locator('#fc-banner')).toContainText('chose the policies', { timeout: 120000 });
   await expect(page.locator('.ivsel input:checked').first()).toBeVisible(); await expect(page.locator('#fc-pick')).toContainText('AI picked the best policies'); expect(await page.locator('.aiwhy').count()).toBeGreaterThan(1); await expect(page.locator('.aiwhy').first()).toContainText(/The AI (chose|did not choose) this/);
   const st2 = await page.evaluate(() => { const q = window.__pathshala.q; return { sel: q('SELECT count(*) n FROM interventions WHERE selected = 1')[0].n, auto: q("SELECT count(*) n FROM auto_choices WHERE code != '_mode' AND reason NOT LIKE 'not:%'")[0].n, chosen: q('SELECT chosen_id FROM investigations')[0].chosen_id }; });
   expect(st2.sel).toBe(st2.auto); expect(st2.chosen).toBeNull();
