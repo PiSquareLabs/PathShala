@@ -8,6 +8,7 @@ import { render } from '../router.js';
 
 const yn = v => (v == null ? 'Not recorded' : v ? '<span class="yes">Yes</span>' : '<span class="no">No</span>');
 
+const ROWSRC = {"Screening score": "PathShala (derived)", "Free seats": "UDISE+ rooms × planning norm", "By road": "Google Routes API / PathShala estimate", "On foot": "Google Routes API / PathShala estimate", "RTE walking limit": "RTE Rules 2010", "Climb": "Google Elevation API", "Mapped hazards": "OpenStreetMap, JRC", "Students · teachers": "UDISE+", "Building": "UDISE+", "Facilities": "UDISE+ report card", "Citizen feedback": "PathShala (synthesised)"};
 const cnt = v => (v == null ? 'Not recorded' : v);
 
 /* One column per candidate receiving school. Every row is data that has a real source (UDISE+, Routes and
@@ -63,7 +64,7 @@ export function stepCompare(el, I) {
       <tbody>${rows.map(([label, cell, val, dir]) => {
         if (!cell) return `<tr class="grp"><th colspan="${cols.length + 1}">${label}</th></tr>`;
         const b = best(val, dir);
-        return `<tr><th scope="row">${label}</th>${cols.map((x, i) => `<td class="${b.has(i) ? 'best' : ''}">${cell(x, i)}</td>`).join('')}</tr>`;
+        return `<tr><th scope="row">${label}<span class="src">${ROWSRC[label] || ''}</span></th>${cols.map((x, i) => `<td class="${b.has(i) ? 'best' : ''}">${cell(x, i)}</td>`).join('')}</tr>`;
       }).join('')}</tbody></table></div>
     <p class="small muted">* straight-line estimate, route not surveyed. Green marks the best value in a row. The score is a screening aid, not a recommendation. Investigate every school, then choose one on the last step.</p>`;
   $$('[data-remove]', el).forEach(b => b.onclick = () => { removeOption(inv, b.dataset.remove); render(); });

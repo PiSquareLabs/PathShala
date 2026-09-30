@@ -574,3 +574,8 @@ blockquote cite { display: block; font-style: normal; font-size: 12px; color: va
 .opttabs button[aria-pressed="true"] .ok { color: #9fe0b5; }
 .mtiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
 .mtiles .tmeta { grid-column: 1 / -1; }
+.srcs { margin: 24px auto 8px; max-width: 1100px; padding: 0 16px; font-size: 12.5px; color: var(--muted); }
+.srcs summary { cursor: pointer; font-weight: 600; }
+.srcs dl { display: grid; grid-template-columns: minmax(150px, 220px) 1fr; gap: 4px 14px; margin: 8px 0 0; }
+.srcs dt { font-weight: 600; color: var(--ink); } .srcs dd { margin: 0; } .srcs dd.syn { color: var(--wait); }
+.cmptbl .src { display: block; font-weight: 400; font-size: 11px; color: var(--faint, var(--muted)); }

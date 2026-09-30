@@ -15,6 +15,7 @@ import { renderRules } from './pages/rules.js';
 import { renderSchool } from './pages/school.js';
 import { renderSql } from './pages/sql.js';
 import { renderSurvey } from './pages/survey.js';
+import { sourcesHtml } from './sources.js';
 import { dbStatus } from './toast.js';
 
 export function render(scrollTop) {
@@ -46,6 +47,8 @@ export function render(scrollTop) {
     else if (r[0] === 'sql') renderSql(pg());
     else go('');
   } catch (e) { console.error(e); app.innerHTML = `<div class="page"><div class="card err">${esc(e.message)}</div></div>`; }
+  if (!app.querySelector('#srcs')) (app.querySelector('.page') || app).insertAdjacentHTML('beforeend', sourcesHtml(r));
+  $$('.tag.mock').forEach(t => { t.textContent = 'PathShala (synthesised)'; });   // synthesised data names PathShala as its source
   dbStatus();
   if (scrollTop) window.scrollTo(0, 0);
 }

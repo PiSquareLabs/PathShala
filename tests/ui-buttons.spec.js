@@ -391,3 +391,20 @@ test('school page, inbox deep link, unknown routes', async ({ page }) => {
   await go(page, 'inbox/G5'); await expect(page.locator('#fb-g')).toHaveValue('G5');
   for (const h of ['s/NOPE', 'nope', 'case/ZZ/compare', 'case']) { await go(page, h); await expect(page).toHaveURL(/#\/$/); }
 });
+
+test('every page lists its data sources; synthesised data names PathShala', async ({ page }) => {
+  await page.evaluate(() => window.__pathshala.createCase('PK2', ['GSH', 'NGN']));
+  for (const h of ['', 'merges', 'cases', 'm/M5', 's/UCH', 'new', 'inbox', 'rules', 'sql', 'case/C1/compare', 'case/C1/evidence', 'case/C1/investigate', 'case/C1/policy', 'case/C1/report']) {
+    await go(page, h); await expect(page.locator('#srcs')).toHaveCount(1);
+    await page.locator('#srcs summary').click(); await expect(page.locator('#srcs')).toContainText(/UDISE|Rules|RTE|PathShala|officer/);
+  }
+  await go(page, 'case/C1/compare'); await expect(page.locator('.cmptbl .src').first()).not.toBeEmpty();
+  await page.locator('#srcs summary').click(); await expect(page.locator('#srcs dd.syn')).toContainText('PathShala (synthesised');
+  await page.screenshot({ path: 'docs/screens/12-sources.png', fullPage: true });
+});
+
+test('mock tags read "PathShala (synthesised)"', async ({ page }) => {
+  await page.evaluate(() => window.__pathshala.createCase('PK2', ['GSH', 'NGN']));
+  await go(page, 'case/C1/compare'); await expect(page.locator('.tag.mock').first()).toHaveText('PathShala (synthesised)');
+  await expect(page.locator('.tag', { hasText: /^mock$/i })).toHaveCount(0);
+});
