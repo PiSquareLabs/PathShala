@@ -36,3 +36,7 @@
 The app saves its SQLite database in `localStorage` (`pathshala.db.v7`). When the seed schema changes, `openDb()` compares the saved
 tables and columns with the seed's and discards a stale save (and deletes older keys), so an old browser copy can never cause
 errors such as "no such column". Bump `STORE` in `src/db/sqlite.js` as well when you change the schema.
+
+## Real UDISE+ data and the Merges page
+- Five UDISE+ School Report Cards 2025-26 (GMS Nahin, GPS Jiyani, GPS Jana, GPS Dobhi, GPS Soyal) are parsed from `data/udise/*.pdf` (`parse_udise.py`) and override the school rows and `school_facts` (rooms by condition, girls'/boys'/CwSN toilets, ramp, handrails, water, electricity, road, enrolment by sex, CwSN, established year, cluster). `head_teacher` was dropped: the cards do not record it. NULL shows as "Not recorded".
+- The To do and Field surveys tabs and pages are removed. `#/merges` is a grid of tiles, one per merge; problems and the survey form still live inside each merge page.

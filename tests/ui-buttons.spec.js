@@ -36,14 +36,14 @@ async function choosePolicy(page, name, titles) {
   for (const t of titles) await page.locator('.ivc', { hasText: t }).locator('input').check();
 }
 
-test('header: brand, three tabs and the More menu', async ({ page }) => {
-  const tabs = [['Investigate', /#\/$/, 'Which school might close'], ['Merges', /#\/merges/, 'school merges'], ['To do', /#\/problems/, 'Problems']];
+test('header: brand, two tabs and the More menu', async ({ page }) => {
+  const tabs = [['Investigate', /#\/$/, 'Which school might close'], ['Merges', /#\/merges/, 'Each tile is one merge']];
   for (const [label, url, text] of tabs) {
     await page.locator('#nav a', { hasText: label }).click();
     await expect(page).toHaveURL(url); await expect(app(page)).toContainText(text);
     await expect(page.locator('#nav a[aria-current="page"]')).toContainText(label);
   }
-  await expect(page.locator('#b-t')).toHaveText('4');
+  await expect(page.locator('#nav a')).toHaveCount(2);
   const menu = [['Feedback inbox', /#\/inbox/, 'Log feedback'], ['Rules', /#\/rules/, 'Rules'], ['SQLite console', /#\/sql/, 'SQLite console']];
   for (const [label, url, text] of menu) {
     await page.locator('#more summary').click();
@@ -240,11 +240,11 @@ test('report: leave a finding out, tick evidence, references, comment, re-draft,
   await page.locator('a.brand').click(); await expect(page.locator('#cpanel')).toContainText('Ready for administrative review');
 });
 
-test('merges map: cards, closing-school links, zoom, new merge', async ({ page }) => {
+test('merges: one tile per merge, closing-school links, new merge', async ({ page }) => {
   await go(page, 'merges'); await page.waitForSelector('.rcv');
   expect(await page.locator('.rcv').count()).toBe(5);
   await expect(page.locator('.home-stats')).not.toContainText('undefined');
-  await page.locator('#hmap .leaflet-control-zoom-in').click(); await page.locator('#hmap .leaflet-control-zoom-out').click();
+  await expect(page.locator('#mtiles .rcv')).toHaveCount(5);
   await page.locator('.rcv .from a').first().click(); await expect(page).toHaveURL(/#\/m\/M\d+\/g\/G\d+/);
   await go(page, 'merges'); await page.locator('.rcv a.stretch').first().click(); await expect(page).toHaveURL(/#\/m\/M\d+$/);
   await go(page, 'merges'); await page.locator('a.btn', { hasText: 'New merge' }).click(); await expect(page).toHaveURL(/#\/new/);
@@ -317,22 +317,9 @@ test('survey: empty submit warns; values, answers, notes update the plan', async
   await go(page, 'm/M5/feedback'); await expect(app(page)).toContainText('afraid of the nallah');
 });
 
-test('to do: problems filters, surveys tab, tab counts', async ({ page }) => {
-  await page.locator('#nav a', { hasText: 'To do' }).click();
-  await expect(page.locator('.tabs a[aria-current="page"]')).toContainText('Problems');
-  for (const [k, label] of [['high', 'High'], ['medium', 'Medium'], ['low', 'Low'], ['all', 'All']]) {
-    await page.locator(`.filters button[data-f="${k}"]`).click();
-    await expect(page.locator('.filters button[aria-pressed="true"]')).toContainText(label);
-    if (k !== 'all') for (const sv of await page.locator('.prob .sv').evaluateAll(e => e.map(x => x.className))) expect(sv).toContain(k);
-  }
-  const link = page.locator('.prob a').first(); const h = await link.getAttribute('href');
-  await link.click(); await expect(page).toHaveURL(new RegExp(h.replace(/[/#]/g, '.')));
-  await go(page, 'problems');
-  await page.locator('.tabs a', { hasText: 'Field surveys' }).click(); await expect(page).toHaveURL(/#\/surveys/);
-  await expect(page.locator('#nav a[aria-current="page"]')).toContainText('To do');
-  await expect(page.locator('a.lcard')).toHaveCount(5);
-  await page.locator('a.lcard').first().click(); await expect(page).toHaveURL(/survey$/);
-  await go(page, 'surveys'); await page.locator('.tabs a', { hasText: 'Problems' }).click(); await expect(page).toHaveURL(/#\/problems/);
+test('to do and field surveys pages are gone', async ({ page }) => {
+  for (const h of ['problems', 'surveys']) { await go(page, h); await expect(page.locator('#cpanel, #hmap').first()).toBeVisible(); }
+  await expect(page.locator('#nav a', { hasText: 'To do' })).toHaveCount(0);
 });
 
 test('feedback inbox: samples, live classifier, filters, save, empty save', async ({ page }) => {

@@ -1,4 +1,3 @@
-import { q1 } from '../db/sqlite.js';
 import { resetNewItems } from '../engine/rules.js';
 import { $, $$, caseState, esc, go, mergeOf, mergeRow, route, state } from './helpers.js';
 import { maps, resetMaps } from './map/baseMap.js';
@@ -12,18 +11,16 @@ import { renderMerge } from './pages/merge.js';
 import { renderMergeFeedback } from './pages/mergeFeedback.js';
 import { renderPair } from './pages/pair.js';
 import { renderPlanner } from './pages/planner.js';
-import { renderProblems } from './pages/problems.js';
 import { renderRules } from './pages/rules.js';
 import { renderSchool } from './pages/school.js';
 import { renderSql } from './pages/sql.js';
 import { renderSurvey } from './pages/survey.js';
-import { renderSurveys } from './pages/surveys.js';
 import { dbStatus } from './toast.js';
 
 export function render(scrollTop) {
   const r = route(), app = $('#app');
   maps.forEach(m => m.remove()); resetMaps();
-  const top = { problems: 'todo', surveys: 'todo', inbox: 'more', rules: 'more', sql: 'more', merges: 'merges', m: 'merges', new: 'merges', s: 'merges' }[r[0]] || 'home';
+  const top = { inbox: 'more', rules: 'more', sql: 'more', merges: 'merges', m: 'merges', new: 'merges', s: 'merges' }[r[0]] || 'home';
   $$('#nav a').forEach(a => a.setAttribute('aria-current', a.dataset.v === top ? 'page' : 'false'));
   $('#more summary').setAttribute('aria-current', top === 'more' ? 'page' : 'false'); $('#more').open = false;
   const pg = () => { app.innerHTML = '<div class="page" id="pg"></div>'; return $('#pg'); };
@@ -44,16 +41,12 @@ export function render(scrollTop) {
     }
     else if (r[0] === 's' && r[1]) renderSchool(pg(), r[1]);
     else if (r[0] === 'new') renderPlanner(pg(), r[1]);
-    else if (r[0] === 'problems') renderProblems(pg());
-    else if (r[0] === 'surveys') renderSurveys(pg());
     else if (r[0] === 'inbox') { if (r[1]) { state.inboxGroup = r[1]; state.draft = Object.assign({}, state.draft, { group: r[1] }); } renderInbox(pg()); }
     else if (r[0] === 'rules') renderRules(pg());
     else if (r[0] === 'sql') renderSql(pg());
     else go('');
   } catch (e) { console.error(e); app.innerHTML = `<div class="page"><div class="card err">${esc(e.message)}</div></div>`; }
   dbStatus();
-  const hp = q1("SELECT count(*) AS n FROM problems WHERE severity = 'high'").n;
-  $('#b-t').textContent = hp || ''; $('#b-t').style.display = hp ? '' : 'none';
   if (scrollTop) window.scrollTo(0, 0);
 }
 window.addEventListener('hashchange', () => {

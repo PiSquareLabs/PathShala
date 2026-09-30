@@ -311,15 +311,21 @@ INSERT INTO "rules" VALUES('R8','Classroom cost','Cost of one additional classro
 INSERT INTO "rules" VALUES('R9','Pupils per teacher','Maximum pupils per teacher.','max_ptr',30.0,'students','RTE Act Schedule','https://indiankanoon.org/doc/42884596/');
 INSERT INTO "rules" VALUES('R12','Attendance drop alert','Drop in attendance, in percentage points, that triggers home visits.','attendance_drop_pts',5.0,'points','PathShala planning threshold','');
 INSERT INTO "rules" VALUES('R13','Child walking pace','Walking speed of a Class 1 child relative to an adult (Tobler''s hiking function).','child_pace',0.75,'× adult','PathShala planning assumption','');
-CREATE TABLE school_facts (school_id TEXT PRIMARY KEY, building TEXT,
-      head_teacher INTEGER, toilets_girls INTEGER, ramp INTEGER, source TEXT, source_note TEXT, source_url TEXT);
-INSERT INTO "school_facts" VALUES('PK2','Poor — needs demolition and replacement',0,0,0,'real','Building condition: The Tribune, 2 Sep 2026','https://www.tribuneindia.com/news/himachal/unsafe-schools-of-tirthan-valley/');
-INSERT INTO "school_facts" VALUES('GSH','Good',1,1,1,'mock','','');
-INSERT INTO "school_facts" VALUES('NGN','Good',1,1,0,'mock','','');
-INSERT INTO "school_facts" VALUES('BNJ','Fair',1,1,1,'mock','','');
-INSERT INTO "school_facts" VALUES('NHN','Unsafe — classes under tin sheds',1,0,0,'real','The Tribune, 2 Sep 2026','https://www.tribuneindia.com/news/himachal/unsafe-schools-of-tirthan-valley/');
-INSERT INTO "school_facts" VALUES('JBH','Good',1,1,0,'mock','','');
-INSERT INTO "school_facts" VALUES('BTH','Fair',0,0,0,'mock','','');
+CREATE TABLE school_facts (school_id TEXT PRIMARY KEY, building TEXT, rooms_good INTEGER, rooms_minor INTEGER, rooms_major INTEGER,
+      toilets_girls INTEGER, toilets_boys INTEGER, cwsn_toilets INTEGER, ramp INTEGER, handrails INTEGER, drinking_water INTEGER,
+      electricity INTEGER, all_weather_road INTEGER, enrol_girls INTEGER, enrol_boys INTEGER, cwsn INTEGER, transport_students INTEGER,
+      established INTEGER, cluster TEXT, source TEXT, source_note TEXT, source_url TEXT);
+INSERT INTO "school_facts" VALUES('PK2','Poor — needs demolition and replacement',NULL,NULL,NULL,0,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'real','Building condition: The Tribune, 2 Sep 2026','https://www.tribuneindia.com/news/himachal/unsafe-schools-of-tirthan-valley/');
+INSERT INTO "school_facts" VALUES('GSH','Good',NULL,NULL,NULL,1,NULL,NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'mock','','');
+INSERT INTO "school_facts" VALUES('NGN','Good',NULL,NULL,NULL,1,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'mock','','');
+INSERT INTO "school_facts" VALUES('BNJ','Fair',NULL,NULL,NULL,1,NULL,NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'mock','','');
+INSERT INTO "school_facts" VALUES('NHN','Unsafe — classes under tin sheds',0,0,0,1,1,0,1,1,1,1,1,10,16,0,1,2006,'GSSS GUSHANI','real','Building: The Tribune, 2 Sep 2026 · other facts: UDISE+ School Report Card 2025-26 (generated 30-09-2026)','https://kys.udiseplus.gov.in');
+INSERT INTO "school_facts" VALUES('JBH','Good',NULL,NULL,NULL,1,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'mock','','');
+INSERT INTO "school_facts" VALUES('BTH','Fair',NULL,NULL,NULL,0,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'mock','','');
+INSERT INTO "school_facts" VALUES('JYN','Classroom condition not recorded',0,0,0,1,1,0,1,1,1,1,1,2,3,0,0,1998,'GSSS BAGAN','real','UDISE+ School Report Card 2025-26 (generated 30-09-2026)','https://kys.udiseplus.gov.in');
+INSERT INTO "school_facts" VALUES('DOB','3 of 3 classrooms in good condition, 0 need minor repair, 0 major repair',3,0,0,2,1,2,1,1,1,1,1,24,18,0,0,1997,'GMSSS KATRAIN','real','UDISE+ School Report Card 2025-26 (generated 30-09-2026)','https://kys.udiseplus.gov.in');
+INSERT INTO "school_facts" VALUES('SOY','2 of 3 classrooms in good condition, 1 need minor repair, 0 major repair',2,1,0,1,1,0,1,1,1,1,1,22,12,2,0,1997,'PM SHRI GSSS HARIPUR','real','UDISE+ School Report Card 2025-26 (generated 30-09-2026)','https://kys.udiseplus.gov.in');
+INSERT INTO "school_facts" VALUES('JNA','Classroom condition not recorded',0,0,0,1,2,0,1,1,1,1,1,40,48,0,0,1954,'GSSS JANNA','real','UDISE+ School Report Card 2025-26 (generated 30-09-2026)','https://kys.udiseplus.gov.in');
 CREATE TABLE schools (
   school_id TEXT PRIMARY KEY, udise_code TEXT, name TEXT, level TEXT, level_code TEXT,
   district TEXT, block TEXT, village TEXT, lat REAL, lng REAL, loc_note TEXT,
@@ -332,21 +338,21 @@ INSERT INTO "schools" VALUES('SDY',NULL,'GMS Sandyar','Middle (6 to 8)','middle'
 INSERT INTO "schools" VALUES('CHT',NULL,'GSSS Chhat','Senior secondary (6 to 12)','senior','Bilaspur','Ghumarwin','Chhat',31.4556,76.6934,'Approximate location',186,0,0,14,12,0,'mock','School real (LiveLaw); numbers mock');
 INSERT INTO "schools" VALUES('NPB',NULL,'GSSS (Boys) Nurpur','Senior secondary (6 to 12)','senior','Kangra','Nurpur','Nurpur, near the fort',32.2998,75.8872,'Approximate location',212,0,0,13,10,0,'mock','School and merger real (The Tribune); numbers mock');
 INSERT INTO "schools" VALUES('NPG',NULL,'Girls PM Shri GSSS Nurpur','Senior secondary (6 to 12)','senior','Kangra','Nurpur','Nurpur, ward 9',32.2966,75.8806,'Approximate location',418,0,0,22,12,0,'mock','School and merger real (The Tribune); numbers mock');
-INSERT INTO "schools" VALUES('JYN',NULL,'GPS Jiyani','Primary (1 to 5)','primary','Kullu','Kullu-II','Jiyani',31.9255,77.154,'Approximate location',4,4,0,1,2,0,'mock','Pair on HP merger list; numbers mock');
+INSERT INTO "schools" VALUES('JYN','02040202403','GPS Jiyani','Primary (1 to 5)','primary','Kullu','Kullu-II','Jiyani',31.9255,77.154,'Approximate location',5,5,0,1,2,0,'real','UDISE+ School Report Card 2025-26 (generated 30-09-2026)');
 INSERT INTO "schools" VALUES('BUA',NULL,'GPS Buai','Primary (1 to 5)','primary','Kullu','Kullu-II','Buai',31.9168,77.1668,'Approximate location',41,41,0,3,5,0,'mock','Pair on HP merger list; numbers mock');
 INSERT INTO "schools" VALUES('PHL',NULL,'GPS Phalyani','Primary (1 to 5)','primary','Kullu','Kullu-II','Phalyani',31.905,77.13,'Approximate location',5,3,2,1,2,1,'mock','Pair on HP merger list; numbers mock');
 INSERT INTO "schools" VALUES('BHM',NULL,'GPS Bhumteer','Primary (1 to 5)','primary','Kullu','Kullu-II','Bhumteer',31.8975,77.1418,'Approximate location',28,28,0,2,4,0,'mock','Pair on HP merger list; numbers mock');
 INSERT INTO "schools" VALUES('KST',NULL,'GPS Kasta','Primary (1 to 5)','primary','Kullu','Naggar','Kasta',32.112,77.162,'Approximate location',5,5,0,1,2,0,'mock','Pair on HP merger list; numbers mock');
 INSERT INTO "schools" VALUES('KKR',NULL,'GPS Kukari','Primary (1 to 5)','primary','Kullu','Naggar','Kukari',32.104,77.175,'Approximate location',36,36,0,2,3,0,'mock','Pair on HP merger list; numbers mock');
 INSERT INTO "schools" VALUES('NER',NULL,'GPS Neri','Primary (1 to 5)','primary','Kullu','Kullu-II','Neri',31.8905,77.153,'Approximate location',6,4,2,1,2,0,'mock','Mock school near Bhumteer');
-INSERT INTO "schools" VALUES('DOB',NULL,'GPS Dobhi','Primary (1 to 5)','primary','Kullu','Naggar','Dobhi',32.109,77.169,'Approximate location',4,4,0,1,2,0,'mock','Mock school near Kukari');
-INSERT INTO "schools" VALUES('SOY',NULL,'GPS Soyal','Primary (1 to 5)','primary','Kullu','Naggar','Soyal',32.099,77.181,'Approximate location',3,2,1,1,2,1,'mock','Mock school near Kukari');
-INSERT INTO "schools" VALUES('JNA',NULL,'GPS Jana','Primary (1 to 5)','primary','Kullu','Naggar','Jana',32.142,77.125,'Approximate location',4,4,0,1,2,0,'mock','Mock school up the valley from Kukari');
+INSERT INTO "schools" VALUES('DOB','02040100401','GPS Dobhi','Primary (1 to 5)','primary','Kullu','Naggar','Dobhi',32.109,77.169,'Approximate location',42,26,16,2,3,1,'real','UDISE+ School Report Card 2025-26 (generated 30-09-2026)');
+INSERT INTO "schools" VALUES('SOY','02040100501','GPS Soyal','Primary (1 to 5)','primary','Kullu','Naggar','Soyal',32.099,77.181,'Approximate location',34,24,10,2,3,0,'real','UDISE+ School Report Card 2025-26 (generated 30-09-2026)');
+INSERT INTO "schools" VALUES('JNA','02040102501','GPS Jana','Primary (1 to 5)','primary','Kullu','Naggar','Jana',32.142,77.125,'Approximate location',88,66,22,5,6,0,'real','UDISE+ School Report Card 2025-26 (generated 30-09-2026)');
 INSERT INTO "schools" VALUES('PK2',NULL,'GPS Pekhri-2','Primary (1 to 5)','primary','Kullu','Banjar','Pekhri-2',31.642,77.433,'Approximate location',27,27,0,2,3,0,'real','School real (The Tribune, Sep 2026: building in poor condition); numbers mock');
 INSERT INTO "schools" VALUES('GSH',NULL,'GPS Gushaini','Primary (1 to 5)','primary','Kullu','Banjar','Gushaini',31.6168,77.4552,'Approximate location',143,131,12,8,6,0,'mock','Village real; school data mock');
 INSERT INTO "schools" VALUES('NGN',NULL,'GPS Nagini','Primary (1 to 5)','primary','Kullu','Banjar','Nagini',31.629,77.405,'Approximate location',86,80,6,5,4,0,'mock','Village real; school data mock');
 INSERT INTO "schools" VALUES('BNJ',NULL,'GPS Banjar','Primary (1 to 5)','primary','Kullu','Banjar','Banjar',31.6365,77.3445,'Approximate location',54,54,0,3,3,0,'mock','Town real; school data mock');
-INSERT INTO "schools" VALUES('NHN',NULL,'GMS Nahin','Middle (6 to 8)','middle','Kullu','Banjar','Nahin',31.6532,77.4415,'Approximate location',21,0,0,3,3,0,'real','21 students, building unsafe, classes under tin sheds (The Tribune, Sep 2026)');
+INSERT INTO "schools" VALUES('NHN','02040401411','GMS Nahin','Middle (6 to 8)','middle','Kullu','Banjar','Nahin',31.6532,77.4415,'Approximate location',26,26,0,3,3,0,'real','UDISE+ School Report Card 2025-26 (generated 30-09-2026)');
 INSERT INTO "schools" VALUES('JBH',NULL,'GPS Jibhi','Primary (1 to 5)','primary','Kullu','Banjar','Jibhi',31.587,77.358,'Approximate location',38,38,0,2,4,0,'mock','Village real; school data mock');
 INSERT INTO "schools" VALUES('BTH',NULL,'GPS Bathad','Primary (1 to 5)','primary','Kullu','Banjar','Bathad',31.5935,77.493,'Approximate location',9,9,0,1,2,0,'mock','Village real; school data mock');
 CREATE TABLE surveys (survey_id INTEGER PRIMARY KEY, merge_id TEXT, group_id TEXT, field TEXT, value TEXT,

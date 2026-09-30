@@ -19,8 +19,10 @@ TRIB_BRIDGE = "https://www.tribuneindia.com/news/himachal/villagers-join-hands-t
 
 def build(cur):
     cur.executescript("""
-    CREATE TABLE school_facts (school_id TEXT PRIMARY KEY, building TEXT,
-      head_teacher INTEGER, toilets_girls INTEGER, ramp INTEGER, source TEXT, source_note TEXT, source_url TEXT);
+    CREATE TABLE school_facts (school_id TEXT PRIMARY KEY, building TEXT, rooms_good INTEGER, rooms_minor INTEGER, rooms_major INTEGER,
+      toilets_girls INTEGER, toilets_boys INTEGER, cwsn_toilets INTEGER, ramp INTEGER, handrails INTEGER, drinking_water INTEGER,
+      electricity INTEGER, all_weather_road INTEGER, enrol_girls INTEGER, enrol_boys INTEGER, cwsn INTEGER, transport_students INTEGER,
+      established INTEGER, cluster TEXT, source TEXT, source_note TEXT, source_url TEXT);
     CREATE TABLE habitations (hab_id TEXT PRIMARY KEY, name TEXT, school_id TEXT, lat REAL, lng REAL, elev_m INTEGER,
       road_connected INTEGER, source TEXT);
     CREATE TABLE links (from_id TEXT, to_id TEXT, road_km REAL, road_min INTEGER, walk_km REAL, climb_m INTEGER, descent_m INTEGER,
@@ -46,21 +48,26 @@ def build(cur):
         ("JBH", "GPS Jibhi", 31.5870, 77.3580, 38, 38, 0, 2, 4, "mock", "Village real; school data mock"),
         ("BTH", "GPS Bathad", 31.5935, 77.4930, 9, 9, 0, 1, 2, "mock", "Village real; school data mock"),
     ]
+    import udise_real
     for (sid, name, lat, lng, tot, pri, pre, t, rooms, src, note) in S:
         lc = "middle" if sid == "NHN" else "primary"
-        cur.execute("INSERT INTO schools VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                    (sid, None, name, "Middle (6 to 8)" if lc == "middle" else "Primary (1 to 5)", lc, "Kullu", "Banjar",
-                     name.split(" ", 1)[1], lat, lng, "Approximate location", tot, pri, pre, t, rooms, 0, src, note))
+        row = (sid, None, name, "Middle (6 to 8)" if lc == "middle" else "Primary (1 to 5)", lc, "Kullu", "Banjar",
+               name.split(" ", 1)[1], lat, lng, "Approximate location", tot, pri, pre, t, rooms, 0, src, note)
+        cur.execute("INSERT INTO schools VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", udise_real.override_school(row))
+    import udise_real
+    # Tirthan valley demo schools: building condition from The Tribune (real for Pekhri-2 and Nahin); the other facts are mock and
+    # left empty where no value exists. Nahin also has a UDISE+ report card (real).
+    N = None
     facts = [
-        ("PK2", "Poor — needs demolition and replacement", 0, 0, 0, "real", "Building condition: The Tribune, 2 Sep 2026", TRIB_SCHOOLS),
-        ("GSH", "Good", 1, 1, 1, "mock", "", ""),
-        ("NGN", "Good", 1, 1, 0, "mock", "", ""),
-        ("BNJ", "Fair", 1, 1, 1, "mock", "", ""),
-        ("NHN", "Unsafe — classes under tin sheds", 1, 0, 0, "real", "The Tribune, 2 Sep 2026", TRIB_SCHOOLS),
-        ("JBH", "Good", 1, 1, 0, "mock", "", ""),
-        ("BTH", "Fair", 0, 0, 0, "mock", "", ""),
-    ]
-    cur.executemany("INSERT INTO school_facts VALUES (?,?,?,?,?,?,?,?)", facts)
+        ("PK2", "Poor — needs demolition and replacement", N, N, N, 0, N, N, 0, N, N, N, N, N, N, N, N, N, N, "real", "Building condition: The Tribune, 2 Sep 2026", TRIB_SCHOOLS),
+        ("GSH", "Good", N, N, N, 1, N, N, 1, N, N, N, N, N, N, N, N, N, N, "mock", "", ""),
+        ("NGN", "Good", N, N, N, 1, N, N, 0, N, N, N, N, N, N, N, N, N, N, "mock", "", ""),
+        ("BNJ", "Fair", N, N, N, 1, N, N, 1, N, N, N, N, N, N, N, N, N, N, "mock", "", ""),
+        udise_real.facts_row("NHN", udise_real.get("GMS Nahin"), "Unsafe — classes under tin sheds", "Building: The Tribune, 2 Sep 2026 · other facts: " + udise_real.NOTE),
+        ("JBH", "Good", N, N, N, 1, N, N, 0, N, N, N, N, N, N, N, N, N, N, "mock", "", ""),
+        ("BTH", "Fair", N, N, N, 0, N, N, 0, N, N, N, N, N, N, N, N, N, N, "mock", "", ""),
+    ] + [udise_real.facts_row(sid, udise_real.get(nm)) for sid, nm in [("JYN", "GPS Jiyani"), ("DOB", "GPS Dobhi"), ("SOY", "GPS Soyal"), ("JNA", "GPS Jana")]]
+    cur.executemany("INSERT INTO school_facts VALUES (%s)" % ",".join("?" * 22) + "", facts)
 
     # ---------- habitations near Pekhri-2 and neighbours (names, location, height, road link) ----------
     H = [

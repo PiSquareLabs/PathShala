@@ -572,3 +572,5 @@ blockquote cite { display: block; font-style: normal; font-size: 12px; color: va
 .opttabs button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
 .opttabs .ok { color: var(--ok); font-weight: 700; }
 .opttabs button[aria-pressed="true"] .ok { color: #9fe0b5; }
+.mtiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.mtiles .tmeta { grid-column: 1 / -1; }

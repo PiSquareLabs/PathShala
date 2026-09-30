@@ -222,7 +222,7 @@ test('09 a second investigation compares two schools for a sender with no survey
 
 test('10 phone: no horizontal scroll on any route', async () => {
   await page.setViewportSize({ width: 400, height: 900 });
-  const routes = ['', 'cases', 'merges', 'problems', 'surveys', 'inbox', 'rules', 'sql', 'new', 'm/M2', 'm/M5', 'm/M5/survey', 'm/M5/feedback', 'case/C1/compare', 'case/C1/evidence', 'case/C1/investigate', 'case/C1/policy', 'case/C1/report'];
+  const routes = ['', 'cases', 'merges', 'inbox', 'rules', 'sql', 'new', 'm/M2', 'm/M5', 'm/M5/survey', 'm/M5/feedback', 'case/C1/compare', 'case/C1/evidence', 'case/C1/investigate', 'case/C1/policy', 'case/C1/report'];
   for (const r of routes) {
     await page.goto('/#/' + r); await page.waitForTimeout(500);
     const w = await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.clientWidth]);

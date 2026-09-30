@@ -29,7 +29,7 @@ test('every page of a fresh app loads without errors', async ({ page }) => {
       items: q('SELECT p.group_id, p.code, g.merge_id FROM plan_items p JOIN merge_groups g USING (group_id)').map(x => [x.merge_id, x.group_id, x.code]), schools: q('SELECT school_id FROM schools').map(x => x.school_id) };
   });
   const bad = [];
-  for (const h of ['', 'cases', 'merges', 'problems', 'surveys', 'inbox', 'rules', 'sql', 'new']) await visit(page, h, bad);
+  for (const h of ['', 'cases', 'merges', 'inbox', 'rules', 'sql', 'new']) await visit(page, h, bad);
   for (const m of ids.merges) for (const sub of ['', '/survey', '/feedback']) await visit(page, `m/${m}${sub}`, bad);
   for (const [m, g] of ids.groups) await visit(page, `m/${m}/g/${g}`, bad);
   for (const [m, g, c] of ids.items) await visit(page, `m/${m}/p/${g}/${c}`, bad);
@@ -81,7 +81,7 @@ test('a database saved by an older build is discarded, not loaded', async ({ pag
   expect(await page.evaluate(() => window.__pathshala.q("SELECT name FROM pragma_table_info('citizen_feedback')").map(c => c.name))).toContain('about_id');
   expect(await page.evaluate(() => [localStorage.getItem('pathshala.db.v6'), localStorage.getItem('pathshala.db.v5')])).toEqual([null, null]);
   const bad = [];
-  for (const h of ['', 'merges', 'problems', 'm/M5', 'inbox', 'rules', 'sql']) await visit(page, h, bad);
+  for (const h of ['', 'merges', 'm/M5', 'inbox', 'rules', 'sql']) await visit(page, h, bad);
   expect(bad).toEqual([]);
 });
 

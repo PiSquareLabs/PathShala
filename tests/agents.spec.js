@@ -132,7 +132,7 @@ test.describe('data audit: only data that has a real source', () => {
       return out;
     });
     expect(cols.habitations).toEqual(['hab_id', 'name', 'school_id', 'lat', 'lng', 'elev_m', 'road_connected', 'source']);   // no counts of children, girls or CwSN per habitation
-    expect(cols.school_facts).toEqual(['school_id', 'building', 'head_teacher', 'toilets_girls', 'ramp', 'source', 'source_note', 'source_url']);   // no seat capacity
+    expect(cols.school_facts).toEqual(['school_id','building','rooms_good','rooms_minor','rooms_major','toilets_girls','toilets_boys','cwsn_toilets','ramp','handrails','drinking_water','electricity','all_weather_road','enrol_girls','enrol_boys','cwsn','transport_students','established','cluster','source','source_note','source_url']);   // no seat capacity
     expect(cols.tables).not.toContain('transport');                                                                          // no timetable source
     expect(cols.rules).not.toEqual(expect.arrayContaining(['warden_per_year']));
     for (const bad of ['warden_per_year', 'girls_safety_cost', 'vehicle_seats']) expect(cols.rules).not.toContain(bad);

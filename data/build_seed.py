@@ -108,6 +108,8 @@ schools = [
      "Jana", 32.1420, 77.1250, "Approximate location",
      4, 4, 0, 1, 2, 0, "mock", "Mock school up the valley from Kukari"),
 ]
+import udise_real
+schools = [udise_real.override_school(t) for t in schools]
 cur.executemany("INSERT INTO schools VALUES (%s)" % ",".join("?" * 19), schools)
 pos = {s[0]: (s[8], s[9]) for s in schools}
 

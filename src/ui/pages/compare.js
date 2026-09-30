@@ -8,6 +8,8 @@ import { render } from '../router.js';
 
 const yn = v => (v == null ? 'Not recorded' : v ? '<span class="yes">Yes</span>' : '<span class="no">No</span>');
 
+const cnt = v => (v == null ? 'Not recorded' : v);
+
 /* One column per candidate receiving school. Every row is data that has a real source (UDISE+, Routes and
    Elevation APIs, GIS layers) or is derived from it; where there is none it says so. */
 function columnData(A, id) {
@@ -36,7 +38,7 @@ export function stepCompare(el, I) {
     ['The school', null],
     ['Students · teachers', x => `${x.B.enrol_total} · ${x.B.teachers}<span class="sub">${(x.B.enrol_total / Math.max(1, x.B.teachers)).toFixed(0)} pupils per teacher</span>`, null],
     ['Building', x => esc(x.f.building || 'Not recorded'), null],
-    ['Facilities', x => `Head teacher ${yn(x.f.head_teacher)}<br>Girls' toilet ${yn(x.f.toilets_girls)}<br>Ramp ${yn(x.f.ramp)}`, null],
+    ['Facilities', x => `Girls' toilets ${cnt(x.f.toilets_girls)}<br>Boys' toilets ${cnt(x.f.toilets_boys)}<br>Ramp ${yn(x.f.ramp)} · Handrails ${yn(x.f.handrails)}<br>Drinking water ${yn(x.f.drinking_water)} · Electricity ${yn(x.f.electricity)}<br>All-weather road ${yn(x.f.all_weather_road)}`, null],
     ['Citizen feedback', x => (x.fb ? `${x.fb} messages` : 'None recorded'), null],
   ];
   const best = (fn, dir) => {

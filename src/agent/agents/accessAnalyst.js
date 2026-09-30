@@ -1,4 +1,5 @@
 import prompt from '../prompts/accessAnalyst.md?raw';
+import { q1 } from '../../db/sqlite.js';
 import { schemas } from '../validate.js';
 
 /* Students affected, walking and road routes, terrain hazards and transport at school times. */
@@ -21,7 +22,7 @@ export const accessAnalyst = {
       { eid: 'E5', kind: 'transport', status: 'needs', label: 'Public transport at school times', detail: 'Data unavailable: no timetable source is connected. Confirm on the field visit.', ref: 'transport' },
       ...(bridge ? [{ eid: 'E7', kind: 'gis', status: 'calculated', label: `Walking route crosses ${bridge.name}`, detail: `${bridge.detail}. Season: ${bridge.season}`, ref: 'feature:' + bridge.feature_id }] : []),
       ...(wp ? [{ eid: 'E10', kind: 'gis', status: 'calculated', label: `${wp.steepKm} km of path steeper than 15%`, detail: `Steepest stretch ${wp.maxSlope}%`, ref: 'route' }] : []),
-      { eid: 'E11', kind: 'data', status: 'calculated', label: `${kids} students on roll: ${A.enrol_primary} in Classes 1–5, ${A.enrol_preprimary} pre-primary`, detail: 'School record (UDISE+)', ref: 'school:' + A.school_id },
+      { eid: 'E11', kind: 'data', status: 'calculated', label: `${kids} students on roll: ${A.enrol_primary} in Classes 1–5, ${A.enrol_preprimary} pre-primary`, detail: (() => { const f = q1('SELECT * FROM school_facts WHERE school_id = ?', [A.school_id]); return f && f.enrol_girls != null ? `School record (UDISE+): ${f.enrol_girls} girls, ${f.enrol_boys} boys, ${f.cwsn || 0} children with special needs` : 'School record (UDISE+)'; })(), ref: 'school:' + A.school_id },
       { eid: 'E12', kind: 'data', status: 'calculated', label: `${avail} seats available at ${B.name}`, detail: `Capacity ${ctx.capB}, enrolled ${B.enrol_total}`, ref: 'school:' + B.school_id },
     ];
     return { evidence, metrics: { students: kids, habitations: habs.length, walk_km: wp ? wp.km : route.walk_km, walk_min: wp ? wp.min : null, road_km: road ? road.km : route.road_km, road_min: road ? road.min : null, steep_km: wp ? wp.steepKm : null, max_slope_pct: wp ? wp.maxSlope : null, route_surveyed: !route.est, seats_available: avail } };
