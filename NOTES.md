@@ -1,7 +1,7 @@
 # NOTES
 
 ## Demo video
-`docs/demo/pathshala-demo.mp4` (about 4.5 minutes, captions, no audio) is recorded by `scripts/record-demo.mjs` (Playwright drives the built app) and converted by `scripts/make-demo.sh` (needs a full ffmpeg, for example `pip install imageio-ffmpeg`). It emphasises the Feedback step. Upload it to YouTube (unlisted or public) or Google Drive ("Anyone with the link") for the hackathon submission.
+`docs/demo/pathshala-demo.mp4` (about 6 minutes, captions and a Piper (offline neural TTS) voice-over) is recorded by `scripts/record-demo.mjs` (Playwright drives the built app) and converted by `scripts/make-demo.sh` (needs a full ffmpeg, for example `pip install imageio-ffmpeg`). It emphasises the Feedback step. Upload it to YouTube (unlisted or public) or Google Drive ("Anyone with the link") for the hackathon submission.
 
 ## Changes from the original prototype
 

@@ -1,11 +1,20 @@
 /* Records the hackathon demo video (webm) by driving the built app with Playwright, with captions.
    Usage: PW_CHROMIUM=... node scripts/record-demo.mjs [baseUrl]   then convert with ffmpeg (see scripts/make-demo.sh). */
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { chromium } from '@playwright/test';
+/* Two passes. DRY=1: run the flow quickly and write docs/demo/texts.json (every caption and card). Then
+   scripts/narrate.py makes a voice clip per text. The real pass holds each caption until its clip has finished and
+   writes docs/demo/timeline.json (when each clip starts) so the clips can be mixed into the video. */
+const DRY = !!process.env.DRY, texts = [], timeline = [];
+const key = t => createHash('sha1').update(t).digest('hex').slice(0, 12);
+const dur = existsSync('docs/demo/tts/durations.json') ? JSON.parse(readFileSync('docs/demo/tts/durations.json', 'utf8')) : {};
 const base = process.argv[2] || 'http://localhost:4175/';
 const W = 1280, H = 720;
 const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM });
-const ctx = await browser.newContext({ viewport: { width: W, height: H }, recordVideo: { dir: 'docs/demo/raw', size: { width: W, height: H } } });
+const ctx = await browser.newContext({ viewport: { width: W, height: H }, ...(DRY ? {} : { recordVideo: { dir: 'docs/demo/raw', size: { width: W, height: H } } }) });
 const page = await ctx.newPage();
+const t0 = Date.now();
 await page.addInitScript(() => {
   const mk = () => {
     if (document.getElementById('cap')) return;
@@ -23,9 +32,15 @@ await page.addInitScript(() => {
   };
   if (document.body) mk(); else addEventListener('DOMContentLoaded', mk);
 });
-const hold = ms => page.waitForTimeout(ms);
-const cap = async (t, ms = 3000) => { await page.evaluate(t => { document.getElementById('cap').textContent = t; document.getElementById('toast')?.classList.remove('show'); }, t); await hold(ms); };
-const card = async (h, p, ms) => { await page.evaluate(([h, p]) => { const k = document.getElementById('card'); k.innerHTML = `<h1>${h}</h1><p>${p}</p>`; k.style.display = 'flex'; }, [h, p]); await hold(ms); await page.evaluate(() => { document.getElementById('card').style.display = 'none'; }); };
+const hold = ms => page.waitForTimeout(DRY ? Math.min(ms, 150) : ms);
+const speak = async (text, ms) => {                       // returns how long to hold so the narration finishes
+  const k = key(text); texts.push({ k, text });
+  if (DRY) return ms;
+  timeline.push({ k, at: (Date.now() - t0) / 1000 });
+  return Math.max(ms, Math.round(((dur[k] || 0) + 0.45) * 1000));
+};
+const cap = async (t, ms = 3000) => { ms = await speak(t, ms); await page.evaluate(t => { document.getElementById('cap').textContent = t; document.getElementById('toast')?.classList.remove('show'); }, t); await hold(ms); };
+const card = async (h, p, ms) => { ms = await speak(`${h}. ${p}`, ms); await page.evaluate(([h, p]) => { const k = document.getElementById('card'); k.innerHTML = `<h1>${h}</h1><p>${p}</p>`; k.style.display = 'flex'; }, [h, p]); await hold(ms); await page.evaluate(() => { document.getElementById('card').style.display = 'none'; }); };
 const click = async (loc, pause = 600) => { const b = await loc.first().boundingBox(); await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 25 }); await hold(300); await loc.first().click(); await hold(pause); };
 const scrollTo = async (loc, block = 'center') => { await loc.first().evaluate((e, b) => e.scrollIntoView({ block: b, behavior: 'smooth' }), block); await hold(900); };
 const step = name => page.locator('.steps a', { hasText: name });
@@ -136,4 +151,5 @@ await cap('Every page lists its data sources. Synthesised data names PathShala a
 await card('What is built', 'Multilingual intake, hardcoded classification with stance, per-category agents, hotspot maps, policy-linked project options with costs, and a report that cites its evidence. Open source, no server needed: it runs in the browser.', 7500);
 await card('Next: scale to BRICS', 'Add national demographic and infrastructure indices and public investment plans as data layers, voice transcription, and more languages (Portuguese, Russian, Chinese, Hindi, Arabic and others) using the same pipeline.', 7500);
 await ctx.close(); await browser.close();
-console.log('recorded');
+writeFileSync(DRY ? 'docs/demo/texts.json' : 'docs/demo/timeline.json', JSON.stringify(DRY ? texts : timeline, null, 1));
+console.log(DRY ? `collected ${texts.length} texts` : 'recorded');

@@ -7,3 +7,6 @@ playwright-report
 .env.local
 __pycache__
 docs/demo/raw/
+docs/demo/tts/*.wav
+docs/demo/texts.json
+docs/demo/timeline.json
