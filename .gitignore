@@ -6,3 +6,4 @@ playwright-report
 .env
 .env.local
 __pycache__
+docs/demo/raw/

@@ -1,5 +1,8 @@
 # NOTES
 
+## Demo video
+`docs/demo/pathshala-demo.mp4` (about 4.5 minutes, captions, no audio) is recorded by `scripts/record-demo.mjs` (Playwright drives the built app) and converted by `scripts/make-demo.sh` (needs a full ffmpeg, for example `pip install imageio-ffmpeg`). It emphasises the Feedback step. Upload it to YouTube (unlisted or public) or Google Drive ("Anyone with the link") for the hackathon submission.
+
 ## Changes from the original prototype
 
 - **Investigate flow.** The prototype compared one closing school with one receiving school. An investigation (`investigations`) is now

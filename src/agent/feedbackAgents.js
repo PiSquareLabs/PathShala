@@ -99,7 +99,7 @@ Return ONLY JSON: {"summary": "<at most 40 words>", "points": [{"text": "<one co
 function simulatedSummary(rows) {
   const g = {}; rows.forEach(r => { (g[r.text_en] ||= []).push(r); });
   const top = Object.entries(g).sort((a, b) => b[1].length - a[1].length).slice(0, 4), habs = new Set(rows.map(r => r.hab_id).filter(Boolean)).size;
-  return { summary: `${rows.length} responses${habs ? ` from ${habs} habitations` : ''}. Most repeated: "${top[0][0]}" (${top[0][1].length}).`, points: top.map(([t, rs]) => ({ text: t, fb_ids: rs.map(r => r.fb_id) })) };
+  return { summary: `${rows.length} ${rows.length === 1 ? 'response' : 'responses'}${habs ? ` from ${habs} habitations` : ''}. Most repeated: "${top[0][0]}" (${top[0][1].length}).`, points: top.map(([t, rs]) => ({ text: t, fb_ids: rs.map(r => r.fb_id) })) };
 }
 
 /* Step 2: one agent per category summarises its concerns; counts and stance come from the classified rows. */
