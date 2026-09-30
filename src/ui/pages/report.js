@@ -6,13 +6,14 @@ import { fold, tile } from '../kit.js';
 import { render } from '../router.js';
 import { toast } from '../toast.js';
 import { optionsTable, wireOptionsTable } from './options.js';
+import { suggestionPanel, wireSuggestion } from './research.js';
 
 /* Last step: compare the options with their totals, choose ONE school, then write and submit its report. */
 export async function stepReport(el, I) {
   const inv = I.inv_id, A = school(I.from_id), many = optionIds(inv).length > 1;
   if (!I.chosen_id && !many) { chooseFinal(inv, optionIds(inv)[0]); I = invRow(inv); }
-  el.innerHTML = `${many ? `<section class="card"><h2>Compare the options and choose one <small>${I.chosen_id ? '' : 'after the field report and policy selection'}</small></h2><div id="opt-wrap">${optionsTable(inv, { choose: I.status !== 'Ready for administrative review' })}</div></section>` : ''}<div id="rp-body" class="tight"></div>`;
-  wireOptionsTable(el, inv);
+  el.innerHTML = `${I.status !== 'Ready for administrative review' ? suggestionPanel(inv) : ''}${many ? `<section class="card"><h2>Compare the options and choose one <small>${I.chosen_id ? '' : 'after the field report and policy selection'}</small></h2><div id="opt-wrap">${optionsTable(inv, { choose: I.status !== 'Ready for administrative review' })}</div></section>` : ''}<div id="rp-body" class="tight"></div>`;
+  wireOptionsTable(el, inv); wireSuggestion(el, inv);
   if (!I.chosen_id) { $('#rp-body').innerHTML = '<div class="card"><h2>Choose a school first</h2><p class="muted">The report is written for the school you choose above.</p></div>'; return; }
   await reportFor($('#rp-body'), I, trackRow(trackId(inv, I.chosen_id)), A, school(I.chosen_id));
 }

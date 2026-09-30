@@ -1,6 +1,7 @@
 import { chooseFinal, invRow, optionSummary, optionIds, trackId, trackRow } from '../../case/options.js';
 import { $$, esc, inr, state } from '../helpers.js';
 import { render } from '../router.js';
+import { suggestedId } from './research.js';
 
 /* The option (candidate receiving school) being worked on in the evidence, investigate and policy steps. */
 export function activeOpt(inv) {
@@ -33,8 +34,8 @@ export function optionsTable(inv, { choose = false } = {}) {
     ['One-time cost', x => `<b>${cost(x.oneTime, x.policyDone ? 'No one-time cost' : '—')}</b>`, x => (x.policyDone ? x.oneTime : null)],
     ['First-year total', x => `<b>${x.policyDone ? inr(x.yearly + x.oneTime) : '—'}</b>${x.unpriced ? `<span class="sub">${x.unpriced} item${x.unpriced > 1 ? 's' : ''} not costed</span>` : ''}`, x => (x.policyDone ? x.yearly + x.oneTime : null)],
   ];
-  return `<div class="cmpwrap"><table class="cmptbl" id="opt-table"><thead><tr><th></th>${sums.map(x => `<th class="${I.chosen_id === x.school.school_id ? 'chosen' : ''}"><div class="oh"><b>${esc(x.school.name)}</b>
-      ${choose ? (I.chosen_id === x.school.school_id ? '<div class="row"><span class="pill s-pending">Chosen</span></div>' : `<div class="row"><button class="btn sm primary" data-final="${x.school.school_id}">Choose this school</button></div>`) : ''}</div></th>`).join('')}</tr></thead>
+  return `<div class="cmpwrap"><table class="cmptbl" id="opt-table"><thead><tr><th></th>${sums.map(x => `<th class="${I.chosen_id === x.school.school_id ? 'chosen' : ''} ${!I.chosen_id && suggestedId(inv) === x.school.school_id ? 'opt-prefill' : ''}"><div class="oh"><b>${esc(x.school.name)}</b>
+      ${choose ? (I.chosen_id === x.school.school_id ? '<div class="row"><span class="pill s-pending">Chosen</span></div>' : `<div class="row"><button class="btn sm primary" data-final="${x.school.school_id}">Choose this school</button>${!I.chosen_id && suggestedId(inv) === x.school.school_id ? '<span class="small muted">Suggested; your call</span>' : ''}</div>`) : ''}</div></th>`).join('')}</tr></thead>
     <tbody>${rows.map(([label, cell, val]) => { const b = val ? best(val) : new Set(); return `<tr><th scope="row">${label}</th>${sums.map((x, i) => `<td class="${b.has(i) ? 'best' : ''} ${I.chosen_id === x.school.school_id ? 'chosen' : ''}">${cell(x)}</td>`).join('')}</tr>`; }).join('')}</tbody></table></div>`;
 }
 export function wireOptionsTable(root, inv) {

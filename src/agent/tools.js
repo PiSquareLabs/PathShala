@@ -5,7 +5,10 @@ import { SCHOOL_WINDOWS, nearby, routeHazards, walkProfile } from '../case/analy
 import { draftSentences } from '../case/draft.js';
 import { q, q1 } from '../db/sqlite.js';
 import { retrieve } from '../retrieval/bm25.js';
-import { P, facts, inr, linkOf, school } from '../ui/helpers.js';
+import { feedbackAbout } from './feedbackAgents.js';
+import { optionSummary, routeInfo, invRow, tracks } from '../case/options.js';
+import { placesFor, search } from './rag.js';
+import { P, capOf, facts, haversine, inr, linkOf, school } from '../ui/helpers.js';
 
 export const tools = {};
 export const toolSchemas = [];
@@ -40,7 +43,7 @@ defineTool('sql_query', 'Run a read-only SQL query (SELECT or WITH) on the PathS
 /* ---------- schools, routes, GIS, transport ---------- */
 defineTool('school_profile', 'School row (UDISE+), facts (building condition, head teacher, toilets, ramp) and the habitations near it.',
   { school_id: str('School id') }, ['school_id'],
-  async ({ school_id }) => ({ school: school(school_id) || null, facts: facts(school_id), habitations: q('SELECT * FROM habitations WHERE school_id = ?', [school_id]) }));
+  async ({ school_id }) => { const sc = school(school_id); return { school: sc || null, capacity: sc ? capOf(sc) : null, facts: facts(school_id), habitations: q('SELECT * FROM habitations WHERE school_id = ?', [school_id]) }; });
 
 defineTool('nearby_schools', 'Schools of a suitable level within max_km, with a transparent screening score (not a recommendation).',
   { school_id: str('School that would close'), max_km: { type: 'number', description: 'Search radius in km (default 12)' } }, ['school_id'],
@@ -193,5 +196,119 @@ defineTool('get_case_evidence', 'Everything already established in a case: findi
 defineTool('draft_report', 'Draft the rationale sentences from the case evidence only. Every sentence carries evidence or policy references.',
   { case_id: str('Case id') }, ['case_id'],
   async ({ case_id }) => ({ sentences: draftSentences(case_id) }));
+
+/* ---------- research tools: search, transport planning, claim checking, option comparison ---------- */
+const COLL = { type: 'array', items: { type: 'string', enum: ['policy', 'feedback', 'reports', 'case', 'past'] }, description: 'Collections to search' };
+defineTool('rag_search', 'Search the collections (policy, feedback, reports, case, past) by keywords and meaning, filtered by place, top k. Returns passages with source, date, place, exact-wording-or-summary and score, or "No source found". Cite only passages returned here.',
+  { collections: COLL, query: str('What to look for'), places: strs('Places to keep (defaults to the case area)'), case_id: str('Case id (needed for the case collection)'), k: { type: 'integer' } }, ['collections', 'query'],
+  async ({ collections, query, places, case_id, k = 5 }) => {
+    const c = case_id && q1('SELECT * FROM cases WHERE case_id = ?', [case_id]);
+    const area = places?.length ? places : c ? [...placesFor([c.from_id, c.to_id])] : undefined;
+    return search({ collections, query, places: area, cid: case_id, k, about: c ? [c.from_id, c.to_id] : undefined });
+  });
+defineTool('web_search', 'Search public reports (news and web items). Every result is labelled "Web source, needs verification" and never changes evidence status by itself.',
+  { query: str('What to look for'), places: strs('Places to keep'), case_id: str('Case id') }, ['query'],
+  async ({ query, places, case_id }) => {
+    const c = case_id && q1('SELECT * FROM cases WHERE case_id = ?', [case_id]);
+    return search({ collections: ['reports'], query, places: places?.length ? places : c ? [...placesFor([c.from_id, c.to_id])] : undefined, k: 5 });
+  });
+defineTool('habitations_and_children', 'Habitations served by a school and the number of children on its roll (UDISE+). Per-habitation child counts are not recorded.',
+  { school_id: str('Closing school id'), students: { type: 'integer', description: 'Field-verified count, if known' } }, ['school_id'],
+  async ({ school_id, students }) => {
+    const sc = school(school_id), hs = q('SELECT hab_id, name, elev_m, road_connected FROM habitations WHERE school_id = ? ORDER BY hab_id', [school_id]);
+    return { habitations: hs, habitation_count: hs.length, children: students || sc.enrol_total, children_source: students ? 'Field count' : 'School roll (UDISE+)', primary_children: sc.enrol_primary };
+  });
+defineTool('route_estimate', 'Straight-line estimate of the road and walking distance when a route has not been surveyed (straight line x 1.4 and x 1.3). An estimate, never a survey.',
+  { from_id: str('Start school'), to_id: str('End school') }, ['from_id', 'to_id'],
+  async ({ from_id, to_id }) => { const r = routeInfo(from_id, to_id); return { estimate: true, straight_km: r.d, road_km: r.road_km, walk_km: r.walk_km, walk_min: r.walk_min }; });
+defineTool('pickup_stops', 'Proposed pickup stops: one at each road-connected habitation; habitations with no road walk to the nearest road-connected habitation (distance from coordinates).',
+  { school_id: str('Closing school id') }, ['school_id'],
+  async ({ school_id }) => {
+    const hs = q('SELECT * FROM habitations WHERE school_id = ? ORDER BY hab_id', [school_id]), roads = hs.filter(h => h.road_connected);
+    const stops = hs.map(h => {
+      if (h.road_connected) return { habitation: h.name, stop: h.name, stop_type: 'at the habitation', walk_to_stop_m: 0 };
+      const near = roads.slice().sort((a, b) => haversine(h, a) - haversine(h, b))[0];
+      return near ? { habitation: h.name, stop: near.name, stop_type: 'walk to the nearest road', walk_to_stop_m: Math.round(haversine(h, near) * 1000) } : { habitation: h.name, stop: null, stop_type: 'no road-connected stop', walk_to_stop_m: null };
+    });
+    return { stops, stop_count: new Set(stops.map(s => s.stop).filter(Boolean)).size, habitations_on_foot: stops.filter(s => s.walk_to_stop_m > 0).length };
+  });
+defineTool('attendance_by_month', 'Attendance percentage by month for a school (merge records only). "Data unavailable" when none is recorded.',
+  { school_id: str('School id') }, ['school_id'],
+  async ({ school_id }) => { const rows = q('SELECT month, pct FROM attendance WHERE school_id = ? ORDER BY month', [school_id]); return rows.length ? { available: true, months: rows } : { available: false, reason: 'Data unavailable: no attendance recorded for this school' }; });
+
+/* Claims in citizen messages: place, time and what is said. */
+const KINDS = [['social', /(panchayat|consult|identity|anganwadi|mid-day|should not close)/i], ['building', /(collapse|building)/i], ['staff', /(teachers|studies will|learn well)/i],
+  ['enrolment', /(very few children|few children)/i], ['facility', /(classrooms|good rooms|ramp|toilets)/i], ['road', /(link road|kutcha|vehicles do not come)/i],
+  ['transport', /(bus|taxi|fare|vehicle|walk to the main road|go with the small)/i], ['safety', /(alone|wild|animal|afraid)/i], ['hazard', /(rain|monsoon|winter|freez|stone|bridge|river|steep|climb|flood|snow|landslide|path)/i]];
+export const claimKind = t => (KINDS.find(([, re]) => re.test(t)) || ['other'])[0];
+defineTool('extract_claims', 'Extract distinct claims from the citizen messages about the case schools: what is said, where, when, and how many messages say it.',
+  { case_id: str('Case id') }, ['case_id'],
+  async ({ case_id }) => {
+    const by = {};
+    feedbackAbout(case_id).forEach(m => { (by[m.text_en] ||= []).push(m); });
+    const claims = Object.entries(by).sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0])).map(([text, ms], i) => {
+      const count = k => ms.filter(m => m[k]).reduce((a, m) => ({ ...a, [m[k]]: (a[m[k]] || 0) + 1 }), {}), top = o => Object.entries(o).sort((x, y) => y[1] - x[1])[0]?.[0] || null;
+      const dates = ms.map(m => m.received).filter(Boolean).sort(), season = (text.match(/\b(winter|monsoon|rains?|7 am|9)\b/i) || [])[0];
+      return { claim_id: 'CL' + (i + 1), text, kind: claimKind(text), place: top(count('hab')) || null, about_id: top(count('about_id')), time: season ? season : dates.length ? (dates[0] === dates.at(-1) ? dates[0] : `${dates[0]} to ${dates.at(-1)}`) : null, messages: ms.length, fb_ids: ms.map(m => m.fb_id) };
+    });
+    return { claims, claim_count: claims.length, message_count: Object.values(by).reduce((a, m) => a + m.length, 0) };
+  });
+/* Judge each claim against the facts gathered by the earlier steps. Supported / contradicted / unchecked, each with the source it rests on. */
+defineTool('check_claims', 'Check each extracted claim against the timetable, attendance, map hazards, field observations, school records and habitation roads gathered so far. Marks supported, contradicted or unchecked, with sources. Web reports alone never make a claim supported.',
+  { case_id: str('Case id'), claims: { type: 'array', items: { type: 'object' } }, facts: { type: 'object', description: 'Outputs of the earlier checks' } }, ['case_id', 'claims', 'facts'],
+  async ({ case_id, claims, facts: F }) => {
+    const c = q1('SELECT * FROM cases WHERE case_id = ?', [case_id]), A = school(c.from_id), B = school(c.to_id), sch = { [A.school_id]: F.profileA, [B.school_id]: F.profileB };
+    const feats = F.hazards || [], obs = F.observations || [], habs = Object.fromEntries((F.profileA?.habitations || []).map(h => [h.name, h]));
+    const web = (F.web?.passages || []).map(p => p.id);
+    const out = claims.map(cl => {
+      const sc = sch[cl.about_id] || F.profileB, S = sc?.school, f = sc?.facts || {};
+      let status = 'unchecked', note = '', sources = [];
+      const has = k => feats.some(x => x.kind === k), src = (ref, label) => sources.push({ ref, label });
+      if (cl.kind === 'road') {
+        const h = habs[cl.place]; if (h) { status = h.road_connected ? 'contradicted' : 'supported'; note = `${h.name} is ${h.road_connected ? 'road-connected' : 'not road-connected'} in the habitation records`; src('habitations', 'Habitation records'); } else note = 'No habitation recorded for this claim';
+      } else if (cl.kind === 'transport') { note = F.timetable?.available ? 'Timetable available' : 'No bus timetable is available to check this'; if (F.timetable?.available === false) src('transport_lookup', 'Timetable: Data unavailable'); }
+      else if (cl.kind === 'building') {
+        const o = obs.find(x => x.kind === 'building'); if (o) { status = 'supported'; note = `Field observation: ${o.text}`; src(o.obs_id, `Field observation ${o.obs_id}`); } else if (/^(Poor|Unsafe)/.test(f.building || '')) { status = 'supported'; note = `Building recorded as: ${f.building}`; src('school_facts', 'School facts (UDISE+)'); }
+      } else if (cl.kind === 'hazard' || cl.kind === 'safety') {
+        const bridge = /(bridge|river)/i.test(cl.text), steep = /(steep|climb)/i.test(cl.text), slide = /(stones|landslide)/i.test(cl.text);
+        const want = bridge ? 'bridge' : steep ? 'steep' : slide ? 'landslide' : null, feat = want && feats.find(x => x.kind === want);
+        if (feat) { status = 'supported'; note = `${want === 'bridge' ? 'A river crossing is' : 'A mapped feature is'} on the route: ${feat.name}`; src(feat.feature_id, `Map feature ${feat.name}`); }
+        else if (bridge) { const o = obs.find(x => x.kind === 'bridge'); if (o) { status = 'supported'; note = `Field observation: ${o.text}`; src(o.obs_id, `Field observation ${o.obs_id}`); } }
+        if (status === 'unchecked') note = want ? 'Not found on the mapped route' : 'No measured data on weather or safety';
+      } else if (cl.kind === 'staff' && /more teachers/i.test(cl.text)) {
+        const a = F.profileA?.school?.teachers, b = F.profileB?.school?.teachers; if (a != null && b != null) { status = b > a ? 'supported' : 'contradicted'; note = `Teachers: ${b} at ${B.name}, ${a} at ${A.name}`; src('schools', 'School records (UDISE+)'); }
+      } else if (cl.kind === 'enrolment' && S) { status = S.enrol_total < sc.capacity / 2 ? 'supported' : 'contradicted'; note = `${S.enrol_total} students on roll for ${sc.capacity} seats at ${S.name}`; src('schools', 'School records (UDISE+)'); }
+      else if (cl.kind === 'facility' && S) {
+        if (/ramp|toilets/i.test(cl.text)) { if (f.ramp != null && f.toilets_girls != null) { const ok = f.ramp === 1 && f.toilets_girls > 0; status = ok ? 'supported' : 'contradicted'; note = `Ramp ${f.ramp ? 'yes' : 'no'}, girls' toilets ${f.toilets_girls} at ${S.name}`; src('school_facts', 'School facts (UDISE+)'); } else note = 'Ramp or toilets not recorded'; }
+        else if (f.building) { const ok = /^Good/.test(f.building) || (f.rooms_good > 0 && !f.rooms_major); status = ok ? 'supported' : 'contradicted'; note = `Building recorded as: ${f.building}`; src('school_facts', 'School facts (UDISE+)'); }
+      }
+      if (status === 'unchecked' && web.length && (cl.kind === 'hazard' || cl.kind === 'building')) note += `${note ? '. ' : ''}A public report exists (${web.join(', ')}): Web source, needs verification`;
+      return { ...cl, status, note, sources };
+    });
+    const n = s => out.filter(x => x.status === s).length;
+    return { claims: out, checked_count: out.length, supported: n('supported'), contradicted: n('contradicted'), unchecked: n('unchecked') };
+  });
+
+/* Compare the candidate schools using numbers taken from the case record and the tools. */
+defineTool('compare_options', 'Compare the candidate receiving schools on walking time, free seats, confirmed concerns and cost (numbers from the case record only).',
+  { inv_id: str('Investigation id') }, ['inv_id'],
+  async ({ inv_id }) => {
+    const I = invRow(inv_id), A = school(I.from_id), R = P(), limit = A.level_code === 'primary' ? R.walk_limit_primary_km : R.walk_limit_upper_km;
+    const sums = optionSummary(inv_id);
+    return { closing_school: A.name, students: A.enrol_total, walk_limit_km: limit, options: sums.map(x => {
+      const r = routeInfo(A.school_id, x.school.school_id), seats = Math.max(0, capOf(x.school) - x.school.enrol_total);
+      return { school_id: x.school.school_id, name: x.school.name, walk_km: r.walk_km, walk_min: r.walk_min, estimated: r.est, seats_available: seats, students: A.enrol_total, enough_seats: seats >= A.enrol_total,
+        investigated: x.investigated, questions: x.questions, answered: x.answered, confirmed_concerns: x.confirmed, concerns_total: x.issues, interventions_selected: x.selected.length, yearly_cost: x.yearly, first_year_total: x.yearly + x.oneTime };
+    }) };
+  });
+defineTool('suggest_option', 'Rank the candidate schools by a fixed rule (enough seats, then fewest confirmed concerns, then shortest walk, then lowest cost) and suggest one, or keeping and repairing the closing school when no option is workable. A suggestion only; the officer decides.',
+  { comparison: { type: 'object', description: 'Output of compare_options' } }, ['comparison'],
+  async ({ comparison: C }) => {
+    const ok = C.options.filter(o => o.enough_seats).sort((a, b) => a.confirmed_concerns - b.confirmed_concerns || a.walk_min - b.walk_min || a.first_year_total - b.first_year_total || a.school_id.localeCompare(b.school_id));
+    const allBad = ok.length > 0 && ok.every(o => o.walk_km > C.walk_limit_km && o.confirmed_concerns >= 2);   // threshold 2 is reported in the output
+    const keep = !ok.length || allBad, best = ok[0] || null;
+    return { concern_threshold: 2, suggested: keep ? 'keep' : best.school_id, suggested_name: keep ? 'Keep and repair the closing school' : best.name, best, ranking: ok.map(o => o.school_id), keep_reason: !ok.length ? 'no_seats' : allBad ? 'all_over_limit_with_confirmed_concerns' : null,
+      unanswered: C.options.filter(o => o.questions && o.answered < o.questions).map(o => ({ name: o.name, unanswered: o.questions - o.answered })), not_investigated: C.options.filter(o => !o.investigated).map(o => o.name) };
+  });
 
 export const toolNames = Object.keys(tools);

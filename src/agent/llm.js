@@ -31,3 +31,17 @@ export async function llmJson(opts) {
   if (!m) throw new Error('The model did not return JSON');
   return JSON.parse(m[0]);
 }
+
+/* Embeddings for meaning-based search. The proxy is expected to offer POST <base>/embed {texts:[...]} -> {embeddings:[[...]]}.
+   If it does not, the caller falls back to keyword search and says so. Vectors are cached in memory. */
+const vecCache = new Map();
+export async function llmEmbed(texts) {
+  const s = llmSettings(), url = s.endpoint.replace(/\/chat\/?$/, '') + '/embed', need = texts.filter(t => !vecCache.has(t));
+  if (need.length) {
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-API-Key': s.key }, body: JSON.stringify({ texts: need }) });
+    if (!r.ok) throw new Error(`Embeddings service ${r.status}`);
+    const j = await r.json(); if (!Array.isArray(j.embeddings) || j.embeddings.length !== need.length) throw new Error('Embeddings reply not understood');
+    need.forEach((t, i) => vecCache.set(t, j.embeddings[i]));
+  }
+  return texts.map(t => vecCache.get(t));
+}

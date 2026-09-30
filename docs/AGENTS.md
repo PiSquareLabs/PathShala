@@ -300,3 +300,9 @@ POST /api/agent
 - [ ] The Approve and Submit buttons are officer-only; no agent can trigger them.
 - [ ] Every agent and officer action is written to `case_log` and shown in the Case record timeline.
 - [ ] Low-confidence inputs (for example voice transcripts later) are shown as "needs verification".
+
+---
+
+## 9. Research agents (added later)
+
+Transport Planner, Feedback Checker and the AI suggestion run the shared loop in `src/agent/loop.js` over five RAG collections (`src/agent/rag.js`). Full description: `docs/WORKFLOW.md`, section 10. Rules that apply here as in section 1: agents only propose; tools produce every number; every sentence cites evidence ids or passages retrieved in the same run; web results are labelled "Web source, needs verification" and never change an evidence status; a failed or invalid Gemini reply falls back to the simulated step and is logged.

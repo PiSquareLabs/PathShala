@@ -6,7 +6,7 @@ import { haversine, linkOf, logCase, school, today } from '../ui/helpers.js';
 import { q, q1, run, save } from '../db/sqlite.js';
 import { screen, walkProfile } from './analysis.js';
 
-export const RESULT_TABLES = ['findings', 'evidence', 'field_questions', 'interventions', 'reports', 'agent_steps', 'feedback_class', 'concerns'];
+export const RESULT_TABLES = ['findings', 'evidence', 'field_questions', 'interventions', 'reports', 'agent_steps', 'feedback_class', 'concerns', 'research_runs', 'research_steps', 'research_evidence'];
 
 export const invRow = inv => q1('SELECT * FROM investigations WHERE inv_id = ?', [inv]);
 export const trackRow = tid => q1('SELECT * FROM cases WHERE case_id = ?', [tid]);
@@ -69,6 +69,8 @@ export function removeOption(inv, schoolId) {
 export function chooseFinal(inv, schoolId) {
   run('UPDATE investigations SET chosen_id = ? WHERE inv_id = ?', [schoolId, inv]);
   logCase(inv, 'Officer', 'Chose receiving school', school(schoolId).name);
+  const sg = q1('SELECT suggested FROM suggestions WHERE inv_id = ?', [inv]);      // record both when the AI suggestion and the officer differ
+  if (sg) { run('UPDATE suggestions SET officer_choice = ? WHERE inv_id = ?', [schoolId, inv]); if (sg.suggested !== schoolId) logCase(inv, 'System', 'Officer choice differs from the AI suggestion', `Suggested ${sg.suggested === 'keep' ? 'keep and repair the closing school' : school(sg.suggested)?.name}; officer chose ${school(schoolId).name}`); }
   save();
 }
 

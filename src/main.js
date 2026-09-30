@@ -1,3 +1,8 @@
+import { RESEARCH_AGENTS } from './agent/agents/researchAgents.js';
+import { checkSentences, toolNumbers } from './agent/loop.js';
+import { search as ragSearch } from './agent/rag.js';
+import { acceptSuggestion, addFieldQuestions, runResearch, runSuggestion, suggestionRow } from './agent/research.js';
+import { run as sqlRun } from './db/sqlite.js';
 import { classifyByRules, runCategoryAgents, runClassify, stanceOf } from './agent/feedbackAgents.js';
 import { draftSentences } from './case/draft.js';
 import 'leaflet/dist/leaflet.css';
@@ -35,4 +40,4 @@ bootSql().then(engine => {
 });
 
 // Debug and test hook (used by tests/agents.spec.js); not used by the app itself.
-window.__pathshala = { runClassify, runCategoryAgents, draftSentences, classifyByRules, stanceOf, q, state, chooseFinal, createCase, runInvestigation, runPolicy, makeSavedDb: sql => { const d = new SQL.Database(); d.exec(sql); return b64(d.export()); }, AGENTS, tools, toolSchemas, callAgent, validate, schemas, captureC1Outputs, CONFIG, GeminiProvider, SimulatedProvider };
+window.__pathshala = { runResearch, runSuggestion, suggestionRow, acceptSuggestion, addFieldQuestions, ragSearch, RESEARCH_AGENTS, checkSentences, toolNumbers, sqlRun, runClassify, runCategoryAgents, draftSentences, classifyByRules, stanceOf, q, state, chooseFinal, createCase, runInvestigation, runPolicy, makeSavedDb: sql => { const d = new SQL.Database(); d.exec(sql); return b64(d.export()); }, AGENTS, tools, toolSchemas, callAgent, validate, schemas, captureC1Outputs, CONFIG, GeminiProvider, SimulatedProvider };

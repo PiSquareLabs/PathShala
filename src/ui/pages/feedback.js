@@ -5,6 +5,7 @@ import { $, esc } from '../helpers.js';
 import { fold } from '../kit.js';
 import { render } from '../router.js';
 import { toast } from '../toast.js';
+import { researchPanel, wireResearch } from './research.js';
 
 const CLS = { Transportation: 'k-tr', Safety: 'k-sf', 'Terrain and weather': 'k-tw', Social: 'k-so', Others: 'k-ot' };
 const PILL = { support: 's-green', oppose: 's-red', neutral: '', mixed: 's-amber' };
@@ -38,6 +39,7 @@ export async function stepFeedback(el, c, A, B) {
         <div class="small muted">${k.pos} positive · ${k.neg} negative · ${k.neu} neutral · ${k.src === 'gemini' ? 'summarised by Gemini' : 'summarised by rules'}</div>`, { cls: `fbrow ${CLS[k.category]}`, id: 'fb-' + k.category })).join('')}</div>
       ${fold('How this is worked out', `<p class="small muted">Every message is put in one category and given a sentiment about the closing school, the receiving school or the merger itself. Good about the receiving school, or bad about the closing school, counts as supporting merging; the reverse does not. The classification is a fixed table, not a model. ${llmConfigured() ? 'Gemini writes the summaries.' : 'Summaries are rule-based; connect Gemini under More → AI connection for written summaries.'} Messages are synthesised for the demo by PathShala.</p>${llmConfigured() ? '<button class="btn sm" id="fb-resum">Summarise again</button>' : ''}`, { id: 'fb-how' })}
     </section>`;
+  el.insertAdjacentHTML('beforeend', researchPanel(c.case_id, 'feedbackChecker', { title: 'Feedback Checker', lead: 'Turns the messages into claims and checks each against the timetable, attendance, map hazards, field observations and public reports.' })); wireResearch(el, c.case_id);
   const r = $('#fb-resum'); if (r) r.onclick = async () => { r.disabled = true; r.textContent = 'Summarising…'; try { await runCategoryAgents(c.case_id); save(); render(); } catch (e) { render(); toast('Summaries failed', [String(e.message || e)]); } };
 }
 export const hasConcerns = cid => (q1('SELECT count(*) AS n FROM concerns WHERE case_id = ?', [cid]).n || 0) > 0;

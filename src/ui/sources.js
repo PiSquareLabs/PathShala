@@ -11,6 +11,7 @@ export const SRC = {
   feedback: ['Citizen feedback', 'PathShala (synthesised for demo from real complaint patterns)'],
   outcomes: ['Attendance, success scores, survey answers', 'PathShala (synthesised for demo)'],
   agents: ['Agent findings and drafts', 'PathShala agents (rules, or Gemini when an AI key is connected), reading only the sources above'],
+  reports: ['Public reports', 'Web source, needs verification: fixed sample summaries of The Tribune reports on the Tirthan footbridge and unsafe schools of Tirthan valley'],
   officer: ['Field answers, choices, report', 'Entered by the officer in this app'],
 };
 const BY_ROUTE = {
@@ -25,6 +26,6 @@ const BY_ROUTE = {
   ai: ['agents'],
   sql: ['udise', 'merge_list', 'routes', 'feedback', 'outcomes', 'rules'],
 };
-const CASE = { compare: ['udise', 'coords', 'routes', 'gis', 'hab', 'rules', 'feedback'], feedback: ['feedback', 'agents'], evidence: ['udise', 'routes', 'gis', 'hab', 'feedback', 'agents'], investigate: ['agents', 'officer', 'feedback', 'routes'], policy: ['rules', 'agents', 'officer'], report: ['agents', 'officer', 'rules', 'udise'] };
+const CASE = { compare: ['udise', 'coords', 'routes', 'gis', 'hab', 'rules', 'feedback'], feedback: ['feedback', 'agents', 'reports'], evidence: ['udise', 'routes', 'gis', 'hab', 'feedback', 'agents', 'reports', 'rules'], investigate: ['agents', 'officer', 'feedback', 'routes'], policy: ['rules', 'agents', 'officer'], report: ['agents', 'officer', 'rules', 'udise', 'reports'] };
 export const sourcesFor = r => (r[0] === 'case' ? CASE[{ access: 'evidence', community: 'evidence' }[r[2]] || r[2]] || CASE.compare : BY_ROUTE[r[0] || ''] || BY_ROUTE['']).map(k => SRC[k]);
 export const sourcesHtml = r => `<details class="srcs" id="srcs"><summary>Sources of data on this page</summary><dl>${sourcesFor(r).map(([l, s]) => `<dt>${l}</dt><dd class="${/PathShala \(/.test(s) ? 'syn' : ''}">${s}</dd>`).join('')}</dl></details>`;

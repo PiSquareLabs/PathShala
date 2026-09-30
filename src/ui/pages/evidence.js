@@ -6,6 +6,7 @@ import { fold, tile } from '../kit.js';
 import { render } from '../router.js';
 import { ensureFeedback } from '../../agent/feedbackAgents.js';
 import { concernsCard } from './feedback.js';
+import { researchPanel, wireResearch } from './research.js';
 
 /* Evidence for the chosen receiving school: the route, what is on it, and what citizens say. */
 export function stepEvidence(el, c, A, B) {
@@ -30,6 +31,7 @@ export function stepEvidence(el, c, A, B) {
       ${fb.length ? `<div class="themes">${order.map(([k, v]) => `<button class="theme ${sel === k ? 'on' : ''}" data-t="${esc(k)}"><b>${v.n}</b><span>${esc(k)}</span><small>${v.v ? v.v + ' verified' : 'all reported'}</small></button>`).join('')}</div>` : '<p class="muted">Data unavailable: no citizen feedback recorded about moving to this school.</p>'}
       ${sel ? `<div class="row" style="margin-top:12px"><b>${esc(sel)}</b><button class="btn sm ghost" id="th-clear">Close</button></div><div class="msgs">${list.map(f => `<div class="msg"><span class="who">${esc(f.sender_role)} · ${esc(f.hab || '')} · ${esc(f.channel)} · ${esc(f.received)}</span>
         <span class="orig hi" lang="hi">“${esc(f.text_hi)}”</span><span class="en">“${esc(f.text_en)}”</span><span class="vf">${evChip(f.status)}${f.verified_by ? `<span class="small">${esc(f.verified_by)}</span>` : ''}</span></div>`).join('')}</div>` : ''}</div>`;
+  el.querySelector('.card').insertAdjacentHTML('afterend', researchPanel(c.case_id, 'transportPlanner', { title: 'Transport Planner', lead: 'Plans how the children could travel: habitations, road route, bus timetable against school hours, pickup stops, transport policy and cost.' })); wireResearch(el, c.case_id);
   if (!q1('SELECT count(*) AS n FROM concerns WHERE case_id = ?', [c.case_id]).n) ensureFeedback(c.case_id).then(d => { if (d) render(); });
   $$('.theme', el).forEach(b => b.onclick = () => { caseState.theme = caseState.theme === b.dataset.t ? null : b.dataset.t; render(); });
   const cl = $('#th-clear'); if (cl) cl.onclick = () => { caseState.theme = null; render(); };
