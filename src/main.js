@@ -11,7 +11,9 @@ import { CONFIG, GeminiProvider, SimulatedProvider } from './agent/provider.js';
 import { callAgent } from './agent/runner.js';
 import { tools, toolSchemas } from './agent/tools.js';
 import { validate, schemas } from './agent/validate.js';
-import { q } from './db/sqlite.js';
+import { SQL, b64, q } from './db/sqlite.js';
+import { createCase } from './case/options.js';
+import { runInvestigation, runPolicy } from './agent/runner.js';
 import { toast } from './ui/toast.js';
 
 $('#reset').onclick = function () {
@@ -31,4 +33,4 @@ bootSql().then(engine => {
 });
 
 // Debug and test hook (used by tests/agents.spec.js); not used by the app itself.
-window.__pathshala = { q, AGENTS, tools, toolSchemas, callAgent, validate, schemas, captureC1Outputs, CONFIG, GeminiProvider, SimulatedProvider };
+window.__pathshala = { q, createCase, runInvestigation, runPolicy, makeSavedDb: sql => { const d = new SQL.Database(); d.exec(sql); return b64(d.export()); }, AGENTS, tools, toolSchemas, callAgent, validate, schemas, captureC1Outputs, CONFIG, GeminiProvider, SimulatedProvider };

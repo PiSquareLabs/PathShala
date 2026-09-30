@@ -61,7 +61,7 @@ test('reset demo: two clicks, wipes changes and localStorage', async ({ page }) 
   await go(page, 'rules');
   await page.locator('.rl input').first().fill('7');
   await page.locator('#rl-go').click(); await expect(toast(page)).toBeVisible();
-  expect(await page.evaluate(() => Object.keys(localStorage).find(k => k.startsWith('pathshala.db')))).toBe('pathshala.db.v5');
+  expect(await page.evaluate(() => Object.keys(localStorage).find(k => k.startsWith('pathshala.db')))).toBe('pathshala.db.v6');
   await page.locator('#more summary').click();
   await page.locator('#reset').click(); await expect(page.locator('#reset')).toHaveText('Click again to reset');
   await page.locator('#reset').click(); await expect(page.locator('#reset')).toHaveText('Reset demo');

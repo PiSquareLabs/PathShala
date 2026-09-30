@@ -29,3 +29,9 @@
 - Policy item pages never show "Last updated" (`implOf()` does not select `updated_on`); left as in the prototype.
 - One legacy column, `schools.anganwadi_on_site`, is unused by the UI.
 - The precedent "GPS Rashkar to GPS Uchh" is spelled "Uchh" in one precedent row and "Uch" in the schools table.
+
+## Saved data
+
+The app saves its SQLite database in `localStorage` (`pathshala.db.v6`). When the seed schema changes, `openDb()` compares the saved
+tables and columns with the seed's and discards a stale save (and deletes older keys), so an old browser copy can never cause
+errors such as "no such column". Bump `STORE` in `src/db/sqlite.js` as well when you change the schema.

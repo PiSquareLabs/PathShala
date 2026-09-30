@@ -33,7 +33,7 @@ After changing the source, run `npm run pages` and commit the new `index.html`. 
 optional Google Fonts stylesheet (system fonts are used if that is blocked).
 
 Everything runs in the browser, from that one file: SQLite (WebAssembly, with an asm.js fallback), the rules engine and the agents. The database
-is saved to `localStorage` (`pathshala.db.v5`) after every write; **Reset demo** reloads it from `src/db/seed.sql`.
+is saved to `localStorage` (`pathshala.db.v6`) after every write; **Reset demo** reloads it from `src/db/seed.sql`.
 
 Deploy `dist/` anywhere: `firebase deploy` (see `firebase.json`), or `docker build -t pathshala . && docker run -p 8080:8080 pathshala`
 (nginx, works on Cloud Run).
