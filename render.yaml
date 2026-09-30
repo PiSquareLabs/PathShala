@@ -10,11 +10,11 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.7
-      - key: GEMINI_API_KEY
+      - key: OPENAI_API_KEY
         sync: false   # you'll be prompted to paste it in the Render dashboard
       - key: APP_API_KEY
         generateValue: true
       - key: ALLOWED_ORIGINS
         value: "*"
-      - key: GEMINI_MODEL
-        value: gemini-3.8-flash
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
