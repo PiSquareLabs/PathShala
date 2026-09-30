@@ -7,7 +7,8 @@ import { render } from '../router.js';
 import { toast } from '../toast.js';
 
 const CLS = { Transportation: 'k-tr', Safety: 'k-sf', 'Terrain and weather': 'k-tw', Social: 'k-so', Others: 'k-ot' };
-const modeBadge = () => (llmConfigured() ? '<span class="pill s-green">Gemini</span>' : '<span class="pill s-pending">Rules (no AI key) <a href="#/ai">connect</a></span>');
+const modeBadge = () => '<span class="pill s-green">Hardcoded classification</span>';
+const agentBadge = () => (llmConfigured() ? '<span class="pill s-green">Gemini summaries</span>' : '<span class="pill s-pending">Rule summaries · <a href="#/ai">connect Gemini</a></span>');
 const SUBJ = { sender: 'closing school', receiver: 'receiving school', merger: 'the merger' };
 
 /* Stance bar: how many messages support merging, are neutral, or do not support it. */
@@ -36,12 +37,12 @@ export function stepFeedback(el, c, A, B) {
       <div class="cats" id="cats">${CATEGORIES.map(k => `<button class="cat ${CLS[k]}" data-cat="${esc(k)}" ${cls.length ? '' : 'disabled'}><b>${cls.length ? groups[k].length : '–'}</b><span>${esc(k)}</span>${cls.length && groups[k].length ? stanceBar(...['support', 'neutral', 'oppose'].map(s => groups[k].filter(m => by[m.fb_id].stance === s).length)) : ''}</button>`).join('')}</div>
       ${cls.length ? `<p class="stanceall">Overall: <b class="t-green">${tot[0]} support</b> · <b>${tot[1]} neutral</b> · <b class="t-red">${tot[2]} do not support</b> merging</p>` : ''}
       ${cls.length ? CATEGORIES.map(k => groups[k].length ? fold(`${k} messages`, `<div class="msgs">${groups[k].slice(0, 40).map(f => { const x = by[f.fb_id]; return `<div class="msg"><span class="who">${esc(f.sender_role)} · ${esc(f.hab || '')}</span><span class="en">“${esc(f.text_en)}”</span><span class="vf"><span class="pill ${x.sentiment === 'positive' ? 's-green' : x.sentiment === 'negative' ? 's-red' : ''}">${x.sentiment} about ${SUBJ[x.subject]}</span> <span class="pill">${STANCE_LABEL[x.stance === 'oppose' ? 'oppose' : x.stance]}</span> ${evChip(f.status)}</span></div>`; }).join('')}</div>${groups[k].length > 40 ? `<p class="small muted">Showing 40 of ${groups[k].length}.</p>` : ''}`, { count: groups[k].length, id: 'fb-' + k }) : '').join('') : '<p class="small muted">Not classified yet.</p>'}</div>
-    <div class="card"><div class="ivtop"><h2 style="margin:0">2 · Category agents summarise the concerns</h2><span class="actions"><button class="btn ${cls.length && !cons.length ? 'primary' : ''}" id="fb-agents" ${cls.length ? '' : 'disabled'}>${cons.length ? 'Run agents again' : 'Run category agents'}</button></span></div>
+    <div class="card"><div class="ivtop"><h2 style="margin:0">2 · Category agents summarise the concerns</h2><span class="actions">${agentBadge()}<button class="btn ${cls.length && !cons.length ? 'primary' : ''}" id="fb-agents" ${cls.length ? '' : 'disabled'}>${cons.length ? 'Run agents again' : 'Run category agents'}</button></span></div>
       <p class="small muted">${CATEGORIES.map(k => CAT_AGENT[k]).join(' · ')}. Each summarises its category and whether it supports merging. These carry forward into Evidence, Investigate and the report.</p>
       <ol class="agent" id="fb-list">${cons.length ? '' : '<li class="muted small" style="list-style:none">Not run yet.</li>'}</ol>${cons.length ? `<div class="ctiles">${cons.map(concernTile).join('')}</div>` : ''}</div>`;
   $('#fb-classify').onclick = async () => {
     const b = $('#fb-classify'); b.disabled = true; b.textContent = 'Classifying…';
-    try { const r = await runClassify(c.case_id); save(); render(); toast('Feedback classified', [`${r.n} messages · ${r.by === 'gemini' ? 'Gemini' : 'rules'}`, ...(r.note ? [r.note] : [])]); }
+    try { const r = await runClassify(c.case_id); save(); render(); toast('Feedback classified', [`${r.n} messages`]); }
     catch (e) { console.error(e); render(); toast('Classification failed', [String(e.message || e)]); }
   };
   const ag = $('#fb-agents'); if (ag) ag.onclick = async () => {

@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { expect, test } from '@playwright/test';
 /* Runs against the real Gemini proxy only when LLM_KEY is in the environment (never committed). */
 test.skip(!process.env.LLM_KEY, 'set LLM_KEY to run against Gemini');
-test('live Gemini: classify and summarise', async ({ page }) => {
+test('live Gemini: category summaries', async ({ page }) => {
   test.setTimeout(240000);
   // the sandbox browser has no route to the internet: relay the proxy call through curl (which does)
   await page.route('https://pathshala-llm-api.onrender.com/**', route => {
@@ -20,5 +20,5 @@ test('live Gemini: classify and summarise', async ({ page }) => {
     return { c, cls: P.q('SELECT category, sentiment, subject, stance, src, count(*) n FROM feedback_class WHERE case_id = ? GROUP BY 1,2,3,4,5', [cid]), con: P.q('SELECT category, summary, src, sup, opp, stance FROM concerns WHERE case_id = ?', [cid]) };
   });
   console.log(JSON.stringify(r, null, 1));
-  expect(r.c.by, r.c.note).toBe('gemini');
+  expect(r.con.every(c => c.src === 'gemini')).toBeTruthy();
 });

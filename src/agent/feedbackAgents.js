@@ -3,7 +3,7 @@
    (1) Each message gets a category, a subject (sender / receiver / merger) and a sentiment towards that subject.
        Whether it SUPPORTS the merger follows from those by a fixed rule (below), never from the model.
    (2) One agent per category summarises the concerns; the counts come from the database.
-   With an AI key the Gemini proxy does (1) and (2); without one, deterministic rules do. */
+   Step (1) is always hardcoded. With an AI key the Gemini proxy only writes the step (2) summaries; without one, rules do. */
 import { q, run } from '../db/sqlite.js';
 import { logCase } from '../ui/helpers.js';
 import { llmConfigured, llmJson } from './llm.js';
@@ -32,7 +32,36 @@ const MERGER = /(identity|should not close|not consulted|what will happen|mid-da
 const SENDER = /(pekhri|our village school|our school|building|collapse|here too)/i;
 const POS = /(good|better|will send|happy|support|more teachers)/i;
 const NEG = /(afraid|not |cannot|no regular|collapse|difficult|closed|steep|unsafe|never|kutcha|freez|washes away|stones|wild|alone|who will|leaves at|broke)/i;
+/* Hardcoded classification of every message in the demo data: [category, subject, sentiment]. Nothing is left to a model. */
+const T = 'Transportation', S = 'Safety', W = 'Terrain and weather', O = 'Others', SO = 'Social';
+const HARD = {
+  'After the bridge broke in 2025 the villagers built a wooden one themselves.': [W, 'receiver', 'negative'],
+  'Children are afraid while crossing the river.': [S, 'receiver', 'negative'],
+  'Children currently walk to the main road.': [T, 'receiver', 'neutral'],
+  'During heavy rain the route becomes difficult.': [W, 'receiver', 'negative'],
+  'Gushaini school has good rooms and toilets.': [O, 'receiver', 'positive'],
+  'If a vehicle is provided we will send the children to Gushaini.': [T, 'receiver', 'positive'],
+  'In the rains stones fall on the road; it stays closed for days.': [W, 'receiver', 'negative'],
+  'In winter mornings the path freezes.': [W, 'receiver', 'negative'],
+  'It is not right to send girls alone so far.': [S, 'receiver', 'negative'],
+  'Our village school is our identity.': [SO, 'merger', 'negative'],
+  'The Pekhri-2 building is about to collapse.': [S, 'sender', 'negative'],
+  'The Tirthan footbridge washes away every monsoon.': [W, 'receiver', 'negative'],
+  'The anganwadi is here too; it should not close.': [SO, 'merger', 'negative'],
+  'The bus to Gushaini leaves at 7 am; school starts at 9.': [T, 'receiver', 'negative'],
+  'The link road is kutcha; vehicles do not come up to the village.': [T, 'receiver', 'negative'],
+  'The panchayat was not consulted.': [SO, 'merger', 'negative'],
+  'The path goes through forest; wild animals are seen.': [S, 'receiver', 'negative'],
+  'There are more teachers there; studies will be better.': [O, 'receiver', 'positive'],
+  'There is a very steep climb below Kandi Dhar.': [W, 'receiver', 'negative'],
+  'There is no regular bus from our village at school time.': [T, 'receiver', 'negative'],
+  'We cannot pay taxi fare every day.': [T, 'receiver', 'negative'],
+  'What will happen to the mid-day meal?': [O, 'merger', 'neutral'],
+  'Who will go with the small children? We work in the fields.': [T, 'receiver', 'negative'],
+};
+/* Any message not in the table (for example one added in the inbox) is classified by keyword rules. */
 export function classifyByRules(text) {
+  const h = HARD[text]; if (h) return { category: h[0], subject: h[1], sentiment: h[2] };
   const category = (RULES.find(([, re]) => re.test(text)) || ['Others'])[0];
   const subject = MERGER.test(text) ? 'merger' : SENDER.test(text) ? 'sender' : 'receiver';
   const sentiment = MERGER.test(text) ? 'negative' : POS.test(text) && !NEG.test(text) ? 'positive' : NEG.test(text) ? 'negative' : 'neutral';
@@ -45,30 +74,12 @@ export const classified = cid => q('SELECT * FROM feedback_class WHERE case_id =
 const ORDER = "CASE category WHEN 'Transportation' THEN 0 WHEN 'Safety' THEN 1 WHEN 'Terrain and weather' THEN 2 WHEN 'Social' THEN 3 ELSE 4 END";
 export const concernsOf = cid => q(`SELECT * FROM concerns WHERE case_id = ? ORDER BY ${ORDER}`, [cid]).map(c => ({ ...c, points: JSON.parse(c.points || '[]') }));
 
-const SYSTEM_CLASSIFY = `You read citizen feedback about schools in Himachal Pradesh, where a school (the "sender") may be closed and its children moved to another (the "receiver"). The messages are about schools, not always about the merger.
-For each message give:
-- category, exactly one of: ${CATEGORIES.join(', ')}. Transportation = buses, vehicles, fares, escorts, the link road. Safety = fear, wild animals, girls travelling alone, unsafe buildings. Terrain and weather = rain, snow, rivers, bridges, steep paths, landslides. Social = community, panchayat, identity, anganwadi, trust. Others = everything else.
-- subject: "sender" (the school that may close), "receiver" (the school children would move to, or the route to it), or "merger" (the closure decision itself).
-- sentiment towards that subject: positive, negative or neutral.
-Return ONLY a JSON array: [{"id": <message id>, "category": "...", "subject": "...", "sentiment": "..."}]. Every id exactly once.`;
-
-/* Step 1: classify. Returns {by, note, n} */
-export async function runClassify(cid, onEvent = () => {}) {
+/* Step 1: classify. Deterministic (hardcoded table, then keyword rules); no model is involved. */
+export async function runClassify(cid) {
   const msgs = feedbackAbout(cid); run('DELETE FROM feedback_class WHERE case_id = ?', [cid]); run('DELETE FROM concerns WHERE case_id = ?', [cid]);
-  let by = 'rules', note = '', got = {};
-  if (llmConfigured() && msgs.length) {
-    try {
-      const texts = [...new Set(msgs.map(m => m.text_en))], ids = Object.fromEntries(texts.map((t, i) => [t, i + 1]));   // repeated sentences are classified once
-      onEvent({ label: `Asking Gemini to classify ${texts.length} distinct messages` });
-      const out = await llmJson({ system: SYSTEM_CLASSIFY, messages: [{ role: 'user', content: JSON.stringify(texts.map(t => ({ id: ids[t], text: t }))) }], max_tokens: 4096 });
-      const byId = {}; (Array.isArray(out) ? out : out.items || []).forEach(o => { if (CATEGORIES.includes(o.category) && SENTIMENTS.includes(o.sentiment) && SUBJECTS.includes(o.subject)) byId[o.id] = o; });
-      msgs.forEach(m => { if (byId[ids[m.text_en]]) got[m.fb_id] = byId[ids[m.text_en]]; });
-      by = 'gemini'; const miss = msgs.filter(m => !got[m.fb_id]).length; if (miss) note = `${miss} messages the model skipped were classified by rules`;
-    } catch (e) { note = `AI unavailable (${e.message}); rules used`; by = 'rules'; got = {}; }
-  }
-  msgs.forEach(m => { const r = got[m.fb_id] || classifyByRules(m.text_en); run('INSERT INTO feedback_class VALUES (?,?,?,?,?,?,?)', [cid, m.fb_id, r.category, r.subject, r.sentiment, stanceOf(r.subject, r.sentiment), got[m.fb_id] ? 'gemini' : 'rules']); });
-  logCase(cid, 'Agent', `Classified ${msgs.length} feedback messages`, `${by}${note ? ' · ' + note : ''}`);
-  return { by, note, n: msgs.length };
+  msgs.forEach(m => { const r = classifyByRules(m.text_en); run('INSERT INTO feedback_class VALUES (?,?,?,?,?,?,?)', [cid, m.fb_id, r.category, r.subject, r.sentiment, stanceOf(r.subject, r.sentiment), HARD[m.text_en] ? 'hardcoded' : 'rules']); });
+  logCase(cid, 'Agent', `Classified ${msgs.length} feedback messages`, 'hardcoded classification');
+  return { by: 'hardcoded', note: '', n: msgs.length };
 }
 
 const SYSTEM_SUMMARY = cat => `You are the ${CAT_AGENT[cat]} for PathShala, used by district education officers assessing a school merger in Himachal Pradesh. You receive citizen messages classified as "${cat}", each with a subject (sender = the school that may close, receiver = the school children would move to, merger = the decision) and a sentiment.
