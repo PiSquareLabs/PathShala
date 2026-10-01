@@ -1,0 +1,61 @@
+{
+  "evidence": [
+    {
+      "eid": "E1",
+      "kind": "feedback",
+      "status": "reported",
+      "label": "31 citizen responses mention transport",
+      "detail": "Community feedback, classified by theme",
+      "ref": "theme:Transport"
+    },
+    {
+      "eid": "E6",
+      "kind": "feedback",
+      "status": "verified",
+      "label": "19 citizen responses mention seasonal access",
+      "detail": "4 of them checked against a field observation",
+      "ref": "theme:Seasonal access"
+    },
+    {
+      "eid": "E8",
+      "kind": "field",
+      "status": "verified",
+      "label": "Field evidence: seasonal bridge issue",
+      "detail": "Footbridge at Baridropa–Jawal washed away on 13 Aug 2025; villagers rebuilt a wooden bridge. Not safe in heavy rain. (JE, PWD Banjar (reported in The Tribune), 2025-08-20)",
+      "ref": "obs:F1"
+    },
+    {
+      "eid": "E9",
+      "kind": "feedback",
+      "status": "reported",
+      "label": "14 citizen responses mention safety",
+      "detail": "",
+      "ref": "theme:Safety"
+    },
+    {
+      "eid": "E13",
+      "kind": "field",
+      "status": "verified",
+      "label": "Pekhri-2 school building in poor condition; needs demolition and replacement.",
+      "detail": "Reported by vice-pradhan (The Tribune), 2026-09-02",
+      "ref": "obs:F2"
+    }
+  ],
+  "metrics": {
+    "responses": 87,
+    "themes": {
+      "Transport": 31,
+      "Seasonal access": 19,
+      "Safety": 14,
+      "Facilities": 7,
+      "Other": 16
+    },
+    "recurring": [
+      "Transport",
+      "Seasonal access",
+      "Safety",
+      "Facilities"
+    ],
+    "field_observations": 2
+  }
+}

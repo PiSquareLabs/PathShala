@@ -1,0 +1,24 @@
+{
+  "name": "pathshala",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "seed": "python3 data/build_seed.py && cp data/seed.sql src/db/seed.sql",
+    "test": "playwright test",
+    "pages": "vite build && cp dist/index.html index.html"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "leaflet": "^1.9.4",
+    "sql.js": "^1.14.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "vite": "^6.0.0",
+    "vite-plugin-singlefile": "^2.3.3"
+  }
+}

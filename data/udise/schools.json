@@ -1,0 +1,502 @@
+{
+  "GMS_NAHIN": {
+    "udise_code": "02040401411",
+    "name": "GMS NAHIN",
+    "district": "Kullu",
+    "block": "Banjar",
+    "cluster": "GSSS GUSHANI",
+    "panchayat": "Pekhri",
+    "category": "Upper Primary only",
+    "classes": "6-8",
+    "pre_primary_section": null,
+    "established": 2006,
+    "anganwadi_at_premises": null,
+    "building_status": "3-Government",
+    "all_weather_road": true,
+    "ramps": true,
+    "handrails": true,
+    "toilets_boys": 1,
+    "toilets_girls": 1,
+    "toilets_boys_func": 1,
+    "toilets_girls_func": 1,
+    "toilets_cwsn_friendly": 0,
+    "classrooms": 3,
+    "rooms_good": 0,
+    "rooms_minor": 0,
+    "rooms_major": 0,
+    "drinking_water": true,
+    "electricity": true,
+    "library": true,
+    "playground": true,
+    "internet": false,
+    "transport_pri": 0,
+    "transport_upr": 1,
+    "grant_receipt": 17500.0,
+    "grant_spent": 17500.0,
+    "teachers_regular": 2,
+    "teachers": 3,
+    "by_class": {
+      "Pre-Pri": {
+        "boys": 0,
+        "girls": 0
+      },
+      "I": {
+        "boys": 0,
+        "girls": 0
+      },
+      "II": {
+        "boys": 0,
+        "girls": 0
+      },
+      "III": {
+        "boys": 0,
+        "girls": 0
+      },
+      "IV": {
+        "boys": 0,
+        "girls": 0
+      },
+      "V": {
+        "boys": 0,
+        "girls": 0
+      },
+      "VI": {
+        "boys": 5,
+        "girls": 5
+      },
+      "VII": {
+        "boys": 4,
+        "girls": 2
+      },
+      "VIII": {
+        "boys": 7,
+        "girls": 3
+      },
+      "IX": {
+        "boys": 0,
+        "girls": 0
+      },
+      "X": {
+        "boys": 0,
+        "girls": 0
+      },
+      "XI": {
+        "boys": 0,
+        "girls": 0
+      },
+      "XII": {
+        "boys": 0,
+        "girls": 0
+      }
+    },
+    "boys": 16,
+    "girls": 10,
+    "enrol_total": 26,
+    "enrol_preprimary": 0,
+    "enrol_primary": 0,
+    "enrol_upper_primary": 26,
+    "cwsn": 0,
+    "bpl": 4,
+    "year": "2025-26"
+  },
+  "GPS_DOBHI": {
+    "udise_code": "02040100401",
+    "name": "GPS DOBHI",
+    "district": "Kullu",
+    "block": "Naggar",
+    "cluster": "GMSSS KATRAIN",
+    "panchayat": "Mandalgarh",
+    "category": "Primary",
+    "classes": "1-5",
+    "pre_primary_section": true,
+    "established": 1997,
+    "anganwadi_at_premises": true,
+    "building_status": "3-Government",
+    "all_weather_road": true,
+    "ramps": true,
+    "handrails": true,
+    "toilets_boys": 1,
+    "toilets_girls": 2,
+    "toilets_boys_func": 1,
+    "toilets_girls_func": 2,
+    "toilets_cwsn_friendly": 2,
+    "classrooms": 3,
+    "rooms_good": 3,
+    "rooms_minor": 0,
+    "rooms_major": 0,
+    "drinking_water": true,
+    "electricity": true,
+    "library": true,
+    "playground": true,
+    "internet": false,
+    "transport_pri": 0,
+    "transport_upr": 0,
+    "grant_receipt": 26625.0,
+    "grant_spent": 26625.0,
+    "teachers_regular": 2,
+    "teachers": 2,
+    "by_class": {
+      "Pre-Pri": {
+        "boys": 6,
+        "girls": 10
+      },
+      "I": {
+        "boys": 2,
+        "girls": 8
+      },
+      "II": {
+        "boys": 0,
+        "girls": 2
+      },
+      "III": {
+        "boys": 5,
+        "girls": 1
+      },
+      "IV": {
+        "boys": 4,
+        "girls": 1
+      },
+      "V": {
+        "boys": 1,
+        "girls": 2
+      },
+      "VI": {
+        "boys": 0,
+        "girls": 0
+      },
+      "VII": {
+        "boys": 0,
+        "girls": 0
+      },
+      "VIII": {
+        "boys": 0,
+        "girls": 0
+      },
+      "IX": {
+        "boys": 0,
+        "girls": 0
+      },
+      "X": {
+        "boys": 0,
+        "girls": 0
+      },
+      "XI": {
+        "boys": 0,
+        "girls": 0
+      },
+      "XII": {
+        "boys": 0,
+        "girls": 0
+      }
+    },
+    "boys": 18,
+    "girls": 24,
+    "enrol_total": 42,
+    "enrol_preprimary": 16,
+    "enrol_primary": 26,
+    "enrol_upper_primary": 0,
+    "cwsn": 0,
+    "bpl": 4,
+    "year": "2025-26"
+  },
+  "GPS_JANA": {
+    "udise_code": "02040102501",
+    "name": "GPS JANA",
+    "district": "Kullu",
+    "block": "Naggar",
+    "cluster": "GSSS JANNA",
+    "panchayat": "Jana",
+    "category": "Primary",
+    "classes": "1-5",
+    "pre_primary_section": true,
+    "established": 1954,
+    "anganwadi_at_premises": false,
+    "building_status": "3-Government",
+    "all_weather_road": true,
+    "ramps": true,
+    "handrails": true,
+    "toilets_boys": 2,
+    "toilets_girls": 1,
+    "toilets_boys_func": 2,
+    "toilets_girls_func": 1,
+    "toilets_cwsn_friendly": 0,
+    "classrooms": 6,
+    "rooms_good": 0,
+    "rooms_minor": 0,
+    "rooms_major": 0,
+    "drinking_water": true,
+    "electricity": true,
+    "library": true,
+    "playground": true,
+    "internet": true,
+    "transport_pri": 0,
+    "transport_upr": 0,
+    "grant_receipt": 48125.0,
+    "grant_spent": 48125.0,
+    "teachers_regular": 5,
+    "teachers": 5,
+    "by_class": {
+      "Pre-Pri": {
+        "boys": 9,
+        "girls": 13
+      },
+      "I": {
+        "boys": 8,
+        "girls": 4
+      },
+      "II": {
+        "boys": 4,
+        "girls": 2
+      },
+      "III": {
+        "boys": 9,
+        "girls": 6
+      },
+      "IV": {
+        "boys": 12,
+        "girls": 5
+      },
+      "V": {
+        "boys": 6,
+        "girls": 10
+      },
+      "VI": {
+        "boys": 0,
+        "girls": 0
+      },
+      "VII": {
+        "boys": 0,
+        "girls": 0
+      },
+      "VIII": {
+        "boys": 0,
+        "girls": 0
+      },
+      "IX": {
+        "boys": 0,
+        "girls": 0
+      },
+      "X": {
+        "boys": 0,
+        "girls": 0
+      },
+      "XI": {
+        "boys": 0,
+        "girls": 0
+      },
+      "XII": {
+        "boys": 0,
+        "girls": 0
+      }
+    },
+    "boys": 48,
+    "girls": 40,
+    "enrol_total": 88,
+    "enrol_preprimary": 22,
+    "enrol_primary": 66,
+    "enrol_upper_primary": 0,
+    "cwsn": 0,
+    "bpl": 5,
+    "year": "2025-26"
+  },
+  "GPS_JIYANI": {
+    "udise_code": "02040202403",
+    "name": "GPS JIYANI",
+    "district": "Kullu",
+    "block": "Kullu-II",
+    "cluster": "GSSS BAGAN",
+    "panchayat": "Bhumteer",
+    "category": "Primary",
+    "classes": "1-5",
+    "pre_primary_section": false,
+    "established": 1998,
+    "anganwadi_at_premises": false,
+    "building_status": "3-Government",
+    "all_weather_road": true,
+    "ramps": true,
+    "handrails": true,
+    "toilets_boys": 1,
+    "toilets_girls": 1,
+    "toilets_boys_func": 1,
+    "toilets_girls_func": 1,
+    "toilets_cwsn_friendly": 0,
+    "classrooms": 2,
+    "rooms_good": 0,
+    "rooms_minor": 0,
+    "rooms_major": 0,
+    "drinking_water": true,
+    "electricity": true,
+    "library": true,
+    "playground": true,
+    "internet": true,
+    "transport_pri": 0,
+    "transport_upr": 0,
+    "grant_receipt": 1125.0,
+    "grant_spent": 1125.0,
+    "teachers_regular": 1,
+    "teachers": 1,
+    "by_class": {
+      "Pre-Pri": {
+        "boys": 0,
+        "girls": 0
+      },
+      "I": {
+        "boys": 1,
+        "girls": 1
+      },
+      "II": {
+        "boys": 0,
+        "girls": 0
+      },
+      "III": {
+        "boys": 1,
+        "girls": 0
+      },
+      "IV": {
+        "boys": 0,
+        "girls": 0
+      },
+      "V": {
+        "boys": 1,
+        "girls": 1
+      },
+      "VI": {
+        "boys": 0,
+        "girls": 0
+      },
+      "VII": {
+        "boys": 0,
+        "girls": 0
+      },
+      "VIII": {
+        "boys": 0,
+        "girls": 0
+      },
+      "IX": {
+        "boys": 0,
+        "girls": 0
+      },
+      "X": {
+        "boys": 0,
+        "girls": 0
+      },
+      "XI": {
+        "boys": 0,
+        "girls": 0
+      },
+      "XII": {
+        "boys": 0,
+        "girls": 0
+      }
+    },
+    "boys": 3,
+    "girls": 2,
+    "enrol_total": 5,
+    "enrol_preprimary": 0,
+    "enrol_primary": 5,
+    "enrol_upper_primary": 0,
+    "cwsn": 0,
+    "bpl": 0,
+    "year": "2025-26"
+  },
+  "GPS_SOYAL": {
+    "udise_code": "02040100501",
+    "name": "GPS SOYAL",
+    "district": "Kullu",
+    "block": "Naggar",
+    "cluster": "PM SHRI GSSS HARIPUR",
+    "panchayat": "Soyal",
+    "category": "Primary",
+    "classes": "1-5",
+    "pre_primary_section": true,
+    "established": 1997,
+    "anganwadi_at_premises": false,
+    "building_status": "3-Government",
+    "all_weather_road": true,
+    "ramps": true,
+    "handrails": true,
+    "toilets_boys": 1,
+    "toilets_girls": 1,
+    "toilets_boys_func": 1,
+    "toilets_girls_func": 1,
+    "toilets_cwsn_friendly": 0,
+    "classrooms": 3,
+    "rooms_good": 2,
+    "rooms_minor": 1,
+    "rooms_major": 0,
+    "drinking_water": true,
+    "electricity": true,
+    "library": true,
+    "playground": true,
+    "internet": false,
+    "transport_pri": 0,
+    "transport_upr": 0,
+    "grant_receipt": 22125.0,
+    "grant_spent": 22125.0,
+    "teachers_regular": 1,
+    "teachers": 2,
+    "by_class": {
+      "Pre-Pri": {
+        "boys": 3,
+        "girls": 7
+      },
+      "I": {
+        "boys": 4,
+        "girls": 2
+      },
+      "II": {
+        "boys": 1,
+        "girls": 3
+      },
+      "III": {
+        "boys": 3,
+        "girls": 4
+      },
+      "IV": {
+        "boys": 0,
+        "girls": 2
+      },
+      "V": {
+        "boys": 1,
+        "girls": 4
+      },
+      "VI": {
+        "boys": 0,
+        "girls": 0
+      },
+      "VII": {
+        "boys": 0,
+        "girls": 0
+      },
+      "VIII": {
+        "boys": 0,
+        "girls": 0
+      },
+      "IX": {
+        "boys": 0,
+        "girls": 0
+      },
+      "X": {
+        "boys": 0,
+        "girls": 0
+      },
+      "XI": {
+        "boys": 0,
+        "girls": 0
+      },
+      "XII": {
+        "boys": 0,
+        "girls": 0
+      }
+    },
+    "boys": 12,
+    "girls": 22,
+    "enrol_total": 34,
+    "enrol_preprimary": 10,
+    "enrol_primary": 24,
+    "enrol_upper_primary": 0,
+    "cwsn": 2,
+    "bpl": 0,
+    "year": "2025-26"
+  }
+}

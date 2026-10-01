@@ -1,0 +1,43 @@
+{
+  "sentences": [
+    {
+      "text": "The proposed consolidation of GPS Pekhri-2 into GPS Gushaini would affect 24 students from 4 habitations.",
+      "refs": [
+        "E4",
+        "E11",
+        "E15"
+      ]
+    },
+    {
+      "text": "The receiving school is approximately 3.8 km away by road (about 19 minutes by vehicle); the footpath is 4.6 km, an estimated 82 minutes for a young child.",
+      "refs": [
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "text": "Community feedback identifies transport (31 responses) and seasonal access (19) as recurring concerns, and field evidence reports a seasonal bridge issue on the walking route.",
+      "refs": [
+        "E1",
+        "E6",
+        "E8"
+      ]
+    },
+    {
+      "text": "Field verification confirms the river crossing is not reliably passable in heavy rain.",
+      "refs": [
+        "E14"
+      ]
+    },
+    {
+      "text": "Public transport is not available at school arrival and departure times.",
+      "refs": [
+        "E5"
+      ]
+    },
+    {
+      "text": "No intervention has been selected yet.",
+      "refs": []
+    }
+  ]
+}

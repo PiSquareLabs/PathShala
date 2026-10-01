@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pathshala.local/schemas/evidence_update.json",
+  "title": "EvidenceUpdate",
+  "type": "object",
+  "required": [
+    "evidence_changes",
+    "finding_changes",
+    "new_evidence"
+  ],
+  "properties": {
+    "evidence_changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "eid",
+          "status"
+        ],
+        "properties": {
+          "eid": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "reported",
+              "verified",
+              "calculated",
+              "needs"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "finding_changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "fid",
+          "status"
+        ],
+        "properties": {
+          "fid": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "new_evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "evidence.json"
+      }
+    }
+  }
+}

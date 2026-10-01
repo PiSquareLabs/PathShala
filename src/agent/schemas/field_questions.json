@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pathshala.local/schemas/field_questions.json",
+  "title": "FieldQuestions",
+  "type": "object",
+  "required": [
+    "questions"
+  ],
+  "properties": {
+    "questions": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "required": [
+          "qid",
+          "text",
+          "type",
+          "gap"
+        ],
+        "properties": {
+          "qid": {
+            "type": "string",
+            "pattern": "^Q[0-9]+$"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "enum": [
+              "choice",
+              "number",
+              "minutes",
+              "evidence"
+            ]
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "gap": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

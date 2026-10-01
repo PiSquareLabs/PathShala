@@ -1,0 +1,80 @@
+{
+  "evidence": [
+    {
+      "eid": "E2",
+      "kind": "gis",
+      "status": "calculated",
+      "label": "Walk 4.6 km, about 82 min for a young child",
+      "detail": "Tobler's hiking function on the route profile, child pace × 0.75; 108 m up, 238 m down",
+      "ref": "route"
+    },
+    {
+      "eid": "E3",
+      "kind": "gis",
+      "status": "calculated",
+      "label": "Road 3.8 km, about 19 min by vehicle",
+      "detail": "Road route along the Pekhri link road and the valley road",
+      "ref": "route"
+    },
+    {
+      "eid": "E4",
+      "kind": "data",
+      "status": "calculated",
+      "label": "4 habitations served",
+      "detail": "Pekhri (1725 m), Jawal (1560 m, no road), Baridropa (1500 m), Kandi Dhar (1840 m, no road)",
+      "ref": "habitations"
+    },
+    {
+      "eid": "E5",
+      "kind": "transport",
+      "status": "needs",
+      "label": "Public transport at school times",
+      "detail": "Data unavailable: no timetable source is connected. Confirm on the field visit.",
+      "ref": "transport"
+    },
+    {
+      "eid": "E7",
+      "kind": "gis",
+      "status": "calculated",
+      "label": "Walking route crosses Baridropa–Jawal footbridge",
+      "detail": "Pedestrian bridge damaged in 2023 floods; temporary wooden bridges washed away, including on 13 Aug 2025; villagers rebuilt it a third time. Season: Monsoon (Jul–Sep)",
+      "ref": "feature:BR1"
+    },
+    {
+      "eid": "E10",
+      "kind": "gis",
+      "status": "calculated",
+      "label": "0.7 km of path steeper than 15%",
+      "detail": "Steepest stretch 16%",
+      "ref": "route"
+    },
+    {
+      "eid": "E11",
+      "kind": "data",
+      "status": "calculated",
+      "label": "27 students on roll: 27 in Classes 1–5, 0 pre-primary",
+      "detail": "School record (UDISE+)",
+      "ref": "school:PK2"
+    },
+    {
+      "eid": "E12",
+      "kind": "data",
+      "status": "calculated",
+      "label": "97 seats available at GPS Gushaini",
+      "detail": "Capacity 240, enrolled 143",
+      "ref": "school:GSH"
+    }
+  ],
+  "metrics": {
+    "students": 27,
+    "habitations": 4,
+    "walk_km": 4.6,
+    "walk_min": 82,
+    "road_km": 3.8,
+    "road_min": 19,
+    "steep_km": 0.7,
+    "max_slope_pct": 16,
+    "route_surveyed": true,
+    "seats_available": 97
+  }
+}

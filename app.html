@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PathShala Merge Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500&display=swap">
+</head>
+<body>
+<header class="bar">
+  <div class="bar-in">
+    <a class="brand" href="#/"><b>PathShala</b></a>
+    <nav id="nav" aria-label="Sections">
+      <a href="#/" data-v="home">Investigate</a>
+      <a href="#/merges" data-v="merges">Merges</a>
+    </nav>
+    <details class="menu" id="more">
+      <summary data-v="more">More</summary>
+      <div class="menu-pop">
+        <a href="#/inbox" data-v="inbox">Feedback inbox</a>
+        <a href="#/ai" data-v="ai">AI connection</a>
+        <a href="#/rules" data-v="rules">Rules</a>
+        <a href="#/sql" data-v="sql">SQLite console</a>
+        <div class="menu-foot"><span id="dbstat"><span class="led"></span>Loading SQLite…</span><button class="btn sm" id="reset" title="Throw away changes and reload the demo data">Reset demo</button></div>
+      </div>
+    </details>
+  </div>
+</header>
+
+<main id="app">
+  <div class="loading" id="loading"><div><b>Starting SQLite in your browser…</b></div><div class="small">The whole app, including the rules engine, runs on this page.</div></div>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
