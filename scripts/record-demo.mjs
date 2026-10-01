@@ -11,9 +11,11 @@ const key = t => createHash('sha1').update(t).digest('hex').slice(0, 12);
 const dur = existsSync('docs/demo/tts/durations.json') ? JSON.parse(readFileSync('docs/demo/tts/durations.json', 'utf8')) : {};
 const base = process.argv[2] || 'http://localhost:4175/';
 const W = 1280, H = 720;
-const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM });
+const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM, proxy: process.env.HTTPS_PROXY ? { server: process.env.HTTPS_PROXY, bypass: 'localhost,127.0.0.1' } : undefined });
 const ctx = await browser.newContext({ viewport: { width: W, height: H }, ...(DRY ? {} : { recordVideo: { dir: 'docs/demo/raw', size: { width: W, height: H } } }) });
 const page = await ctx.newPage();
+// public news pages are fetched by Node (which trusts the proxy CA) and handed to the browser; the app itself is served locally
+await ctx.route(u => !u.href.startsWith(base) && /^https?:/.test(u.protocol), async r => { try { await r.fulfill({ response: await r.fetch({ timeout: 30000 }) }); } catch (e) { await r.abort(); } });
 const t0 = Date.now();
 await page.addInitScript(() => {
   const mk = () => {
@@ -46,110 +48,98 @@ const scrollTo = async (loc, block = 'center') => { await loc.first().evaluate((
 const step = name => page.locator('.steps a', { hasText: name });
 const tab = name => page.locator('.opttabs button', { hasText: name });
 
-await page.goto(base); await page.waitForSelector('#hmap'); await hold(500);
-await card('PathShala', 'A multilingual citizen-feedback platform that turns fragmented development requests into evidence for public investment decisions. Demonstrated on school consolidation in Himachal Pradesh, India. BRICS theme: Innovation.', 7000);
-await card('The problem', 'Citizen feedback lives in fragmented channels: WhatsApp, calls, gram sabhas, portals. It is rarely aligned with infrastructure data, so spending is misaligned and gaps go unaddressed.', 6500);
-// intake: multilingual, multi-channel
-await cap('INTAKE: requests arrive by WhatsApp, phone, gram sabha and portal, in Hindi or English.', 3500);
-await page.evaluate(() => { location.hash = '#/inbox'; }); await page.waitForSelector('#fb-t'); await hold(1200);
-await click(page.locator('.samples button').first(), 1500);
-await cap('A Hindi WhatsApp message is structured on arrival: issue, sentiment, severity and language.', 4500);
-await scrollTo(page.locator('#fb-cls'), 'center'); await hold(2500);
-await page.evaluate(() => { location.hash = '#/'; }); await page.waitForSelector('#hmap'); await hold(1200);
-await cap('Now the analysis: an officer investigates one proposed school closure.', 3000);
 
-// 1. pick sender, several receivers
-await cap('Data from UDISE+ (India school register) sets the context: GPS Pekhri-2, 27 students, building in poor condition.', 3500);
-await click(page.locator('.srow[data-s="PK2"]'), 1200);
-await cap('Then ticks SEVERAL receiving schools to compare side by side.', 2500);
-await click(page.locator('.pickrow[data-b="GSH"] input'), 500); await click(page.locator('.pickrow[data-b="NGN"] input'), 800);
-await click(page.locator('#cp-go'), 1500);
-
-// 2. compare
-await cap('Compare: distance, climb, hazards, free seats and facilities. Every row names its data source.', 3500);
-await scrollTo(page.locator('.cmptbl'), 'start'); await hold(2500);
-await cap('Nothing is chosen yet. The choice comes last, after field answers and costs.', 3000);
-
-// 3. FEEDBACK
-await click(step('Feedback'), 1500);
-await cap('THE FEEDBACK STEP: what do citizens say about these schools?', 3000);
-await cap('Messages about BOTH the closing and the receiving school are pooled. They are about schools, not always about merging.', 4000);
-await click(tab('Gushaini'), 1200);
-await cap('GPS Gushaini: 87 citizen messages, in Hindi and English, from villagers, parents and SMC members.', 3500);
-await click(page.locator('#fb-classify'), 1500);
-await cap('Step 1: every message is classified, with a fixed hardcoded table: Transportation, Safety, Terrain and weather, Social, Others.', 4500);
-await scrollTo(page.locator('#cats'), 'center'); await hold(1500);
-await cap('Each message also gets a sentiment, and a stance: does it support merging, or not?', 3500);
-await click(page.locator('.cat', { hasText: 'Transportation' }), 1200);
-await scrollTo(page.locator('#fb-Transportation .msg'), 'center'); await hold(1500);
-await cap('Good about the receiving school, or bad about the closing school, supports merging. The reverse does not. A rule decides this, never a model.', 5500);
-await scrollTo(page.locator('.stanceall'), 'center'); await hold(2000);
-await cap('Overall stance of the community, at a glance.', 2500);
-
-await scrollTo(page.locator('#fb-agents'), 'center');
-await cap('Step 2: one agent per category summarises the concerns. Gemini writes the summaries when connected; the counts always come from the database.', 5000);
-await click(page.locator('#fb-agents'), 1500);
-await scrollTo(page.locator('.ctile').first(), 'center'); await hold(3500);
-await cap('Transport, Safety, Terrain and weather, Social, Others: each with a verdict, a summary and its main concerns.', 4500);
-await click(tab('Nagini'), 1200);
-await cap('GPS Nagini has its own feedback. Each candidate school is judged on its own messages.', 3500);
-await click(page.locator('#fb-classify'), 1000); await click(page.locator('#fb-agents'), 1500);
-await scrollTo(page.locator('.ctile').first(), 'center'); await hold(3000);
-
-// 4. evidence carries the concerns and shows demand hotspots
-await click(step('Evidence'), 1500);
-await cap('The concerns are carried forward into the Evidence step...', 3000);
-await click(tab('Gushaini'), 1000);
-await scrollTo(page.locator('#concerns'), 'start'); await hold(3000);
-await cap('Citizen demand by habitation: click a theme to see where it concentrates. These are the demand hotspots.', 3500);
-await scrollTo(page.locator('.themes'), 'center'); await click(page.locator('.theme').first(), 1500);
-await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })); await hold(2500);
-await cap('Hotspot map: circles grow with the number of responses from each habitation.', 3500);
-
-// 5. investigate
-await click(step('Investigate'), 1200);
-await cap('...and into the investigation. Agents check students, routes, map layers, transport and gaps. Every step is a visible tool call.', 4500);
-await click(page.locator('#ag-run-all'), 500);
-await cap('Running all schools...', 1000);
-await page.waitForSelector('.fq', { timeout: 120000 }); await hold(1500);
-await scrollTo(page.locator('#findings'), 'start'); await hold(2500);
-await cap('Findings are only potential issues until the officer verifies them in the field.', 3500);
-await scrollTo(page.locator('#fq'), 'start');
-await cap('Targeted field questions, specific to this route. The officer answers them.', 3000);
-const answer = async () => {
-  await click(page.locator('.fq[data-q="Q1"] .opts button', { hasText: 'No' }), 300);
-  await page.locator('.fq[data-q="Q2"] .fv').fill('20'); await hold(300);
-  await click(page.locator('.fq[data-q="Q3"] .opts button', { hasText: 'No' }), 300);
-  await page.locator('.fq[data-q="Q4"] .fv').fill('45'); await hold(300);
-  await click(page.locator('.fq[data-q="Q5"] .opts button', { hasText: 'Photo' }), 300);
-  await click(page.locator('#fq-go'), 1500);
+const badge = async t => page.evaluate(t => { let b = document.getElementById('srcb'); if (!b) { b = document.createElement('div'); b.id = 'srcb'; b.style.cssText = 'position:fixed;top:14px;right:14px;z-index:99999;background:#f5b301;color:#111;font:700 18px system-ui,sans-serif;padding:8px 14px;border-radius:10px'; document.body.appendChild(b); } b.textContent = t; b.style.display = t ? 'block' : 'none'; }, t);
+/* A real public news article: headline first, then a slow scroll to the first paragraphs. */
+const news = async (url, source, text, ms = 7000) => {
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => {}); await hold(3500);
+  await page.evaluate(() => { document.querySelectorAll('[class*="popup"],[class*="modal"],[id*="consent"],[class*="cookie"]').forEach(e => { e.style.display = 'none'; }); window.scrollTo(0, 0); });
+  await badge(source); await cap(text, ms);
+  await page.evaluate(() => window.scrollTo({ top: 520, behavior: 'smooth' })); await hold(1800); await badge('');
 };
-await answer(); await cap('Answers update the evidence: reported claims become verified.', 3000);
-await click(tab('Nagini'), 1000); await scrollTo(page.locator('#fq'), 'start'); await answer();
+const waitShow = async sel => { await page.waitForSelector(sel, { timeout: 240000 }); await hold(600); };
+const nowOn = async () => { const p = page.locator('#fc-pause'); if (await p.count() && /Pause/.test(await p.innerText())) await p.click(); };
 
-// 6. policy
-await click(step('Policy'), 1500);
-await cap('Policy and cost: interventions come from retrieved government policy text; costs come from a calculator, never a model.', 4500);
-await click(page.locator('.ivsel input').first(), 1000);
-await click(tab('Gushaini'), 1000); await click(page.locator('.ivsel input').first(), 1000);
-await scrollTo(page.locator('#opt-wrap'), 'center'); await hold(2500);
-await cap('Total cost of each option, side by side.', 2500);
+// ---------- 1. title and the real-world problem ----------
+await page.goto(base); await page.waitForSelector('#hmap'); await hold(500);
+await card('PathShala', 'A multilingual citizen-feedback platform that turns fragmented development requests into evidence for public investment decisions. Shown on school consolidation in Himachal Pradesh, India. BRICS theme: Innovation. A Digital Public Good.', 8000);
+await card('The problem is real', 'Governments are merging and closing small schools. Here is what the news says.', 4500);
+await news('https://thenewshimachal.com/2025/06/103-zero-admission-schools-in-himachal-to-be-closed-443-others-merged/', 'Source: The News Himachal, 7 June 2025', 'June 2025: Himachal decides to close 103 schools with no students and to merge 443 schools that have ten or fewer students into schools two to five kilometres away.', 9000);
+await news('https://www.tribuneindia.com/news/himachal/villagers-join-hands-to-set-up-wooden-bridge-over-tirthan-river-for-third-time/amp', 'Source: The Tribune, 21 September 2025', 'But the way to the new school matters. In the Tirthan valley, villagers rebuilt a wooden bridge over the river on their own, for the third time, after floods washed it away.', 9000);
+await news('https://www.tribuneindia.com/news/himachal/unsafe-schools-of-tirthan-valley/', 'Source: The Tribune, 2 September 2026', 'And the buildings are unsafe. At Government Middle School Nahin, twenty-one students sit in classes under three tin sheds, and the building was declared unsafe last year.', 9000);
+await news('https://www.livelaw.in/high-court/himachal-pradesh-high-court/hp-high-court-upholds-merger-government-middle-school-551937', 'Source: LiveLaw, 26 September 2026', 'Courts now ask about access. The High Court upheld one merger because the new school was just one and a half kilometres away by road, and five hundred metres on foot.', 9000);
+await card('The gap', 'Officers must decide with feedback scattered across WhatsApp, phone calls, gram sabhas and portals, and almost never lined up with the map, the hazards, the policy or the cost. PathShala closes that gap.', 8500);
 
-// 7. choose + report
-await click(step('Report'), 1500);
-await cap('Only now does the officer choose ONE school, with evidence and costs in view.', 3500);
-await click(page.locator('[data-final]', { hasText: 'Choose' }).first(), 1500);
-await scrollTo(page.locator('#rp-text'), 'center'); await hold(1500);
-await cap('The report draft cites its evidence. The community feedback summaries reach the report, with their stance counts.', 5000);
-await page.locator('#rp-text').evaluate(e => { e.scrollTop = e.scrollHeight; }); await hold(2500);
-await cap('A critic agent checks every sentence has a reference and no invented numbers. The officer decides and submits.', 4500);
+// ---------- 2. multilingual intake ----------
+await page.goto(base + '#/inbox'); await page.waitForSelector('#fb-t'); await hold(1200);
+await cap('Step one: citizens speak in their own language. A Hindi WhatsApp message is read and structured on arrival: the issue, the sentiment, how serious it is.', 6500);
+await click(page.locator('.samples button').first(), 1500);
+await scrollTo(page.locator('#fb-cls'), 'center'); await hold(2500);
 
-// 8. sources + close
-await page.evaluate(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })); await hold(1200);
-await page.locator('#srcs summary').click(); await hold(500);
-await cap('Every page lists its data sources. Synthesised data names PathShala as the source.', 4500);
-await card('What is built', 'Multilingual intake, hardcoded classification with stance, per-category agents, hotspot maps, policy-linked project options with costs, and a report that cites its evidence. Open source, no server needed: it runs in the browser.', 7500);
-await card('Next: scale to BRICS', 'Add national demographic and infrastructure indices and public investment plans as data layers, voice transcription, and more languages (Portuguese, Russian, Chinese, Hindi, Arabic and others) using the same pipeline.', 7500);
+// ---------- 3. Full control on GPS Kasta ----------
+await page.goto(base + '#/'); await page.waitForSelector('#hmap'); await hold(1200);
+await cap('Now the investigation. The officer chooses Full control: pick one school, and the AI does the research.', 5500);
+await click(page.locator('#mode-full'), 900);
+await cap('GPS Kasta has twenty-two students on a steep hillside. The AI will pick its best candidate schools.', 5000);
+await click(page.locator('#demo-school'), 1000);
+await cap('The officer only chooses the closing school. Everything else is the AI.', 4000);
+await click(page.locator('#cp-full'), 1500);
+await waitShow('#fc-banner'); await nowOn();
+await cap('The AI picked three candidate schools: Dobhi, Kukari and Soyal. It has already started researching them in the background.', 6500);
+await scrollTo(page.locator('.cmptbl'), 'start'); await hold(2000);
+await click(page.locator('#fc-now'), 800);
+
+// feedback
+await waitShow('.fbrow');
+await cap('The feedback step. The AI read what parents and villagers say about each school and sorted it into transportation, safety, terrain and weather, social and others.', 7500);
+await scrollTo(page.locator('.fbrow').first(), 'start'); await hold(2500);
+await cap('Each category shows who supports merging and who does not. These are real concerns, grouped, not a pile of messages.', 5500);
+await click(page.locator('.opttabs button').nth(1), 1500); await hold(2000);
+await cap('Every school has different feedback, because every school has different ground: rivers, snow, landslides, roads.', 5500);
+await waitShow('#fc-now'); await click(page.locator('#fc-now'), 800);
+
+// evidence
+await waitShow('#rs-transportPlanner .rstep');
+await cap('The evidence step. Here the AI plans how the children could travel, and shows its work in plain words: why it looked, and what it found.', 7000);
+await scrollTo(page.locator('#rs-transportPlanner .rstep').first(), 'start'); await hold(3500);
+await cap('It studied the geography around both schools, the road route, the bus timetable, pickup stops, the government rules and the cost.', 7000);
+await waitShow('#fc-now'); await click(page.locator('#fc-now'), 800);
+
+// investigate: field form
+await waitShow('#fc-form');
+await cap('Now the only stop. The AI wrote a short field form for each school, with questions from that school’s own terrain. The field officer fills it in.', 7500);
+await scrollTo(page.locator('#fc-form'), 'start'); await hold(2500);
+await click(page.locator('#fc-demo-fill'), 1500);
+await cap('For the demo we fill in sample answers: a river crossing passable, a bus available, how many children use the route.', 6000);
+await scrollTo(page.locator('#fc-submit'), 'center'); await hold(1500);
+await click(page.locator('#fc-submit'), 1500);
+await cap('The AI now updates the picture with those answers.', 3000);
+await waitShow('#fc-now'); await click(page.locator('#fc-now'), 800);
+
+// policy
+await waitShow('.aiwhy');
+await cap('Policy and cost. The AI picks the best policies for each school, and explains why it chose each one, or why not.', 6500);
+await scrollTo(page.locator('.aiwhy').first(), 'center'); await hold(3000);
+await cap('The officer can change anything. Untick a policy, and the report will use the officer’s choice.', 5500);
+const first = page.locator('.ivsel input:checked').first(); if (await first.count()) { await click(first, 1200); await click(first, 1200); }
+await waitShow('#fc-now'); await click(page.locator('#fc-now'), 800);
+
+// report
+await waitShow('.fcrec');
+await cap('The final report. The AI compares all the schools and gives the reason for its recommendation, in plain words. It is a suggestion; the officer decides.', 8000);
+await scrollTo(page.locator('.fcrec'), 'start'); await hold(3500);
+await scrollTo(page.locator('#fc-compare'), 'start');
+await cap('Side by side: walking time, terrain on the way, confirmed concerns, community support, and the cost of the chosen policies.', 6500);
+await hold(2500);
+await click(page.locator('#fc-score-fold summary'), 1200);
+await cap('And the working is open to inspect: how each school scored on each criterion.', 4500);
+await scrollTo(page.locator('#fc-budget'), 'start');
+await cap('The budget compares every school, and the cost of keeping and repairing the closing school.', 5000);
+await scrollTo(page.locator('#fc-report'), 'start');
+await cap('A full report with a source on every sentence, ready to download or print for the district office.', 5500);
+await badge('');
+await card('Why this matters', 'Citizen voices, in any language, are lined up with maps, hazards, policy and cost, so a decision about a child’s school rests on evidence. Everything runs in the browser, so any district can use it: a Digital Public Good for the BRICS innovation theme.', 9500);
+
+if (!DRY) { writeFileSync('docs/demo/timeline.json', JSON.stringify(timeline)); }
+else writeFileSync('docs/demo/texts.json', JSON.stringify(texts));
 await ctx.close(); await browser.close();
-writeFileSync(DRY ? 'docs/demo/texts.json' : 'docs/demo/timeline.json', JSON.stringify(DRY ? texts : timeline, null, 1));
-console.log(DRY ? `collected ${texts.length} texts` : 'recorded');
