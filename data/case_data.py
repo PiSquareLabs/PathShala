@@ -333,6 +333,8 @@ def build(cur):
         if t[10]: keys.append("wild")
         if "kutcha" in t[9] or "footpath" in t[9]: keys.append("kutcha")
         if not keys or (t[3] < 10 and t[9] == "metalled road" and len(keys) < 2): keys += ["pucca", "flat"] if t[3] < 10 else ["pucca"]
+        if t[9] == "metalled road" and t[3] < 12 and not t[4]:   # an easy approach: gentle ground, a metalled road and no river to cross
+            keys += [k for k in ("pucca", "flat") if k not in keys]
         pool = [(tt, hi, en) for tt, hi, en in AS_RECEIVER[:2] + AS_RECEIVER[5:]] + AS_SENDER
         msgs = []
         for k in keys[:5]:
