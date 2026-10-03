@@ -9,7 +9,7 @@ for (const id of ids) {
     const inv = FC.startFull(id);
     for (const step of ['feedback', 'evidence', 'investigate']) await FC.runWork(inv, step);
     const forms = FC.fieldForm(inv), ans = {};
-    forms.forEach(f => { ans[f.track.case_id] = Object.fromEntries(f.questions.map(x => [x.qid, { v: x.type === 'choice' ? (x.qid === 'Q1' ? 'Seasonal' : (x.options.includes('No') ? 'No' : x.options[0] || '')) : x.type === 'number' || x.type === 'minutes' ? '20' : '', note: 'n' }])); });
+    forms.forEach((f, i) => { ans[f.track.case_id] = Object.fromEntries(f.questions.map(x => [x.qid, { v: x.type === 'choice' ? (x.qid === 'Q1' ? ['No', 'Seasonal', 'Yes'][i % 3] : x.qid === 'Q3' ? ['No', 'No', 'Yes'][i % 3] : ['Confirmed', 'Not confirmed', 'Confirmed'][i % 3]) : x.type === 'number' || x.type === 'minutes' ? '22' : '', note: 'Demo answer' }])); });
     FC.submitFieldForm(inv, ans);
     for (const step of ['investigate', 'policy', 'report']) await FC.runWork(inv, step);
     const o = FC.fullRow(inv).out;

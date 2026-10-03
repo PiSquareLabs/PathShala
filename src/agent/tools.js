@@ -327,8 +327,8 @@ defineTool('compare_options', 'Compare the candidate receiving schools on walkin
     }) };
   });
 /* Weights of the ranking score. Each criterion scores 0 to 100 and the officer can see every part. */
-const WEIGHTS = { walk: 25, concerns: 25, cost: 20, community: 15, terrain: 15 }, LABEL = { walk: 'walking time', concerns: 'confirmed concerns', cost: 'first-year cost', community: 'community support', terrain: 'terrain at the receiving school' };
-defineTool('suggest_option', 'Rank the candidate schools that have enough seats by a weighted score (walking time 25, confirmed concerns 25, first-year cost 20, community support 15, terrain at the receiving school 15) and suggest one, or keeping and repairing the closing school when no option is workable. A suggestion only; the officer decides.',
+const WEIGHTS = { walk: 25, concerns: 25, cost: 20, community: 15, terrain: 15 }, LABEL = { walk: 'distance from the closing school', concerns: 'confirmed concerns', cost: 'first-year cost', community: 'community support', terrain: 'terrain at the receiving school' };
+defineTool('suggest_option', 'Rank the candidate schools that have enough seats by a weighted score (distance 25, confirmed concerns 25, first-year cost 20, community support 15, terrain at the receiving school 15) and suggest one, or keeping and repairing the closing school when no option is workable. A suggestion only; the officer decides.',
   { comparison: { type: 'object', description: 'Output of compare_options' } }, ['comparison'],
   async ({ comparison: C }) => {
     const ok = C.options.filter(o => o.enough_seats), costs = ok.map(o => o.first_year_total), lo = Math.min(...costs), hi = Math.max(...costs);
@@ -336,7 +336,7 @@ defineTool('suggest_option', 'Rank the candidate schools that have enough seats 
     const scores = {};
     ok.forEach(o => {
       const supportShare = o.messages ? (o.support - o.oppose) / o.messages : 0, potential = Math.max(0, (o.concerns_total || 0) - o.confirmed_concerns);
-      const pts = { walk: clamp(100 * (90 - o.walk_min) / 75), concerns: clamp(100 - 35 * o.confirmed_concerns - 8 * potential), cost: hi === lo ? 100 : clamp(100 * (hi - o.first_year_total) / (hi - lo)),
+      const pts = { walk: clamp(o.walk_km <= C.walk_limit_km ? 100 : 100 - 35 * (o.walk_km - C.walk_limit_km)), concerns: clamp(100 - 35 * o.confirmed_concerns - 8 * potential), cost: hi === lo ? 100 : clamp(100 * (hi - o.first_year_total) / (hi - lo)),
         community: clamp(50 + 50 * supportShare), terrain: clamp(100 - o.terrain_at_school - (o.elev_diff_m != null && o.elev_diff_m >= 250 ? 15 : 0)) };
       const total = Math.round(Object.entries(WEIGHTS).reduce((a, [k, w]) => a + pts[k] * w / 100, 0));
       scores[o.school_id] = { total, parts: Object.fromEntries(Object.entries(pts).map(([k, v]) => [k, { pts: v, weight: WEIGHTS[k] }])) };
@@ -350,7 +350,7 @@ defineTool('suggest_option', 'Rank the candidate schools that have enough seats 
     const gain = (a, b) => Object.keys(WEIGHTS).map(k => [k, (scores[a.school_id].parts[k].pts - scores[b.school_id].parts[k].pts) * WEIGHTS[k] / 100]);
     const strengths = best && next ? gain(best, next).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 2).map(x => x[0]) : best ? ['walk'] : [];
     const weaknesses = best && next ? gain(best, next).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 1).map(x => x[0]) : [];
-    return { concern_threshold: 2, weights: WEIGHTS, scores, edge, strengths, weaknesses, runner_up: next ? { school_id: next.school_id, name: next.name, walk_min: next.walk_min, first_year_total: next.first_year_total, confirmed_concerns: next.confirmed_concerns } : null, suggested: keep ? 'keep' : best.school_id, suggested_name: keep ? 'Keep and repair the closing school' : best.name, best, ranking: ranked.map(o => o.school_id), keep_reason: !ok.length ? 'no_seats' : allBad ? 'all_over_limit_with_confirmed_concerns' : null,
+    return { concern_threshold: 2, weights: WEIGHTS, scores, edge, strengths, weaknesses, runner_up: next ? { school_id: next.school_id, name: next.name, walk_min: next.walk_min, walk_km: next.walk_km, first_year_total: next.first_year_total, confirmed_concerns: next.confirmed_concerns } : null, suggested: keep ? 'keep' : best.school_id, suggested_name: keep ? 'Keep and repair the closing school' : best.name, best, ranking: ranked.map(o => o.school_id), keep_reason: !ok.length ? 'no_seats' : allBad ? 'all_over_limit_with_confirmed_concerns' : null,
       unanswered: C.options.filter(o => o.questions && o.answered < o.questions).map(o => ({ name: o.name, unanswered: o.questions - o.answered })), not_investigated: C.options.filter(o => !o.investigated).map(o => o.name) };
   });
 

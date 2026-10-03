@@ -4,10 +4,10 @@
    for each candidate, calculates the budget, ranks the candidates and prepares the final screen: recommendation, comparison,
    budget, full report text. Every step is logged. Nothing is submitted, and the officer adopts or changes the choice. */
 import { nearby } from '../case/analysis.js';
-import { chooseFinal, createCase, hasResults, invRow, tracks } from '../case/options.js';
+import { chooseFinal, createCase, hasResults, invRow, routeInfo, tracks } from '../case/options.js';
 import { saveFieldAnswers } from '../case/findings.js';
 import { q, q1, run, save } from '../db/sqlite.js';
-import { logCase, school } from '../ui/helpers.js';
+import { P, logCase, school } from '../ui/helpers.js';
 import { ensureFeedback } from './feedbackAgents.js';
 import { addFieldQuestions, runResearch, runSuggestion } from './research.js';
 import { CONFIG } from './provider.js';
@@ -116,7 +116,12 @@ export const fieldForm = inv => tracks(inv).map(t => ({ track: t, school: school
 function ruleChoice(cid) {
   const F = Object.fromEntries(q('SELECT fid, status, title FROM findings WHERE case_id = ? AND removed = 0', [cid]).map(f => [f.fid, f])), iv = Object.fromEntries(q('SELECT * FROM interventions WHERE case_id = ?', [cid]).map(v => [v.code, v]));
   const confirmed = f => f && /Confirmed|Verified/.test(f.status), pick = {}, no = {};
-  if (confirmed(F.F1)) {
+  // a school beyond the walking limit always needs transport support: RTE Rule 6(1)(a) sets the limit, the Samagra transport norm pays for the journey
+  const c = q1('SELECT * FROM cases WHERE case_id = ?', [cid]), A = c && school(c.from_id), km = c ? routeInfo(c.from_id, c.to_id).walk_km : 0, limit = A?.level_code === 'primary' ? P().walk_limit_primary_km : P().walk_limit_upper_km;
+  if (iv.TR && km > limit) {
+    pick.TR = `The walk is about ${km} km, beyond the ${limit} km walking limit (RTE Rule 6(1)(a)), so the journey needs transport support under the Samagra Shiksha norm`;
+    if (iv.ES) no.ES = 'The transport support already covers the journey';
+  } else if (confirmed(F.F1)) {
     const opts = ['TR', 'ES'].filter(c => iv[c]).sort((a, b) => iv[a].cost_inr - iv[b].cost_inr || a.localeCompare(b)), best = opts[0];
     if (best) { pick[best] = `Addresses the confirmed concern "${F.F1.title}"; the cheapest of ${opts.map(c => `${c} (${fmt(iv[c].cost_inr)})`).join(' and ')}`; opts.slice(1).forEach(c => { no[c] = `Also addresses "${F.F1.title}" but costs more than ${best}`; }); }
   } else ['TR', 'ES'].filter(c => iv[c]).forEach(c => { no[c] = 'The distance and travel concern is not confirmed, so no transport cost is needed'; });
@@ -132,6 +137,7 @@ export async function selectBestPolicies(cid) {
       const out = await llmJson({ system: 'You choose school-merger interventions for a district education officer. Choose only from the listed codes. Prefer interventions that address a confirmed finding at the lowest cost. Reply as JSON: {"choices":[{"code":"TR","chosen":true,"reason":"one plain sentence"}]} with one entry for every listed code. Do not invent numbers.', messages: [{ role: 'user', content: JSON.stringify({ findings: fnd, interventions: iv }) }], max_tokens: 1024 }, 2);
       const ch = out.choices; if (!Array.isArray(ch) || iv.some(v => !ch.find(c => c.code === v.code && typeof c.reason === 'string' && c.reason))) throw new Error('choices not understood');
       pick = {}; no = {}; ch.filter(c => iv.find(v => v.code === c.code)).forEach(c => { (c.chosen ? pick : no)[c.code] = c.reason; }); mode = 'Gemini';
+      if (base.pick.TR && base.pick.TR.startsWith('The walk is about') && !pick.TR) { pick.TR = base.pick.TR; delete no.TR; }   // the distance rule is not left to the model
     } catch (e) { addLogCase(cid, `Gemini policy choice not used (${e.message}); the rule's choice stands`); pick = base.pick; no = base.no; }
   }
   run('DELETE FROM auto_choices WHERE case_id = ?', [cid]); run('UPDATE interventions SET selected = 0 WHERE case_id = ?', [cid]);
